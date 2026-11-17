@@ -19,7 +19,8 @@ body{
   background:radial-gradient(1200px 800px at 50% -20%,#1a2f46 0%,#0a0f16 60%,#070a0f 100%);
   -webkit-font-smoothing:antialiased;
 }
-.app{max-width:1340px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+/* 铺满可视宽度：球桌尽量放大，右侧面板贴到窗口右边 */
+.app{width:100%;max-width:none;display:flex;flex-direction:column;gap:12px}
 
 /* ---------- 顶部：标题 + 模式切换 ---------- */
 header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -43,17 +44,26 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .icon-btn svg{width:16px;height:16px;flex:0 0 auto;opacity:.9}
 
 /* ---------- 主区域 ---------- */
-.main{display:flex;gap:14px;align-items:flex-start}
+.main{display:flex;gap:18px;align-items:flex-start}
+/* 舞台占满剩余宽度，桌子在其中水平居中（不能用 flex 容器，否则 canvas 的固有宽度会成为 min-content 撑破窄屏） */
 .stage{flex:1 1 auto;min-width:0}
 
 /* 画布容器：固定 1120:620 比例，等比缩放不拉伸 */
 .canvas-wrap{
   position:relative;
+  width:100%;
+  max-width:100%;
+  margin:0 auto;
   padding:10px;
   border-radius:18px;
   background:linear-gradient(180deg,#0e1621,#080c12);
   border:1px solid #1b2837;
   box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);
+}
+/* 宽屏：桌子宽度同时受可用宽度和窗口高度约束（1.8065 = 1120/620） */
+@media (min-width:941px){
+  .canvas-wrap{width:min(100%, calc((100vh - 128px) * 1.8065))}
+  .canvas-wrap{width:min(100%, calc((100dvh - 128px) * 1.8065))}
 }
 /* 关键：width 100% + height auto，画布按自身位图比例缩放，永不拉伸 */
 canvas{
@@ -75,6 +85,10 @@ canvas{
 
 /* ---------- 右侧面板 ---------- */
 .panel{width:302px;flex:0 0 302px;display:flex;flex-direction:column;gap:10px}
+/* 大屏时右侧面板略宽一些，跟放大的球桌比例更协调 */
+@media (min-width:1200px){
+  .panel{width:336px;flex:0 0 336px}
+}
 .card{background:linear-gradient(180deg,#111a25,#0d151e);border:1px solid #1c2a3a;border-radius:14px;padding:12px 14px}
 
 .status-card{display:flex;flex-direction:column;gap:6px}
