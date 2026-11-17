@@ -31,7 +31,8 @@ canvas-billiards/
 │   ├── hud.js        # 状态提示、弹窗、按钮、球号条
 │   ├── loop.js       # 主循环
 │   └── main.js       # 启动
-└── README.md
+├── README.md
+└── .gitignore        # 忽略系统垃圾文件、IDE 配置、日志与临时文件
 ```
 
 脚本按上表顺序以普通 `<script>` 引入（非 ES Module，所以 `file://` 直接双击也能跑），全部共享一个全局作用域，只在 `main.js` 末尾调用一次启动。
