@@ -260,6 +260,15 @@ canvas{
     { x1: TABLE.x + TABLE.w, y1: TABLE.y + RAIL_GAP, x2: TABLE.x + TABLE.w, y2: TABLE.y + TABLE.h - RAIL_GAP }
   ];
 
+  const PHYS_DT = 1 / 240;      // 物理固定步长（防穿透）
+  const MAX_SPEED = 1250;       // 满力度球速（逻辑单位/秒）
+  const MIN_SHOT_SPEED = 150;   // 最小出杆速度
+  const ROLL_DECEL = 200;       // 滚动摩擦减速度
+  const STOP_SPEED = 7;         // 低于该速度视为静止
+  const CUSHION_RESTI = 0.84;   // 库边弹性
+  const BALL_RESTI = 0.96;      // 球球弹性
+  const MAX_DRAG = 250;         // 拖拽多远算满力度
+
   // 1-7 纯色 / 9-15 花色（与 1-7 同色系）
   const BALL_COLORS = {
     1: '#f2c53d', 2: '#2f6dd0', 3: '#d64545', 4: '#7b4bc4',
@@ -307,6 +316,8 @@ canvas{
     power: 0,               // 当前力度 0~1
     aimDir: { x: 1, y: 0 }, // 瞄准方向（单位向量）
     aiming: false,          // 是否正在拖拽瞄准
+    showAim: true,          // 是否绘制瞄准辅助线
+    settleTimer: 0,         // 停球后的结算延时
     dragMode: null,         // 'aim' | 'place'
     calledPocket: -1,       // 黑八阶段指定的袋口
     ballInHand: false,      // 手中球状态
@@ -643,10 +654,557 @@ canvas{
     drawCushions();
     drawPockets();
     drawBalls();
+    drawAim();
+    drawCueStick();
   }
 
   /* ============================================================
-   * 6. 主循环
+   * 6. 物理引擎：运动、球球碰撞、库边反弹、落袋判定
+   * ============================================================ */
+
+  // 音效钩子（第 6 阶段注入真实实现，这里先留空避免耦合）
+  let sfxCue = function () {};
+  let sfxHit = function () {};
+  let sfxPocket = function () {};
+
+  const cueBall = () => state.balls[0];
+
+  function allStopped() {
+    for (const b of state.balls) {
+      if (b.active && (b.vx !== 0 || b.vy !== 0)) return false;
+    }
+    return true;
+  }
+
+  // 一个物理子步：摩擦 → 位移 → 球球碰撞 → 库边 → 袋口
+  function substep(dt) {
+    const balls = state.balls;
+
+    for (const b of balls) {
+      if (!b.active) continue;
+      const sp = Math.hypot(b.vx, b.vy);
+      if (sp === 0) continue;
+      const ns = sp - ROLL_DECEL * dt;
+      if (ns <= STOP_SPEED) {
+        b.vx = 0;
+        b.vy = 0;
+      } else {
+        const k = ns / sp;
+        b.vx *= k;
+        b.vy *= k;
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+      }
+    }
+
+    for (let i = 0; i < balls.length; i++) {
+      const a = balls[i];
+      if (!a.active) continue;
+      for (let j = i + 1; j < balls.length; j++) {
+        const b = balls[j];
+        if (b.active) collideBalls(a, b);
+      }
+    }
+
+    for (const b of balls) {
+      if (b.active) collideRails(b);
+    }
+
+    for (const b of balls) {
+      if (b.active) checkPocket(b);
+    }
+  }
+
+  // 等质量弹性碰撞
+  function collideBalls(a, b) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const d2 = dx * dx + dy * dy;
+    const minD = BALL_R * 2;
+    if (d2 >= minD * minD || d2 < 1e-6) return;
+
+    const d = Math.sqrt(d2);
+    const nx = dx / d;
+    const ny = dy / d;
+
+    // 先分离重叠，避免粘连
+    const overlap = minD - d;
+    a.x -= nx * overlap * 0.5;
+    a.y -= ny * overlap * 0.5;
+    b.x += nx * overlap * 0.5;
+    b.y += ny * overlap * 0.5;
+
+    // 记录母球第一次碰到的球（规则判定用）
+    if (state.shot && state.shot.firstHit === null && (a.id === 0 || b.id === 0)) {
+      state.shot.firstHit = a.id === 0 ? b.id : a.id;
+    }
+
+    const rvn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+    if (rvn > 0) return; // 正在分离，不再施加冲量
+
+    const imp = -(1 + BALL_RESTI) * rvn * 0.5;
+    a.vx -= imp * nx;
+    a.vy -= imp * ny;
+    b.vx += imp * nx;
+    b.vy += imp * ny;
+
+    sfxHit(Math.min(1, Math.abs(rvn) / 600));
+  }
+
+  // 球与库边线段碰撞（线段端点天然形成“袋角”，擦袋可弹回）
+  function collideRails(b) {
+    for (const s of RAIL_SEGS) {
+      const dx = s.x2 - s.x1;
+      const dy = s.y2 - s.y1;
+      const segLen2 = dx * dx + dy * dy;
+      const t = clamp(((b.x - s.x1) * dx + (b.y - s.y1) * dy) / segLen2, 0, 1);
+      const px = s.x1 + dx * t;
+      const py = s.y1 + dy * t;
+
+      const ox = b.x - px;
+      const oy = b.y - py;
+      const d = Math.hypot(ox, oy);
+      if (d >= BALL_R || d < 1e-6) continue;
+
+      const nx = ox / d;
+      const ny = oy / d;
+      b.x = px + nx * BALL_R;
+      b.y = py + ny * BALL_R;
+
+      const vn = b.vx * nx + b.vy * ny;
+      if (vn < 0) {
+        b.vx -= (1 + CUSHION_RESTI) * vn * nx;
+        b.vy -= (1 + CUSHION_RESTI) * vn * ny;
+        sfxHit(Math.min(0.6, Math.abs(vn) / 900));
+      }
+    }
+  }
+
+  function checkPocket(b) {
+    for (let i = 0; i < POCKETS.length; i++) {
+      const p = POCKETS[i];
+      if (dist(b.x, b.y, p.x, p.y) < CAPTURE_R) {
+        pocketBall(b, i);
+        return;
+      }
+    }
+    // 兜底：极端情况下穿出边界，按最近袋口处理
+    if (b.x < TABLE.x - 34 || b.x > TABLE.x + TABLE.w + 34 ||
+        b.y < TABLE.y - 34 || b.y > TABLE.y + TABLE.h + 34) {
+      let best = 0;
+      let bd = Infinity;
+      for (let i = 0; i < POCKETS.length; i++) {
+        const d = dist(b.x, b.y, POCKETS[i].x, POCKETS[i].y);
+        if (d < bd) { bd = d; best = i; }
+      }
+      pocketBall(b, best);
+    }
+  }
+
+  function pocketBall(b, pocketIdx) {
+    b.active = false;
+    b.vx = 0;
+    b.vy = 0;
+    sfxPocket(b.id === 0);
+    if (!state.shot) return;
+    if (b.id === 0) {
+      state.shot.cuePotted = true;
+    } else if (b.id === 8) {
+      state.shot.eightPocket = pocketIdx;
+    }
+    state.shot.potted.push({ id: b.id, pocket: pocketIdx });
+  }
+
+  // 固定步长推进物理
+  let physAcc = 0;
+  function stepPhysics(dt) {
+    physAcc += dt;
+    let guard = 0;
+    while (physAcc >= PHYS_DT && guard < 80) {
+      substep(PHYS_DT);
+      physAcc -= PHYS_DT;
+      guard++;
+    }
+    if (guard >= 80) physAcc = 0;
+  }
+
+  /* ============================================================
+   * 7. 瞄准辅助线（只预测母球出发方向，不做碰撞后轨迹预测）
+   * ============================================================ */
+  function raycastAim(from, dir, maxDist) {
+    let best = maxDist;
+
+    // 与其它球相交
+    for (const b of state.balls) {
+      if (!b.active || b.id === 0) continue;
+      const fx = b.x - from.x;
+      const fy = b.y - from.y;
+      const t = fx * dir.x + fy * dir.y;
+      if (t <= 0) continue;
+      const perp2 = fx * fx + fy * fy - t * t;
+      const rr = (BALL_R * 2) * (BALL_R * 2);
+      if (perp2 >= rr) continue;
+      const hit = t - Math.sqrt(rr - perp2);
+      if (hit > 0 && hit < best) best = hit;
+    }
+
+    // 与台面边界相交
+    const x1 = TABLE.x + BALL_R;
+    const x2 = TABLE.x + TABLE.w - BALL_R;
+    const y1 = TABLE.y + BALL_R;
+    const y2 = TABLE.y + TABLE.h - BALL_R;
+    if (dir.x > 0) best = Math.min(best, (x2 - from.x) / dir.x);
+    if (dir.x < 0) best = Math.min(best, (x1 - from.x) / dir.x);
+    if (dir.y > 0) best = Math.min(best, (y2 - from.y) / dir.y);
+    if (dir.y < 0) best = Math.min(best, (y1 - from.y) / dir.y);
+
+    return Math.max(0, best);
+  }
+
+  function drawAim() {
+    if (!state.showAim) return;
+    const cue = cueBall();
+    if (!cue || !cue.active) return;
+
+    const dir = state.aimDir;
+    const len = raycastAim(cue, dir, 1400);
+    const ex = cue.x + dir.x * len;
+    const ey = cue.y + dir.y * len;
+
+    // 虚线
+    ctx.save();
+    ctx.setLineDash([9, 7]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,255,255,.62)';
+    ctx.beginPath();
+    ctx.moveTo(cue.x + dir.x * (BALL_R + 2), cue.y + dir.y * (BALL_R + 2));
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+    ctx.restore();
+
+    // 起点光点
+    const rg = ctx.createRadialGradient(cue.x, cue.y, 2, cue.x, cue.y, BALL_R * 2.4);
+    rg.addColorStop(0, 'rgba(255,255,255,.42)');
+    rg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.arc(cue.x, cue.y, BALL_R * 2.4, 0, TAU);
+    ctx.fill();
+
+    // 终点小箭头
+    ctx.save();
+    ctx.translate(ex, ey);
+    ctx.rotate(Math.atan2(dir.y, dir.x));
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-8, -4);
+    ctx.lineTo(-8, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 出杆时的球杆（画在拖拽方向一侧，即母球反方向）
+  function drawCueStick() {
+    if (!state.aiming) return;
+    const cue = cueBall();
+    if (!cue || !cue.active) return;
+
+    const dir = state.aimDir;
+    const bx = -dir.x;
+    const by = -dir.y;
+    const pull = 16 + state.power * 46;
+    const tipX = cue.x + bx * (BALL_R + pull);
+    const tipY = cue.y + by * (BALL_R + pull);
+    const shaftLen = 150;
+    const buttLen = 62;
+    const midX = tipX + bx * shaftLen;
+    const midY = tipY + by * shaftLen;
+    const buttX = midX + bx * buttLen;
+    const buttY = midY + by * buttLen;
+
+    // 前节
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#e9d6ae';
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(midX, midY);
+    ctx.stroke();
+
+    // 后把
+    const g = ctx.createLinearGradient(midX, midY, buttX, buttY);
+    g.addColorStop(0, '#8b5a32');
+    g.addColorStop(0.4, '#5a361d');
+    g.addColorStop(1, '#2e1a0c');
+    ctx.lineWidth = 11;
+    ctx.strokeStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(midX, midY);
+    ctx.lineTo(buttX, buttY);
+    ctx.stroke();
+
+    // 皮头
+    ctx.beginPath();
+    ctx.arc(tipX, tipY, 3.6, 0, TAU);
+    ctx.fillStyle = '#2b7ea8';
+    ctx.fill();
+
+    // 力度光晕
+    if (state.power > 0.02) {
+      const pr = 4 + state.power * 10;
+      ctx.beginPath();
+      ctx.arc(cue.x, cue.y, BALL_R + pr, 0, TAU);
+      ctx.strokeStyle = `rgba(255,210,90,${0.18 + state.power * 0.5})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+
+  /* ============================================================
+   * 8. 输入：鼠标 / 触摸拖拽瞄准
+   * ============================================================ */
+  let activePointer = null;
+
+  function pointerPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) / rect.width * VIEW_W,
+      y: (e.clientY - rect.top) / rect.height * VIEW_H
+    };
+  }
+
+  function canControl() {
+    if (state.modalOpen || state.gameOver) return false;
+    if (state.phase !== 'aim') return false;
+    if (state.mode === 'ai' && state.turn === 1) return false;
+    return true;
+  }
+
+  // 根据指针位置更新瞄准方向与力度（拖拽方向 = 击球反方向，拖拽距离 = 力度）
+  function updateAimFromPointer(p) {
+    const cue = cueBall();
+    if (!cue || !cue.active) return;
+    const dx = cue.x - p.x;
+    const dy = cue.y - p.y;
+    const d = Math.hypot(dx, dy);
+    if (d > 0.5) state.aimDir = { x: dx / d, y: dy / d };
+
+    const pull = Math.max(0, d - BALL_R * 1.6);
+    state.power = clamp(pull / MAX_DRAG, 0, 1);
+    updatePowerUI();
+  }
+
+  function onPointerDown(e) {
+    if (!canControl() || activePointer !== null) return;
+    e.preventDefault();
+    activePointer = e.pointerId;
+    if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
+
+    const p = pointerPos(e);
+    state.aiming = true;
+    state.showAim = true;
+    updateAimFromPointer(p);
+  }
+
+  function onPointerMove(e) {
+    if (e.pointerId !== activePointer || !state.aiming) return;
+    e.preventDefault();
+    updateAimFromPointer(pointerPos(e));
+  }
+
+  function onPointerUp(e) {
+    if (e.pointerId !== activePointer) return;
+    activePointer = null;
+    if (!state.aiming) return;
+    state.aiming = false;
+
+    const power = state.power;
+    if (power > 0.04) {
+      shoot(power);
+    } else {
+      state.power = 0;
+      updatePowerUI();
+    }
+  }
+
+  canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+  canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+  canvas.addEventListener('pointerup', onPointerUp);
+  canvas.addEventListener('pointercancel', onPointerUp);
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+  /* ============================================================
+   * 9. 击球流程（规则判定在第 4 阶段补全）
+   * ============================================================ */
+  function shoot(power) {
+    const cue = cueBall();
+    if (!cue || !cue.active) return;
+
+    const speed = Math.max(MIN_SHOT_SPEED, MAX_SPEED * power);
+    cue.vx = state.aimDir.x * speed;
+    cue.vy = state.aimDir.y * speed;
+
+    state.shot = {
+      firstHit: null,
+      potted: [],
+      cuePotted: false,
+      eightPocket: null,
+      preRemaining: 99
+    };
+    state.phase = 'shooting';
+    state.aiming = false;
+    state.showAim = false;
+    state.power = 0;
+    state.settleTimer = 0;
+    updatePowerUI();
+    updateStatus();
+    sfxCue(power);
+  }
+
+  function endShot() {
+    state.phase = 'aim';
+    const prev = state.turn;
+    state.shot = null;
+    switchTurn(1 - prev);
+  }
+
+  function switchTurn(p) {
+    state.turn = p;
+    state.calledPocket = -1;
+    state.aimDir = { x: 1, y: 0 };
+    updateStatus();
+  }
+
+  /* ============================================================
+   * 10. 弹窗与 HUD
+   * ============================================================ */
+  const el = id => document.getElementById(id);
+  const statusTextEl = el('statusText');
+  const statusSubEl = el('statusSub');
+  const turnDotEl = el('turnDot');
+  const powerFillEl = el('powerFill');
+  const powerValEl = el('powerVal');
+  const toastEl = el('toast');
+  const modalEl = el('modal');
+  const modalTitleEl = el('modalTitle');
+  const modalTextEl = el('modalText');
+  const modalActionsEl = el('modalActions');
+
+  let toastTimer = 0;
+  function toast(msg, ms) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms || 1600);
+  }
+
+  function showModal(title, text, actions) {
+    modalTitleEl.textContent = title;
+    modalTextEl.textContent = text || '';
+    modalActionsEl.innerHTML = '';
+    (actions || []).forEach(a => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn ' + (a.cls || '');
+      btn.textContent = a.label;
+      btn.addEventListener('click', () => {
+        if (a.keepOpen) { a.onClick && a.onClick(); return; }
+        hideModal();
+        a.onClick && a.onClick();
+      });
+      modalActionsEl.appendChild(btn);
+    });
+    modalEl.classList.add('show');
+    state.modalOpen = true;
+  }
+
+  function hideModal() {
+    modalEl.classList.remove('show');
+    state.modalOpen = false;
+  }
+
+  function updatePowerUI() {
+    const pct = Math.round(state.power * 100);
+    powerFillEl.style.width = pct + '%';
+    powerValEl.textContent = pct + '%';
+  }
+
+  function updateStatus() {
+    const isAI = state.mode === 'ai';
+    const p = state.turn;
+    let name = p === 0 ? '玩家 1' : (isAI ? '电脑' : '玩家 2');
+    let sub = '';
+    let target = '待定';
+
+    if (state.groups[p] === 'solid') target = '纯色 1-7';
+    else if (state.groups[p] === 'stripe') target = '花色 9-15';
+
+    statusTextEl.textContent = `${name} 击球`;
+    if (state.phase === 'shooting') {
+      statusTextEl.textContent = '球在运动中…';
+      sub = '所有球静止后才可继续击球';
+    } else if (state.ballInHand) {
+      statusTextEl.textContent = `${name} · 手中球`;
+      sub = '在开球区拖动母球摆放，再拖拽瞄准';
+    } else {
+      sub = `目标：${target} · 向母球反方向拖拽瞄准，松手击球`;
+    }
+    statusSubEl.textContent = sub;
+    turnDotEl.className = 'dot' + (isAI && p === 1 ? ' ai' : '');
+  }
+
+  function resetGame() {
+    setupBalls();
+    state.turn = 0;
+    state.groups = [null, null];
+    state.phase = 'aim';
+    state.aiming = false;
+    state.showAim = false;
+    state.power = 0;
+    state.locked = false;
+    state.gameOver = false;
+    state.winner = null;
+    state.shot = null;
+    state.calledPocket = -1;
+    state.ballInHand = false;
+    state.aimDir = { x: 1, y: 0 };
+    physAcc = 0;
+    activePointer = null;
+    hideModal();
+    updateStatus();
+    updatePowerUI();
+  }
+
+  // 模式 / 难度切换
+  el('modeSeg').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const mode = btn.dataset.mode;
+    if (mode === state.mode) return;
+    state.mode = mode;
+    [...el('modeSeg').children].forEach(b => b.classList.toggle('active', b === btn));
+    el('levelSeg').hidden = mode !== 'ai';
+    resetGame();
+    toast(mode === 'ai' ? '人机对战：玩家 1 先开球' : '本地双人轮流');
+  });
+
+  el('levelSeg').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    state.aiLevel = btn.dataset.level;
+    [...el('levelSeg').children].forEach(b => b.classList.toggle('active', b === btn));
+    resetGame();
+    toast('难度：' + btn.textContent);
+  });
+
+  el('btnRestart').addEventListener('click', () => {
+    resetGame();
+    toast('重新开局');
+  });
+
+  /* ============================================================
+   * 11. 主循环
    * ============================================================ */
   let lastTime = performance.now();
 
@@ -659,15 +1217,25 @@ canvas{
   }
 
   function update(dt) {
-    /* 阶段 2 接入物理与击球流程 */
+    if (state.phase === 'shooting') {
+      stepPhysics(dt);
+      if (allStopped()) {
+        state.settleTimer += dt;
+        if (state.settleTimer > 0.22) endShot();
+      } else {
+        state.settleTimer = 0;
+      }
+    }
   }
 
   /* ============================================================
-   * 7. 启动
+   * 12. 启动
    * ============================================================ */
   function boot() {
     resizeCanvas();
     setupBalls();
+    updateStatus();
+    updatePowerUI();
     requestAnimationFrame(time => { lastTime = time; frame(time); });
   }
 
