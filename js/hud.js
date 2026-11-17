@@ -81,11 +81,11 @@ function updateStatus() {
       title = `${name} · 开球`;
       sub = isAI && p === 1
         ? '电脑正在摆放母球'
-        : '母球可在开球区拖动摆放，再拖拽瞄准击球';
+        : '按在母球上拖动能摆放位置，松手后正常拖拽瞄准击球';
     } else {
       title = `${name} · 手中球`;
       sub = (state.lastFoul ? state.lastFoul + ' · ' : '') +
-        (isAI && p === 1 ? '电脑正在摆放母球' : '在开球区拖动母球摆放，再拖拽瞄准击球');
+        (isAI && p === 1 ? '电脑正在摆放母球' : '按在母球上拖动摆放（开球区内），松手后拖拽瞄准击球');
     }
   } else if (state.phase === 'aim' && isAI && p === 1) {
     title = '电脑瞄准中';

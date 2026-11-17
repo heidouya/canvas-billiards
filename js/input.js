@@ -56,8 +56,9 @@ function onPointerDown(e) {
   state.moved = false;
 
   const cue = cueBall();
-  // 手中球状态：按在母球上 → 拖动摆放
-  if (state.ballInHand && cue && dist(p.x, p.y, cue.x, cue.y) < 95) {
+  // 手中球状态：只有按在母球本体上（约 2.6 倍球半径内）才算拖动摆放，
+  // 半径太小容易误触摆球、太大又会让想瞄准的玩家一直被当成摆球
+  if (state.ballInHand && cue && dist(p.x, p.y, cue.x, cue.y) < BALL_R * 2.6) {
     state.dragMode = 'place';
     state.aiming = false;
     state.placeOrigin = { x: cue.x, y: cue.y };
@@ -107,6 +108,12 @@ function onPointerUp(e) {
     if (cue && !cueFits(cue.x, cue.y) && state.placeOrigin) {
       cue.x = state.placeOrigin.x;
       cue.y = state.placeOrigin.y;
+    }
+    // 真的拖动过就算摆放完成，立刻退出手中球：
+    // 否则下一次在母球附近按下拖拽会被再次当成摆球，看起来就像"打不了球"
+    if (state.moved) {
+      state.ballInHand = false;
+      state.placeOrigin = null;
     }
     state.power = 0;
     updatePowerUI();
