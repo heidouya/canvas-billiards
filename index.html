@@ -318,7 +318,6 @@ canvas{
     power: 0,               // 当前力度 0~1
     aimDir: { x: 1, y: 0 }, // 瞄准方向（单位向量）
     aiming: false,          // 是否正在拖拽瞄准
-    showAim: true,          // 是否绘制瞄准辅助线
     settleTimer: 0,         // 停球后的结算延时
     dragMode: null,         // 'aim' | 'place'
     calledPocket: -1,       // 黑八阶段指定的袋口
@@ -330,7 +329,8 @@ canvas{
     placeOrigin: null,      // 手中球拖动前的原位置
     modalOpen: false,
     gameOver: false,
-    winner: null
+    winner: null,
+    replayFrames: null    // 当前一杆的回放帧
   };
 
   /* ============================================================
@@ -687,6 +687,17 @@ canvas{
   }
 
   function drawBalls() {
+    // 回放：按记录的帧绘制球位
+    if (state.phase === 'replay' && replayData) {
+      const frames = replayData.frames;
+      const f = frames[Math.min(frames.length - 1, Math.floor(replayIdx))];
+      for (let i = 0; i < state.balls.length; i++) {
+        const d = f && f[i];
+        if (!d || !d[2]) continue;
+        drawBall(state.balls[i], d[0], d[1]);
+      }
+      return;
+    }
     for (const b of state.balls) {
       if (!b.active) continue;
       drawBall(b, b.x, b.y);
@@ -1058,6 +1069,9 @@ canvas{
   }
 
   function onPointerDown(e) {
+    // 首次触控/点击时解锁音频
+    Sound.init();
+    Sound.resume();
     if (!canControl() || activePointer !== null) return;
     e.preventDefault();
     activePointer = e.pointerId;
@@ -1078,7 +1092,6 @@ canvas{
 
     state.dragMode = 'aim';
     state.aiming = true;
-    state.showAim = true;
     updateAimFromPointer(p);
   }
 
@@ -1190,10 +1203,11 @@ canvas{
     };
     state.phase = 'shooting';
     state.aiming = false;
-    state.showAim = false;
     state.ballInHand = false;
     state.power = 0;
     state.settleTimer = 0;
+    startRecording();
+    el('btnReplay').disabled = true;
     updatePowerUI();
     updateStatus();
     sfxCue(power);
@@ -1245,6 +1259,7 @@ canvas{
     state.phase = 'aim';
     state.breakDone = true;
     state.locked = false;
+    finishRecording();
 
     if (!shot) { updateStatus(); return; }
 
@@ -1432,6 +1447,7 @@ canvas{
     state.ballInHand = false;
     state.calledPocket = -1;
     state.locked = false;
+    el('btnReplay').disabled = true;
     saveResult(winner);
     updateStatus();
     showModal(`${nameOf(winner)} 获胜`, reason, [
@@ -1705,7 +1721,6 @@ canvas{
     const power = clamp(plan.power * (1 + (Math.random() * 2 - 1) * cfg.powerErr), 0.12, 1);
     state.aiming = true;
     state.power = power;
-    state.showAim = true;
     updatePowerUI();
     updateStatus();
 
@@ -1733,7 +1748,173 @@ canvas{
   };
 
   /* ============================================================
-   * 12. 弹窗与 HUD
+   * 12. 音效（WebAudio 合成，无需外部资源）
+   * ============================================================ */
+  const SOUND_KEY = 'eightball.sound.v1';
+
+  const Sound = {
+    ctx: null,
+    enabled: true,
+
+    init() {
+      if (this.ctx) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      try { this.ctx = new AC(); } catch (e) { this.ctx = null; }
+    },
+
+    resume() {
+      if (this.ctx && this.ctx.state === 'suspended') {
+        try { this.ctx.resume(); } catch (e) { /* 忽略 */ }
+      }
+    },
+
+    tone(freq, dur, vol, type, slideTo) {
+      const c = this.ctx;
+      if (!c || !this.enabled) return;
+      const t = c.currentTime;
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = type || 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+      if (slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(40, slideTo), t + dur);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(Math.max(0.0005, vol), t + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start(t);
+      osc.stop(t + dur + 0.03);
+    },
+
+    noise(dur, vol, freq) {
+      const c = this.ctx;
+      if (!c || !this.enabled) return;
+      const len = Math.max(1, Math.floor(c.sampleRate * dur));
+      const buf = c.createBuffer(1, len, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+      }
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const filter = c.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = freq || 2000;
+      filter.Q.value = 0.8;
+      const gain = c.createGain();
+      gain.gain.value = vol;
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(c.destination);
+      src.start();
+    },
+
+    // 出杆：皮头撞击 + 木质闷响
+    cue(power) {
+      this.noise(0.08, 0.10 + power * 0.20, 1500);
+      this.tone(180, 0.07, 0.05 + power * 0.10, 'square', 90);
+    },
+
+    // 球与球 / 球与库边：清脆撞击，强度越大越响越尖
+    hit(strength) {
+      const v = clamp(strength, 0, 1);
+      this.tone(760 + v * 620, 0.045 + v * 0.03, 0.05 + v * 0.20, 'triangle', 420);
+    },
+
+    // 落袋：低频下坠 + 短促杂音
+    pocket(isCue) {
+      this.tone(isCue ? 90 : 150, 0.22, 0.20, 'sine', 55);
+      this.noise(0.16, 0.10, 400);
+    }
+  };
+
+  // 挂接物理层音效钩子
+  sfxCue = function (power) { Sound.cue(power); };
+  sfxHit = function (v) { Sound.hit(v); };
+  sfxPocket = function (isCue) { Sound.pocket(isCue); };
+
+  function updateSoundBtn() {
+    el('btnSound').textContent = '音效：' + (Sound.enabled ? '开' : '关');
+  }
+
+  function saveSound() {
+    try { localStorage.setItem(SOUND_KEY, Sound.enabled ? '1' : '0'); } catch (e) { /* 忽略 */ }
+  }
+
+  /* ============================================================
+   * 13. 上一杆回放
+   * ============================================================ */
+  const MAX_REPLAY_FRAMES = 2400;   // 约 40 秒
+  let replayData = null;
+  let replayIdx = 0;
+  let replayAcc = 0;
+  let recAcc = 0;
+
+  function snapshotFrame() {
+    const arr = new Array(state.balls.length);
+    for (let i = 0; i < state.balls.length; i++) {
+      const b = state.balls[i];
+      arr[i] = [Math.round(b.x * 10) / 10, Math.round(b.y * 10) / 10, b.active ? 1 : 0];
+    }
+    return arr;
+  }
+
+  function startRecording() {
+    state.replayFrames = [snapshotFrame()];
+    recAcc = 0;
+  }
+
+  function tickRecording(dt) {
+    if (!state.replayFrames) return;
+    recAcc += dt;
+    if (recAcc >= 1 / 60) {
+      recAcc -= 1 / 60;
+      if (state.replayFrames.length < MAX_REPLAY_FRAMES) {
+        state.replayFrames.push(snapshotFrame());
+      }
+    }
+  }
+
+  function finishRecording() {
+    const frames = state.replayFrames;
+    state.replayFrames = null;
+    if (frames && frames.length > 4) {
+      replayData = { frames };
+      el('btnReplay').disabled = false;
+    }
+  }
+
+  function startReplay() {
+    if (!replayData || replayData.frames.length < 4) return;
+    if (state.phase !== 'aim' || state.gameOver) return;
+    if (state.locked || state.modalOpen) return;
+    state.phase = 'replay';
+    state.aiming = false;
+    state.power = 0;
+    updatePowerUI();
+    replayIdx = 0;
+    replayAcc = 0;
+    updateStatus();
+    toast('正在回放上一杆');
+  }
+
+  function tickReplay(dt) {
+    if (!replayData) { state.phase = 'aim'; return; }
+    const last = replayData.frames.length - 1;
+    if (replayIdx >= last) {
+      state.phase = 'aim';
+      replayIdx = 0;
+      updateStatus();
+      maybeStartAI();
+      return;
+    }
+    replayIdx += dt * 60;
+    if (replayIdx > last) replayIdx = last;
+  }
+
+  /* ============================================================
+   * 14. 弹窗与 HUD
    * ============================================================ */
   const el = id => document.getElementById(id);
   const statusTextEl = el('statusText');
@@ -1796,6 +1977,9 @@ canvas{
     if (state.phase === 'shooting') {
       title = '球在运动中…';
       sub = '所有球静止后才可继续击球';
+    } else if (state.phase === 'replay') {
+      title = '上一杆回放中…';
+      sub = '回放结束后可继续击球';
     } else if (state.phase === 'gameover') {
       title = `${nameOf(state.winner)} 获胜`;
       sub = '点击「一键重新开局」再战一局';
@@ -1832,7 +2016,6 @@ canvas{
     state.groups = [null, null];
     state.phase = 'aim';
     state.aiming = false;
-    state.showAim = true;
     state.power = 0;
     state.locked = false;
     state.gameOver = false;
@@ -1846,6 +2029,10 @@ canvas{
     activePointer = null;
     clearTimeout(aiTimer);
     clearTimeout(aiShootTimer);
+    replayData = null;
+    replayIdx = 0;
+    state.replayFrames = null;
+    el('btnReplay').disabled = true;
     hideModal();
     updateStatus();
     updatePowerUI();
@@ -1878,6 +2065,21 @@ canvas{
     toast('重新开局');
   });
 
+  // 上一杆回放
+  el('btnReplay').addEventListener('click', startReplay);
+
+  // 音效开关
+  el('btnSound').addEventListener('click', () => {
+    Sound.enabled = !Sound.enabled;
+    saveSound();
+    updateSoundBtn();
+    if (Sound.enabled) {
+      Sound.init();
+      Sound.resume();
+    }
+    toast(Sound.enabled ? '音效已开启' : '音效已关闭');
+  });
+
   // 清空战绩（带确认提示）
   el('btnClear').addEventListener('click', () => {
     showModal('清空战绩', '将清除本地保存的全部战绩记录（含双人与人机），此操作不可撤销。', [
@@ -1896,7 +2098,7 @@ canvas{
   });
 
   /* ============================================================
-   * 13. 主循环
+   * 15. 主循环
    * ============================================================ */
   let lastTime = performance.now();
 
@@ -1911,22 +2113,30 @@ canvas{
   function update(dt) {
     if (state.phase === 'shooting') {
       stepPhysics(dt);
+      tickRecording(dt);
       if (allStopped()) {
         state.settleTimer += dt;
         if (state.settleTimer > 0.22) endShot();
       } else {
         state.settleTimer = 0;
       }
+    } else if (state.phase === 'replay') {
+      tickReplay(dt);
     }
   }
 
   /* ============================================================
-   * 14. 启动
+   * 16. 启动
    * ============================================================ */
   function boot() {
     resizeCanvas();
     setupBalls();
     renderRecords();
+    try {
+      Sound.enabled = localStorage.getItem(SOUND_KEY) !== '0';
+    } catch (e) { /* 忽略 */ }
+    updateSoundBtn();
+    el('btnReplay').disabled = true;
     updateStatus();
     updatePowerUI();
     requestAnimationFrame(time => { lastTime = time; frame(time); });
