@@ -43,25 +43,74 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 
 /* ---------- 主区域 ---------- */
 .main{display:flex;gap:18px;align-items:flex-start}
-/* 舞台占满剩余宽度，桌子在其中水平居中（不能用 flex 容器，否则 canvas 的固有宽度会成为 min-content 撑破窄屏） */
+/* 舞台占满剩余宽度，桌子在其中水平居中 */
 .stage{flex:1 1 auto;min-width:0}
+
+/* 桌子列：上方球号条 + 下方画布，整体一起受宽度/高度约束 */
+.table-col{width:100%;max-width:100%;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+
+/* ---------- 台面上方：球组分类与球号 ---------- */
+.rack-strip{display:flex;gap:10px}
+.group-panel{
+  flex:1 1 0;min-width:0;display:flex;align-items:center;gap:10px;
+  padding:8px 12px;border-radius:14px;
+  background:linear-gradient(180deg,#111a25,#0d151e);
+  border:1px solid #1c2a3a;
+  transition:border-color .2s,box-shadow .2s,background .2s;
+}
+.gp-head{flex:0 0 auto;display:flex;flex-direction:column;gap:1px;white-space:nowrap}
+.gp-owner{font-size:14px;font-weight:600;color:#7d93a9;line-height:1.3}
+.gp-tag{font-size:11px;color:#617687;letter-spacing:.5px;line-height:1.3}
+.chips{flex:1 1 auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+/* 小球：纯色球为实心，花色球为白底 + 中间色带（与台面渲染一致） */
+.chip{
+  position:relative;flex:0 0 auto;
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-weight:800;font-size:12px;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--tc,#fff);
+  transition:opacity .25s,filter .25s;
+}
+.chip.solid{
+  background:var(--c,#888);
+  text-shadow:0 1px 1px rgba(0,0,0,.35);
+  box-shadow:inset 0 -3px 7px rgba(0,0,0,.3),inset 0 2px 6px rgba(255,255,255,.32);
+}
+.chip.stripe{
+  background:#f6f2e7;
+  box-shadow:inset 0 -3px 7px rgba(0,0,0,.16);
+}
+.chip.stripe::before{
+  content:'';position:absolute;left:0;right:0;top:50%;height:56%;
+  transform:translateY(-50%);background:var(--c,#888);
+}
+.chip span{position:relative;z-index:1}
+/* 已进袋的球：淡出 */
+.chip.out{opacity:.22;filter:grayscale(.85)}
+
+/* 定组后按归属着色：玩家 1 绿、玩家 2 蓝 */
+.group-panel.owner-0{border-color:rgba(55,208,139,.55)}
+.group-panel.owner-0 .gp-owner{color:#37d08b}
+.group-panel.owner-1{border-color:rgba(88,166,255,.55)}
+.group-panel.owner-1 .gp-owner{color:#58a6ff}
+/* 当前击球方的球组更亮一点 */
+.group-panel.current{background:linear-gradient(180deg,#16232f,#101a24);box-shadow:0 0 14px rgba(55,208,139,.12)}
 
 /* 画布容器：固定 1120:620 比例，等比缩放不拉伸 */
 .canvas-wrap{
   position:relative;
   width:100%;
   max-width:100%;
-  margin:0 auto;
   padding:10px;
   border-radius:18px;
   background:linear-gradient(180deg,#0e1621,#080c12);
   border:1px solid #1b2837;
   box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);
 }
-/* 宽屏：桌子宽度同时受可用宽度和窗口高度约束（1.8065 = 1120/620） */
+/* 宽屏：整体宽度同时受可用宽度和窗口高度约束（1.8065 = 1120/620） */
 @media (min-width:941px){
-  .canvas-wrap{width:min(100%, calc((100vh - 128px) * 1.8065))}
-  .canvas-wrap{width:min(100%, calc((100dvh - 128px) * 1.8065))}
+  .table-col{width:min(100%, calc((100vh - 190px) * 1.8065))}
+  .table-col{width:min(100%, calc((100dvh - 190px) * 1.8065))}
 }
 /* 关键：width 100% + height auto，画布按自身位图比例缩放，永不拉伸 */
 canvas{
@@ -153,6 +202,8 @@ canvas{
   .canvas-wrap{padding:6px}
   .btn-card{flex-wrap:wrap}
   .btn{flex:1 1 45%}
+  .chip{width:24px;height:24px;font-size:11px}
+  .chips{gap:5px}
 }
 @media (max-width:560px){
   .brand h1{font-size:17px}
@@ -160,6 +211,14 @@ canvas{
   .btn{flex:1 1 100%;min-width:0}
   .status-line{font-size:14px}
   .rec-list{font-size:12px}
+  /* 球号条：窄屏改成上下两段，小球缩小，一行放下 7 颗 */
+  .rack-strip{gap:6px}
+  .group-panel{flex-direction:column;align-items:flex-start;gap:6px;padding:7px 9px;border-radius:11px}
+  .gp-head{flex-direction:row;align-items:baseline;gap:6px}
+  .gp-owner{font-size:12px}
+  .gp-tag{font-size:10px}
+  .chip{width:18px;height:18px;font-size:9px}
+  .chips{gap:3px;justify-content:flex-start}
 }
 @media (max-height:520px) and (orientation:landscape){
   .main{flex-direction:row}
@@ -190,9 +249,29 @@ canvas{
 
   <div class="main">
     <div class="stage">
-      <div class="canvas-wrap">
-        <canvas id="table"></canvas>
-        <div id="toast"></div>
+      <div class="table-col">
+        <!-- 台面上方：球组分类与球号，定组后标记归属 -->
+        <div class="rack-strip">
+          <div class="group-panel" id="panelSolid">
+            <div class="gp-head">
+              <span class="gp-owner" id="ownerSolid">球组待定</span>
+              <span class="gp-tag">纯色 1-7</span>
+            </div>
+            <div class="chips" id="chipsSolid"></div>
+          </div>
+          <div class="group-panel" id="panelStripe">
+            <div class="gp-head">
+              <span class="gp-owner" id="ownerStripe">球组待定</span>
+              <span class="gp-tag">花色 9-15</span>
+            </div>
+            <div class="chips" id="chipsStripe"></div>
+          </div>
+        </div>
+
+        <div class="canvas-wrap">
+          <canvas id="table"></canvas>
+          <div id="toast"></div>
+        </div>
       </div>
     </div>
 
@@ -2033,6 +2112,7 @@ canvas{
     statusSubEl.className = 'sub' +
       (state.phase === 'aim' && state.lastFoul ? ' warn' : '');
     turnDotEl.className = 'dot' + (isAI && p === 1 ? ' ai' : '') + (state.ballInHand ? ' warn' : '');
+    updateRackStrip();
   }
 
   function resetGame() {
@@ -2124,6 +2204,73 @@ canvas{
   });
 
   /* ============================================================
+   * 14.1 台面上方：球组分类与球号条
+   * ============================================================ */
+  const chips = { solid: [], stripe: [] };
+
+  // 按球色亮度决定球号用深色还是白色，保证可读
+  function chipTextColor(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return lum > 0.6 ? '#1b1b1b' : '#ffffff';
+  }
+
+  // 生成 1-7 / 9-15 的小球（纯色实心、花色白底 + 中间色带，与台面画法一致）
+  function buildRackStrip() {
+    const groups = [
+      ['solid', [1, 2, 3, 4, 5, 6, 7], 'chipsSolid'],
+      ['stripe', [9, 10, 11, 12, 13, 14, 15], 'chipsStripe']
+    ];
+    for (const [kind, ids, boxId] of groups) {
+      const box = el(boxId);
+      box.innerHTML = '';
+      chips[kind] = [];
+      for (const id of ids) {
+        const color = BALL_COLORS[id];
+        const chip = document.createElement('div');
+        chip.className = 'chip ' + kind;
+        chip.style.setProperty('--c', color);
+        chip.style.setProperty('--tc', chipTextColor(color));
+        chip.title = `${id} 号球`;
+        const num = document.createElement('span');
+        num.textContent = String(id);
+        chip.appendChild(num);
+        box.appendChild(chip);
+        chips[kind].push({ id, el: chip });
+      }
+    }
+  }
+
+  // 刷新球号条：进袋的球淡出；定组后在标题处标出归属与剩余数量
+  function updateRackStrip() {
+    const ownerOf = kind => {
+      if (state.groups[0] === kind) return 0;
+      if (state.groups[1] === kind) return 1;
+      return null;
+    };
+    const panels = [
+      ['solid', 'panelSolid', 'ownerSolid'],
+      ['stripe', 'panelStripe', 'ownerStripe']
+    ];
+    for (const [kind, panelId, ownerId] of panels) {
+      const owner = ownerOf(kind);
+      const panel = el(panelId);
+      el(ownerId).textContent = owner === null
+        ? '球组待定'
+        : `${nameOf(owner)} · 剩 ${remainingOf(owner)}`;
+      panel.classList.toggle('owner-0', owner === 0);
+      panel.classList.toggle('owner-1', owner === 1);
+      panel.classList.toggle('current', owner !== null && owner === state.turn);
+      for (const c of chips[kind]) {
+        const ball = state.balls.find(b => b.id === c.id);
+        c.el.classList.toggle('out', !(ball && ball.active));
+      }
+    }
+  }
+
+  /* ============================================================
    * 15. 主循环
    * ============================================================ */
   let lastTime = performance.now();
@@ -2157,6 +2304,7 @@ canvas{
   function boot() {
     resizeCanvas();
     setupBalls();
+    buildRackStrip();
     renderRecords();
     try {
       Sound.enabled = localStorage.getItem(SOUND_KEY) !== '0';
