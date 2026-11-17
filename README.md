@@ -5,9 +5,36 @@
 
 ```
 canvas-billiards/
-├── index.html   # 全部内容：HTML 结构 + 内联 CSS + 内联 JS
+├── index.html        # 页面结构 + 外链 CSS / JS
+├── css/
+│   ├── base.css      # 变量、重置、body、标题栏
+│   ├── layout.css    # 主区域、桌子列、画布容器与 canvas
+│   ├── rack.css      # 台面上方球组 / 球号条
+│   ├── panel.css     # 右侧面板：卡片、状态、力度、按钮、战绩
+│   ├── overlay.css   # 画布浮层提示与胜利弹窗
+│   └── responsive.css# 全部响应式断点
+├── js/
+│   ├── config.js     # 常量与几何定义
+│   ├── util.js       # 通用工具函数
+│   ├── state.js      # 游戏状态
+│   ├── balls.js      # 球与球堆
+│   ├── canvas.js     # Canvas 初始化与设备像素比
+│   ├── render.js     # 台面渲染
+│   ├── physics.js    # 物理引擎
+│   ├── aim.js        # 瞄准线 / 球杆
+│   ├── input.js      # 鼠标与触摸输入
+│   ├── rules.js      # 击球流程与八球规则
+│   ├── score.js      # 胜负判定与本地战绩
+│   ├── ai.js         # 电脑对手（三档难度）
+│   ├── sound.js      # WebAudio 音效
+│   ├── replay.js     # 上一杆回放
+│   ├── hud.js        # 状态提示、弹窗、按钮、球号条
+│   ├── loop.js       # 主循环
+│   └── main.js       # 启动
 └── README.md
 ```
+
+脚本按上表顺序以普通 `<script>` 引入（非 ES Module，所以 `file://` 直接双击也能跑），全部共享一个全局作用域，只在 `main.js` 末尾调用一次启动。
 
 ## 运行
 
@@ -75,32 +102,31 @@ canvas-billiards/
 | 摩擦 | 恒定滚动减速，低于静止阈值直接归零 |
 | 限制 | 无塞、无扎杆、无跳球、无旋转 |
 
-## 代码结构（单文件内按章节组织）
+## 代码结构（按功能分文件）
 
-`index.html` 的 `<script>` 内按 0~16 编号分节，便于定位：
+CSS 与 JS 都按功能拆开，一个文件对应一类职责，文件名即用途（见上方目录树）。JS 内部仍沿用 0~16 的分节注释，便于在文件里快速定位：
 
 ```
-0  常量与几何定义（逻辑坐标，与屏幕像素无关）
-1  通用工具函数
-2  游戏状态 state
-3  球与球堆（三角摆球：8 号固定第 3 排中间，底排两角一纯一花）
-4  Canvas 初始化与自适应缩放（devicePixelRatio 处理）
-5  渲染（木框 / 台呢 / 六袋 / 库边胶条 / 球 / 瞄准线 / 球杆）
-6  物理引擎
-7  瞄准辅助线（只算母球出发方向）
-8  输入（鼠标 / 触摸拖拽）
-9  击球流程与规则判定
-10 胜负判定与本地战绩
-11 电脑对手
-12 音效（WebAudio）
-13 上一杆回放
-14 弹窗与 HUD
-14.1 台面上方球组 / 球号条
-15 主循环
-16 启动
+config.js  常量与几何定义（逻辑坐标，与屏幕像素无关）
+util.js    通用工具函数
+state.js   游戏状态 state
+balls.js   球与球堆（三角摆球：8 号固定第 3 排中间，底排两角一纯一花）
+canvas.js  Canvas 初始化与自适应缩放（devicePixelRatio 处理）
+render.js  渲染（木框 / 台呢 / 六袋 / 库边胶条 / 球 / 瞄准线 / 球杆）
+physics.js 物理引擎
+aim.js     瞄准辅助线（只算母球出发方向）
+input.js   输入（鼠标 / 触摸拖拽）
+rules.js   击球流程与规则判定
+score.js   胜负判定与本地战绩
+ai.js      电脑对手
+sound.js   音效（WebAudio）
+replay.js  上一杆回放
+hud.js     弹窗与 HUD、台面上方球组 / 球号条
+loop.js    主循环
+main.js    启动
 ```
 
-常用可调参数都在第 0 节：`VIEW_W/VIEW_H`（逻辑画布 1120×620）、`TABLE`（台面 1000×500）、`BALL_R`、`MAX_SPEED`、`ROLL_DECEL`、`STOP_SPEED`、`POCKET_R` / `CAPTURE_R` / `RAIL_GAP`（袋口宽容度）、`MAX_DRAG`（拖拽满力距离）。
+常用可调参数都在 `js/config.js`：`VIEW_W/VIEW_H`（逻辑画布 1120×620）、`TABLE`（台面 1000×500）、`BALL_R`、`MAX_SPEED`、`ROLL_DECEL`、`STOP_SPEED`、`POCKET_R` / `CAPTURE_R` / `RAIL_GAP`（袋口宽容度）、`MAX_DRAG`（拖拽满力距离）。
 
 ## 提交记录
 
@@ -121,9 +147,10 @@ canvas-billiards/
 | `08960a9` | 台面上方球组分类与球号条，定组后标记归属 |
 | `4684c07` | 模式与难度移入右侧设置卡，页头只留标题 |
 | `87d30df` | 对局设置卡移到面板最上方，居于状态卡之上 |
+| `7daa6fa` | 内联 CSS / JS 按功能拆到 css、js 目录 |
 
 ## 说明
 
-- 需求里"CSS / JS 分文件"与"所有代码写在一个 html 文件"两处冲突，这里按**单文件**实现：样式在 `<head>` 的 `<style>`，逻辑在文末 `<script>`，仍按功能分节组织。
-- 手中球按需求原文严格限制在**开球区**。如果想改成全台任意摆放，把 `cueFits()` 里 `state.ballInHand` 那处边界判断放开即可。
+- 早期需求里"CSS / JS 分文件"与"所有代码写在一个 html 文件"两处冲突，最初按单文件实现；现在按最后的反馈改成 `css/` + `js/` 分文件，`index.html` 只保留结构和外链引用。文件之间共享全局作用域，所以仍然是双击就能玩，不需要构建或本地服务器。
+- 手中球按需求原文严格限制在**开球区**。如果想改成全台任意摆放，把 `js/rules.js` 里 `cueFits()` 的 `state.ballInHand` 那处边界判断放开即可。
 - 不做：联机对战、碰撞后轨迹预测、整局回放、分数导出、贴库球/推杆等职业判罚、双指缩放旋转。
