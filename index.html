@@ -29,19 +29,17 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .brand .tag{font-size:12px;color:#6f8aa6;letter-spacing:1px}
 
 .controls{display:flex;gap:10px;flex-wrap:wrap}
-
-/* 右上角设置按钮 */
-.icon-btn{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:8px 14px;border-radius:12px;cursor:pointer;
-  background:#0f1722;border:1px solid #1d2b3c;color:#cfe2f2;
-  font-size:13px;letter-spacing:1px;
-  transition:border-color .18s,background .18s,transform .1s;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+.seg{display:flex;padding:3px;border-radius:12px;background:#0f1722;border:1px solid #1d2b3c;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+/* hidden 属性要能压过 .seg 的 display:flex（本地双人时隐藏难度按钮） */
+.seg[hidden]{display:none}
+.seg button{
+  appearance:none;border:0;background:transparent;color:#93a9bf;
+  font-size:13px;padding:7px 14px;border-radius:9px;cursor:pointer;
+  transition:background .18s,color .18s,transform .1s;white-space:nowrap;
 }
-.icon-btn:hover{border-color:#35b37e;color:#eaf6ff;background:#111c28}
-.icon-btn:active{transform:scale(.97)}
-.icon-btn svg{width:16px;height:16px;flex:0 0 auto;opacity:.9}
+.seg button:hover{color:#dceaf7}
+.seg button:active{transform:scale(.97)}
+.seg button.active{background:linear-gradient(180deg,#2f9d6c,#1b6b47);color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(31,140,95,.35)}
 
 /* ---------- 主区域 ---------- */
 .main{display:flex;gap:18px;align-items:flex-start}
@@ -147,39 +145,6 @@ canvas{
 .modal-actions{display:flex;gap:10px;flex-wrap:wrap}
 .modal-actions .btn{flex:1 1 40%;min-width:110px}
 
-/* ---------- 设置面板（模式 / 难度） ---------- */
-.settings-box{width:min(460px,100%)}
-.set-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.set-head h2{margin:0;font-size:18px;letter-spacing:1px}
-.set-close{
-  appearance:none;width:30px;height:30px;border-radius:9px;cursor:pointer;
-  background:#0b1219;border:1px solid #1d2b3c;color:#9db1c6;font-size:16px;line-height:1;
-}
-.set-close:hover{color:#fff;border-color:#3c5468}
-.set-group{margin-bottom:14px}
-.set-label{font-size:12px;letter-spacing:1px;color:#8ba1b8;margin-bottom:8px}
-.opt-list{display:flex;flex-direction:column;gap:8px}
-.opt-list.dim{opacity:.4;pointer-events:none}
-.opt{
-  display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;cursor:pointer;
-  padding:10px 12px;border-radius:11px;color:#cfe2f2;
-  background:#0b1219;border:1px solid #1a2634;
-  transition:border-color .15s,background .15s,transform .1s;
-  font-family:inherit;
-}
-.opt:hover{border-color:#2b3d52;background:#0e1720}
-.opt:active{transform:scale(.99)}
-.opt.active{
-  border-color:#35b37e;
-  background:linear-gradient(180deg,rgba(53,179,126,.16),rgba(53,179,126,.05));
-  box-shadow:inset 0 0 0 1px rgba(53,179,126,.3);
-}
-.opt-t{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
-.opt-t::before{content:'';flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:#33445a;transition:background .15s,box-shadow .15s}
-.opt.active .opt-t::before{background:#35b37e;box-shadow:0 0 8px rgba(53,179,126,.75)}
-.opt-d{padding-left:16px;font-size:12px;line-height:1.6;color:#8ba1b8}
-.set-tip{margin:2px 0 16px;font-size:12px;color:#7d93a9;line-height:1.6}
-
 /* ---------- 响应式 ---------- */
 @media (max-width:940px){
   body{padding:10px}
@@ -191,11 +156,10 @@ canvas{
 }
 @media (max-width:560px){
   .brand h1{font-size:17px}
-  .icon-btn{padding:7px 11px;font-size:12px}
+  .seg button{padding:6px 11px;font-size:12px}
   .btn{flex:1 1 100%;min-width:0}
   .status-line{font-size:14px}
   .rec-list{font-size:12px}
-  .modal-box{padding:18px}
 }
 @media (max-height:520px) and (orientation:landscape){
   .main{flex-direction:row}
@@ -212,16 +176,15 @@ canvas{
       <span class="tag">CANVAS POOL</span>
     </div>
     <div class="controls">
-      <button type="button" class="icon-btn" id="btnSettings" title="对局设置" aria-label="对局设置">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h8M16 17h4"/>
-          <circle cx="15" cy="7" r="2"/>
-          <circle cx="9" cy="12" r="2"/>
-          <circle cx="14" cy="17" r="2"/>
-        </svg>
-        设置
-      </button>
+      <div class="seg" id="modeSeg">
+        <button type="button" class="active" data-mode="pvp">本地双人</button>
+        <button type="button" data-mode="ai">人机对战</button>
+      </div>
+      <div class="seg" id="levelSeg" hidden>
+        <button type="button" data-level="easy">简单</button>
+        <button type="button" class="active" data-level="normal">普通</button>
+        <button type="button" data-level="hard">困难</button>
+      </div>
     </div>
   </header>
 
@@ -267,55 +230,6 @@ canvas{
     <h2 id="modalTitle"></h2>
     <p id="modalText"></p>
     <div class="modal-actions" id="modalActions"></div>
-  </div>
-</div>
-
-<!-- 对局设置面板 -->
-<div class="modal" id="settingsModal">
-  <div class="modal-box settings-box" role="dialog" aria-modal="true" aria-label="对局设置">
-    <div class="set-head">
-      <h2>对局设置</h2>
-      <button type="button" class="set-close" id="setClose" aria-label="关闭设置">×</button>
-    </div>
-
-    <div class="set-group">
-      <div class="set-label">对局模式</div>
-      <div class="opt-list" id="optMode" role="radiogroup" aria-label="对局模式">
-        <button type="button" class="opt" data-mode="pvp" role="radio" aria-checked="false">
-          <span class="opt-t">本地双人</span>
-          <span class="opt-d">同一台设备两个人轮流击球，各打一组球</span>
-        </button>
-        <button type="button" class="opt" data-mode="ai" role="radio" aria-checked="false">
-          <span class="opt-t">人机对战</span>
-          <span class="opt-d">你与电脑对打，AI 走同一套规则与物理</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="set-group">
-      <div class="set-label">电脑难度</div>
-      <div class="opt-list" id="optLevel" role="radiogroup" aria-label="电脑难度">
-        <button type="button" class="opt" data-level="easy" role="radio" aria-checked="false">
-          <span class="opt-t">简单</span>
-          <span class="opt-d">瞄准误差大、力度偏，经常失误，适合新手上手</span>
-        </button>
-        <button type="button" class="opt" data-level="normal" role="radio" aria-checked="false">
-          <span class="opt-t">普通</span>
-          <span class="opt-d">瞄准较稳，偶尔失误，打得出线路也会打丢球</span>
-        </button>
-        <button type="button" class="opt" data-level="hard" role="radio" aria-checked="false">
-          <span class="opt-t">困难</span>
-          <span class="opt-d">瞄准精准、力度控制到位，很少失误，会主动做安全球</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="set-tip">切换模式或难度会重新摆球开局，当前这一局不会保留。</div>
-
-    <div class="modal-actions">
-      <button type="button" class="btn" id="setCancel">取消</button>
-      <button type="button" class="btn primary" id="setApply">开始新对局</button>
-    </div>
   </div>
 </div>
 
@@ -2150,79 +2064,26 @@ canvas{
     updatePowerUI();
   }
 
-  /* ---------- 对局设置面板（模式 / 难度） ---------- */
-  const LEVEL_TEXT = { easy: '简单', normal: '普通', hard: '困难' };
-  const settingsEl = el('settingsModal');
-  let setMode = 'pvp';        // 面板内的临时选择，点“开始新对局”才生效
-  let setLevel = 'normal';
-
-  function renderSettings() {
-    [...el('optMode').children].forEach(b => {
-      const on = b.dataset.mode === setMode;
-      b.classList.toggle('active', on);
-      b.setAttribute('aria-checked', on ? 'true' : 'false');
-    });
-    [...el('optLevel').children].forEach(b => {
-      const on = b.dataset.level === setLevel;
-      b.classList.toggle('active', on);
-      b.setAttribute('aria-checked', on ? 'true' : 'false');
-    });
-    // 非人机模式下难度不可选，但仍显示当前档位
-    el('optLevel').classList.toggle('dim', setMode !== 'ai');
-  }
-
-  function openSettings() {
-    setMode = state.mode;
-    setLevel = state.aiLevel;
-    renderSettings();
-    settingsEl.classList.add('show');
-    state.modalOpen = true;        // 面板打开时锁住台面输入
-  }
-
-  function closeSettings() {
-    settingsEl.classList.remove('show');
-    state.modalOpen = false;
-  }
-
-  function applySettings() {
-    const changed = setMode !== state.mode ||
-      (setMode === 'ai' && setLevel !== state.aiLevel);
-    state.mode = setMode;
-    state.aiLevel = setLevel;
-    closeSettings();
-    if (!changed) {
-      toast('设置未变更');
-      return;
-    }
+  // 模式 / 难度切换
+  el('modeSeg').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const mode = btn.dataset.mode;
+    if (mode === state.mode) return;
+    state.mode = mode;
+    [...el('modeSeg').children].forEach(b => b.classList.toggle('active', b === btn));
+    el('levelSeg').hidden = mode !== 'ai';
     resetGame();
-    toast(state.mode === 'ai' ? '人机对战 · ' + LEVEL_TEXT[state.aiLevel] : '本地双人轮流');
-  }
+    toast(mode === 'ai' ? '人机对战：玩家 1 先开球' : '本地双人轮流');
+  });
 
-  el('btnSettings').addEventListener('click', openSettings);
-  el('setClose').addEventListener('click', closeSettings);
-  el('setCancel').addEventListener('click', closeSettings);
-  el('setApply').addEventListener('click', applySettings);
-
-  el('optMode').addEventListener('click', e => {
-    const btn = e.target.closest('.opt');
+  el('levelSeg').addEventListener('click', e => {
+    const btn = e.target.closest('button');
     if (!btn) return;
-    setMode = btn.dataset.mode;
-    renderSettings();
-  });
-
-  el('optLevel').addEventListener('click', e => {
-    const btn = e.target.closest('.opt');
-    if (!btn) return;
-    setLevel = btn.dataset.level;
-    renderSettings();
-  });
-
-  // 点击遮罩或按 Esc 关闭
-  settingsEl.addEventListener('click', e => {
-    if (e.target === settingsEl) closeSettings();
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && settingsEl.classList.contains('show')) closeSettings();
+    state.aiLevel = btn.dataset.level;
+    [...el('levelSeg').children].forEach(b => b.classList.toggle('active', b === btn));
+    resetGame();
+    toast('难度：' + btn.textContent);
   });
 
   el('btnRestart').addEventListener('click', () => {
