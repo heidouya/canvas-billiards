@@ -83,6 +83,8 @@ canvas{
 .dot.ai{background:#f2a63d;box-shadow:0 0 10px rgba(242,166,61,.8)}
 .dot.warn{background:#ef5d5d;box-shadow:0 0 10px rgba(239,93,93,.8)}
 .sub{font-size:12px;color:#7e94ab;line-height:1.5}
+/* 犯规提示：状态卡里用暖色标出“谁犯规、犯了什么规” */
+.sub.warn{color:#f0a85e}
 
 /* 力度条 */
 .power-head{display:flex;justify-content:space-between;font-size:12px;color:#8ba1b8;margin-bottom:8px}
@@ -418,7 +420,8 @@ canvas{
     modalOpen: false,
     gameOver: false,
     winner: null,
-    replayFrames: null    // 当前一杆的回放帧
+    replayFrames: null,   // 当前一杆的回放帧
+    lastFoul: null        // 最近一次犯规的文字（谁犯规 + 原因），下一杆开始时清空
   };
 
   /* ============================================================
@@ -1292,6 +1295,7 @@ canvas{
     state.phase = 'shooting';
     state.aiming = false;
     state.ballInHand = false;
+    state.lastFoul = null;      // 新的一杆开始，上一次犯规提示作废
     state.power = 0;
     state.settleTimer = 0;
     startRecording();
@@ -1433,7 +1437,9 @@ canvas{
     state.calledPocket = -1;
 
     if (foul) {
-      toast('犯规：' + foulMsg);
+      // 犯规：提示里点名是谁犯规、犯的什么规，以及谁来拿手中球
+      state.lastFoul = `${nameOf(me)} 犯规：${foulMsg}`;
+      toast(`${state.lastFoul} · ${nameOf(opp)} 手中球`);
       giveBallInHand(opp);
       state.turn = opp;
       state.phase = 'aim';
@@ -2076,12 +2082,13 @@ canvas{
       sub = '同时打进纯色与花色球，可自选一组';
     }
 
-    if (state.phase === 'aim' && isAI && p === 1) {
+    if (state.phase === 'aim' && state.ballInHand) {
+      title = `${name} · 手中球`;
+      sub = (state.lastFoul ? state.lastFoul + ' · ' : '') +
+        (isAI && p === 1 ? '电脑正在摆放母球' : '在开球区拖动母球摆放，再拖拽瞄准击球');
+    } else if (state.phase === 'aim' && isAI && p === 1) {
       title = '电脑瞄准中';
       sub = '电脑回合，玩家操作已锁定';
-    } else if (state.phase === 'aim' && state.ballInHand) {
-      title = `${name} · 手中球`;
-      sub = '在开球区拖动母球摆放，再拖拽瞄准击球';
     } else if (state.phase === 'aim' && isOnEight(p)) {
       sub = state.calledPocket >= 0
         ? `目标：黑八 · 已指定${POCKET_NAMES[state.calledPocket]}，拖拽瞄准`
@@ -2095,6 +2102,8 @@ canvas{
 
     statusTextEl.textContent = title;
     statusSubEl.textContent = sub;
+    statusSubEl.className = 'sub' +
+      (state.phase === 'aim' && state.lastFoul ? ' warn' : '');
     turnDotEl.className = 'dot' + (isAI && p === 1 ? ' ai' : '') + (state.ballInHand ? ' warn' : '');
   }
 
@@ -2112,6 +2121,7 @@ canvas{
     state.calledPocket = -1;
     state.ballInHand = true;   // 开球：母球可先在开球区内摆放
     state.breakDone = false;
+    state.lastFoul = null;
     state.aimDir = { x: 1, y: 0 };
     physAcc = 0;
     activePointer = null;
