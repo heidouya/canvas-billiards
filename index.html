@@ -28,7 +28,6 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .brand h1{margin:0;font-size:20px;letter-spacing:3px;font-weight:700}
 .brand .tag{font-size:12px;color:#6f8aa6;letter-spacing:1px}
 
-.controls{display:flex;gap:10px;flex-wrap:wrap}
 .seg{display:flex;padding:3px;border-radius:12px;background:#0f1722;border:1px solid #1d2b3c;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
 /* hidden 属性要能压过 .seg 的 display:flex（本地双人时隐藏难度按钮） */
 .seg[hidden]{display:none}
@@ -152,8 +151,15 @@ canvas{
 .power-track{height:12px;border-radius:8px;background:#0a1119;border:1px solid #1e2c3d;overflow:hidden}
 .power-fill{height:100%;width:0%;border-radius:8px;background:linear-gradient(90deg,#2bb673,#e8c33a 55%,#ef5d5d);transition:width .06s linear}
 
-/* 按钮组：flex-wrap 保证小屏自动换行 */
+/* 按钮组：flex-wrap 保证小屏自动换行；模式 / 难度也放在这张卡里 */
 .btn-card{display:flex;flex-wrap:wrap;gap:8px;padding:12px}
+/* 对局设置行：左边小标题，右边分段按钮铺满 */
+.seg-row{flex:1 1 100%;display:flex;align-items:center;gap:8px}
+.seg-row[hidden]{display:none}
+.seg-label{flex:0 0 auto;font-size:12px;color:#7d93a9;letter-spacing:1px}
+.seg-row .seg{flex:1 1 auto;min-width:0}
+.seg-row .seg button{flex:1 1 0;text-align:center;padding:7px 8px}
+.divider{flex:1 1 100%;height:1px;margin:3px 0;background:linear-gradient(90deg,rgba(28,42,58,0),#1c2a3a,#1c2a3a,rgba(28,42,58,0))}
 .btn{
   flex:1 1 46%;min-width:112px;appearance:none;cursor:pointer;
   font-size:13px;padding:10px 8px;border-radius:10px;
@@ -234,17 +240,6 @@ canvas{
       <h1>美式八球</h1>
       <span class="tag">CANVAS POOL</span>
     </div>
-    <div class="controls">
-      <div class="seg" id="modeSeg">
-        <button type="button" class="active" data-mode="pvp">本地双人</button>
-        <button type="button" data-mode="ai">人机对战</button>
-      </div>
-      <div class="seg" id="levelSeg" hidden>
-        <button type="button" data-level="easy">简单</button>
-        <button type="button" class="active" data-level="normal">普通</button>
-        <button type="button" data-level="hard">困难</button>
-      </div>
-    </div>
   </header>
 
   <div class="main">
@@ -290,6 +285,23 @@ canvas{
       </div>
 
       <div class="card btn-card">
+        <!-- 对局设置：模式与电脑难度，和人机切换后即时开局 -->
+        <div class="seg-row">
+          <span class="seg-label">模式</span>
+          <div class="seg" id="modeSeg">
+            <button type="button" class="active" data-mode="pvp">本地双人</button>
+            <button type="button" data-mode="ai">人机对战</button>
+          </div>
+        </div>
+        <div class="seg-row" id="levelRow" hidden>
+          <span class="seg-label">难度</span>
+          <div class="seg" id="levelSeg">
+            <button type="button" data-level="easy">简单</button>
+            <button type="button" class="active" data-level="normal">普通</button>
+            <button type="button" data-level="hard">困难</button>
+          </div>
+        </div>
+        <div class="divider"></div>
         <button type="button" class="btn" id="btnRestart">重新开局</button>
         <button type="button" class="btn" id="btnReplay" disabled>上一杆回放</button>
         <button type="button" class="btn" id="btnSound">音效：开</button>
@@ -2090,9 +2102,17 @@ canvas{
     }
 
     if (state.phase === 'aim' && state.ballInHand) {
-      title = `${name} · 手中球`;
-      sub = (state.lastFoul ? state.lastFoul + ' · ' : '') +
-        (isAI && p === 1 ? '电脑正在摆放母球' : '在开球区拖动母球摆放，再拖拽瞄准击球');
+      // 开球时的摆放不算手中球，说明文字要和犯规后区分开
+      if (!state.breakDone) {
+        title = `${name} · 开球`;
+        sub = isAI && p === 1
+          ? '电脑正在摆放母球'
+          : '母球可在开球区拖动摆放，再拖拽瞄准击球';
+      } else {
+        title = `${name} · 手中球`;
+        sub = (state.lastFoul ? state.lastFoul + ' · ' : '') +
+          (isAI && p === 1 ? '电脑正在摆放母球' : '在开球区拖动母球摆放，再拖拽瞄准击球');
+      }
     } else if (state.phase === 'aim' && isAI && p === 1) {
       title = '电脑瞄准中';
       sub = '电脑回合，玩家操作已锁定';
@@ -2111,7 +2131,8 @@ canvas{
     statusSubEl.textContent = sub;
     statusSubEl.className = 'sub' +
       (state.phase === 'aim' && state.lastFoul ? ' warn' : '');
-    turnDotEl.className = 'dot' + (isAI && p === 1 ? ' ai' : '') + (state.ballInHand ? ' warn' : '');
+    turnDotEl.className = 'dot' + (isAI && p === 1 ? ' ai' : '') +
+      (state.ballInHand && state.breakDone ? ' warn' : '');
     updateRackStrip();
   }
 
@@ -2144,7 +2165,7 @@ canvas{
     updatePowerUI();
   }
 
-  // 模式 / 难度切换
+  // 模式 / 难度切换（都在右侧设置卡里）
   el('modeSeg').addEventListener('click', e => {
     const btn = e.target.closest('button');
     if (!btn) return;
@@ -2152,7 +2173,7 @@ canvas{
     if (mode === state.mode) return;
     state.mode = mode;
     [...el('modeSeg').children].forEach(b => b.classList.toggle('active', b === btn));
-    el('levelSeg').hidden = mode !== 'ai';
+    el('levelRow').hidden = mode !== 'ai';
     resetGame();
     toast(mode === 'ai' ? '人机对战：玩家 1 先开球' : '本地双人轮流');
   });
@@ -2303,16 +2324,13 @@ canvas{
    * ============================================================ */
   function boot() {
     resizeCanvas();
-    setupBalls();
     buildRackStrip();
+    resetGame();          // 首次进页面就与“重新开局”完全一致（含开球区摆放母球）
     renderRecords();
     try {
       Sound.enabled = localStorage.getItem(SOUND_KEY) !== '0';
     } catch (e) { /* 忽略 */ }
     updateSoundBtn();
-    el('btnReplay').disabled = true;
-    updateStatus();
-    updatePowerUI();
     requestAnimationFrame(time => { lastTime = time; frame(time); });
   }
 
