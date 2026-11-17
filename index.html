@@ -98,6 +98,8 @@ canvas{
 .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .btn.danger{color:#ffb9b9;border-color:#4a2630;background:#221318}
 .btn.danger:hover{background:#2c181f;border-color:#6d3441}
+.btn.primary{color:#ffffff;background:linear-gradient(180deg,#2f9d6c,#1b6b47);border-color:#2f9d6c}
+.btn.primary:hover{background:linear-gradient(180deg,#37b27b,#217a52);border-color:#37b27b}
 
 /* 战绩 */
 .rec-head{font-size:12px;color:#8ba1b8;letter-spacing:1px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
@@ -321,7 +323,11 @@ canvas{
     dragMode: null,         // 'aim' | 'place'
     calledPocket: -1,       // 黑八阶段指定的袋口
     ballInHand: false,      // 手中球状态
+    breakDone: false,       // 开球是否已完成
     shot: null,             // 当前一杆的统计
+    downPos: null,          // 按下位置
+    moved: false,           // 本次按下是否发生拖动
+    placeOrigin: null,      // 手中球拖动前的原位置
     modalOpen: false,
     gameOver: false,
     winner: null
@@ -560,6 +566,47 @@ canvas{
     }
   }
 
+  // 手中球：高亮开球区，提示可摆放范围
+  function drawBallInHandArea() {
+    if (!state.ballInHand) return;
+    ctx.save();
+    ctx.fillStyle = 'rgba(120,220,180,.08)';
+    ctx.fillRect(TABLE.x, TABLE.y, HEAD_X - TABLE.x, TABLE.h);
+    ctx.setLineDash([7, 7]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(140,235,195,.42)';
+    ctx.strokeRect(TABLE.x + 1, TABLE.y + 1, HEAD_X - TABLE.x - 2, TABLE.h - 2);
+    ctx.restore();
+
+    // 母球周围的脉冲圈，提示“可拖动”
+    const cue = cueBall();
+    if (cue && cue.active) {
+      const t = (performance.now() / 900) % 1;
+      ctx.beginPath();
+      ctx.arc(cue.x, cue.y, BALL_R + 6 + t * 10, 0, TAU);
+      ctx.strokeStyle = `rgba(140,235,195,${0.5 * (1 - t)})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+
+  // 黑八阶段：提示可选袋口，高亮已指定袋口
+  function drawPocketHint() {
+    if (state.phase !== 'aim') return;
+    if (!isOnEight(state.turn)) return;
+    ctx.save();
+    POCKETS.forEach((p, i) => {
+      const called = i === state.calledPocket;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POCKET_R - 4, 0, TAU);
+      ctx.setLineDash(called ? [] : [6, 6]);
+      ctx.lineWidth = called ? 3 : 1.5;
+      ctx.strokeStyle = called ? 'rgba(255,208,90,.95)' : 'rgba(255,255,255,.30)';
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
   // 单颗球
   function drawBall(b, x, y) {
     const r = BALL_R;
@@ -653,6 +700,8 @@ canvas{
     drawCloth();
     drawCushions();
     drawPockets();
+    drawBallInHandArea();
+    drawPocketHint();
     drawBalls();
     drawAim();
     drawCueStick();
@@ -862,9 +911,12 @@ canvas{
   }
 
   function drawAim() {
-    if (!state.showAim) return;
+    if (state.phase !== 'aim' || state.modalOpen) return;
     const cue = cueBall();
     if (!cue || !cue.active) return;
+
+    ctx.save();
+    ctx.globalAlpha = state.aiming ? 1 : 0.5;
 
     const dir = state.aimDir;
     const len = raycastAim(cue, dir, 1400);
@@ -902,6 +954,8 @@ canvas{
     ctx.lineTo(-8, 4);
     ctx.closePath();
     ctx.fill();
+    ctx.restore();
+
     ctx.restore();
   }
 
@@ -977,8 +1031,16 @@ canvas{
   function canControl() {
     if (state.modalOpen || state.gameOver) return false;
     if (state.phase !== 'aim') return false;
-    if (state.mode === 'ai' && state.turn === 1) return false;
+    if (state.mode === 'ai' && state.turn === 1) return false; // AI 回合锁定玩家操作
     return true;
+  }
+
+  // 命中哪个袋口（轻点袋口用于指定黑八目标袋）
+  function pocketAt(x, y) {
+    for (let i = 0; i < POCKETS.length; i++) {
+      if (dist(x, y, POCKETS[i].x, POCKETS[i].y) < 46) return i;
+    }
+    return -1;
   }
 
   // 根据指针位置更新瞄准方向与力度（拖拽方向 = 击球反方向，拖拽距离 = 力度）
@@ -1002,22 +1064,86 @@ canvas{
     if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
 
     const p = pointerPos(e);
+    state.downPos = p;
+    state.moved = false;
+
+    const cue = cueBall();
+    // 手中球状态：按在母球上 → 拖动摆放
+    if (state.ballInHand && cue && dist(p.x, p.y, cue.x, cue.y) < 95) {
+      state.dragMode = 'place';
+      state.aiming = false;
+      state.placeOrigin = { x: cue.x, y: cue.y };
+      return;
+    }
+
+    state.dragMode = 'aim';
     state.aiming = true;
     state.showAim = true;
     updateAimFromPointer(p);
   }
 
   function onPointerMove(e) {
-    if (e.pointerId !== activePointer || !state.aiming) return;
+    if (e.pointerId !== activePointer) return;
     e.preventDefault();
-    updateAimFromPointer(pointerPos(e));
+    const p = pointerPos(e);
+
+    if (state.downPos && dist(p.x, p.y, state.downPos.x, state.downPos.y) > 6) {
+      state.moved = true;
+    }
+
+    if (state.dragMode === 'place') {
+      const cue = cueBall();
+      if (!cue) return;
+      const maxX = state.ballInHand ? HEAD_X : TABLE.x + TABLE.w - BALL_R;
+      const tx = clamp(p.x, TABLE.x + BALL_R, maxX);
+      const ty = clamp(p.y, TABLE.y + BALL_R, TABLE.y + TABLE.h - BALL_R);
+      if (cueFits(tx, ty)) {
+        cue.x = tx;
+        cue.y = ty;
+      }
+      return;
+    }
+
+    if (state.aiming) updateAimFromPointer(p);
   }
 
   function onPointerUp(e) {
     if (e.pointerId !== activePointer) return;
     activePointer = null;
+
+    const wasPlace = state.dragMode === 'place';
+    state.dragMode = null;
+
+    // 摆放结束：落点不合法则回到原位，之后仍可继续拖拽瞄准
+    if (wasPlace) {
+      const cue = cueBall();
+      if (cue && !cueFits(cue.x, cue.y) && state.placeOrigin) {
+        cue.x = state.placeOrigin.x;
+        cue.y = state.placeOrigin.y;
+      }
+      state.power = 0;
+      updatePowerUI();
+      updateStatus();
+      return;
+    }
+
     if (!state.aiming) return;
     state.aiming = false;
+
+    const p = pointerPos(e);
+
+    // 轻点袋口 → 指定黑八目标袋
+    if (!state.moved && isOnEight(state.turn)) {
+      const idx = pocketAt(p.x, p.y);
+      if (idx >= 0) {
+        state.calledPocket = idx;
+        state.power = 0;
+        updatePowerUI();
+        updateStatus();
+        toast('已指定目标袋：' + POCKET_NAMES[idx]);
+        return;
+      }
+    }
 
     const power = state.power;
     if (power > 0.04) {
@@ -1035,11 +1161,19 @@ canvas{
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
   /* ============================================================
-   * 9. 击球流程（规则判定在第 4 阶段补全）
+   * 9. 击球流程与美式八球规则
    * ============================================================ */
   function shoot(power) {
     const cue = cueBall();
     if (!cue || !cue.active) return;
+
+    // 黑八阶段必须指定袋口
+    if (isOnEight(state.turn) && state.calledPocket < 0) {
+      toast('黑八阶段请先点击袋口指定目标袋');
+      state.power = 0;
+      updatePowerUI();
+      return;
+    }
 
     const speed = Math.max(MIN_SHOT_SPEED, MAX_SPEED * power);
     cue.vx = state.aimDir.x * speed;
@@ -1050,11 +1184,14 @@ canvas{
       potted: [],
       cuePotted: false,
       eightPocket: null,
-      preRemaining: 99
+      preRemaining: state.groups[state.turn] ? remainingOf(state.turn) : 99,
+      targetKind: targetKind(state.turn),
+      isBreak: !state.breakDone
     };
     state.phase = 'shooting';
     state.aiming = false;
     state.showAim = false;
+    state.ballInHand = false;
     state.power = 0;
     state.settleTimer = 0;
     updatePowerUI();
@@ -1062,19 +1199,300 @@ canvas{
     sfxCue(power);
   }
 
-  function endShot() {
-    state.phase = 'aim';
-    const prev = state.turn;
-    state.shot = null;
-    switchTurn(1 - prev);
+  /* ---------- 球组 / 目标球相关 ---------- */
+  function ballKind(id) {
+    if (id === 8) return 'eight';
+    return id < 8 ? 'solid' : 'stripe';
   }
 
-  function switchTurn(p) {
-    state.turn = p;
-    state.calledPocket = -1;
-    state.aimDir = { x: 1, y: 0 };
-    updateStatus();
+  function remainingOf(player) {
+    const g = state.groups[player];
+    if (!g) return 99;
+    let n = 0;
+    for (const b of state.balls) {
+      if (b.active && b.id !== 0 && ballKind(b.id) === g) n++;
+    }
+    return n;
   }
+
+  function isOnEight(player) {
+    return !!state.groups[player] && remainingOf(player) === 0;
+  }
+
+  function targetKind(player) {
+    if (!state.groups[player]) return 'open';
+    return remainingOf(player) === 0 ? 'eight' : state.groups[player];
+  }
+
+  function assignGroups(player, kind) {
+    state.groups[player] = kind;
+    state.groups[1 - player] = kind === 'solid' ? 'stripe' : 'solid';
+  }
+
+  function nameOf(player) {
+    if (player === 1 && state.mode === 'ai') return '电脑';
+    return player === 0 ? '玩家 1' : '玩家 2';
+  }
+
+  /* ---------- 结算一杆 ---------- */
+  function endShot() {
+    const me = state.turn;
+    const opp = 1 - me;
+    const shot = state.shot;
+
+    state.shot = null;
+    state.settleTimer = 0;
+    state.phase = 'aim';
+    state.breakDone = true;
+
+    if (!shot) { updateStatus(); return; }
+
+    // ---------- 1) 黑八结算（优先处理胜负） ----------
+    if (shot.eightPocket !== null) {
+      const called = state.calledPocket;
+      let loseReason = null;
+      if (shot.preRemaining > 0) {
+        loseReason = '还没清完自己的球就打进黑八';
+      } else if (shot.cuePotted) {
+        loseReason = '打进黑八的同时母球落袋';
+      } else if (called >= 0 && shot.eightPocket !== called) {
+        loseReason = `黑八打进了${POCKET_NAMES[shot.eightPocket]}，而不是指定的${POCKET_NAMES[called]}`;
+      }
+
+      if (loseReason) {
+        endGame(opp, `${nameOf(me)} ${loseReason}，${nameOf(opp)} 获胜。`);
+      } else {
+        endGame(me, `${nameOf(me)} 成功打进黑八，赢得本局！`);
+      }
+      return;
+    }
+
+    // ---------- 2) 普通犯规判定 ----------
+    let foul = false;
+    let foulMsg = '';
+
+    if (shot.cuePotted) {
+      foul = true;
+      foulMsg = '母球落袋';
+    } else if (shot.firstHit === null) {
+      foul = true;
+      foulMsg = '空杆，没有碰到任何球';
+    } else {
+      const hitKind = ballKind(shot.firstHit);
+      if (shot.targetKind === 'eight') {
+        if (hitKind !== 'eight') { foul = true; foulMsg = '黑八阶段必须先碰到黑八'; }
+      } else if (shot.targetKind === 'open') {
+        if (hitKind === 'eight') { foul = true; foulMsg = '不能先碰黑八'; }
+      } else if (hitKind !== shot.targetKind) {
+        foul = true;
+        foulMsg = hitKind === 'eight' ? '先碰到了黑八' : `先碰到了对方的球（${shot.firstHit} 号）`;
+      }
+    }
+
+    const potted = shot.potted.filter(p => p.id !== 8);
+    const pottedAny = shot.potted.length > 0;
+
+    // ---------- 3) 球组归属（开球/首次进球 → 锁定球组） ----------
+    if (!foul && !state.groups[me] && potted.length) {
+      let solids = 0;
+      let stripes = 0;
+      for (const p of potted) {
+        if (p.id < 8) solids++;
+        else stripes++;
+      }
+      if (solids && stripes) {
+        // 同时打进纯色 + 花色：由击球方自选
+        state.turn = me;
+        askGroupChoice(me);
+        return;
+      }
+      if (solids) assignGroups(me, 'solid');
+      else if (stripes) assignGroups(me, 'stripe');
+      toast(`球组锁定：${state.groups[me] === 'solid' ? '纯色 1-7' : '花色 9-15'}`);
+    }
+
+    // ---------- 4) 回合处理 ----------
+    state.calledPocket = -1;
+
+    if (foul) {
+      toast('犯规：' + foulMsg);
+      giveBallInHand(opp);
+      state.turn = opp;
+      state.phase = 'aim';
+      updateStatus();
+      maybeStartAI();
+      return;
+    }
+
+    if (pottedAny) {
+      // 进球继续击球
+      state.turn = me;
+      updateStatus();
+      maybeStartAI();
+    } else {
+      state.turn = opp;
+      updateStatus();
+      maybeStartAI();
+    }
+  }
+
+  function askGroupChoice(player) {
+    state.phase = 'groupChoice';
+    updateStatus();
+    showModal('选择球组', '你同时打进了纯色球和花色球，可以自选一组继续。', [
+      {
+        label: '纯色 1-7',
+        onClick: () => {
+          assignGroups(player, 'solid');
+          state.phase = 'aim';
+          updateStatus();
+          toast('球组锁定：纯色 1-7');
+          maybeStartAI();
+        }
+      },
+      {
+        label: '花色 9-15',
+        onClick: () => {
+          assignGroups(player, 'stripe');
+          state.phase = 'aim';
+          updateStatus();
+          toast('球组锁定：花色 9-15');
+          maybeStartAI();
+        }
+      }
+    ]);
+  }
+
+  /* ---------- 手中球：母球摆放 ---------- */
+  function giveBallInHand(player) {
+    const cue = cueBall();
+    cue.active = true;
+    cue.vx = 0;
+    cue.vy = 0;
+    state.ballInHand = true;
+    const spot = findFreeSpot(HEAD_X - 90, MID_Y);
+    cue.x = spot.x;
+    cue.y = spot.y;
+    state.turn = player;
+    state.calledPocket = -1;
+  }
+
+  // 判断母球该位置是否合规（不压球、不出界、不在袋口、手中球须在开球区）
+  function cueFits(x, y) {
+    if (x < TABLE.x + BALL_R || x > TABLE.x + TABLE.w - BALL_R) return false;
+    if (y < TABLE.y + BALL_R || y > TABLE.y + TABLE.h - BALL_R) return false;
+    if (state.ballInHand && x > HEAD_X) return false;
+    for (const p of POCKETS) {
+      if (dist(x, y, p.x, p.y) < CAPTURE_R + BALL_R * 0.4) return false;
+    }
+    for (const b of state.balls) {
+      if (!b.active || b.id === 0) continue;
+      if (dist(x, y, b.x, b.y) < BALL_R * 2 + 0.6) return false;
+    }
+    return true;
+  }
+
+  // 在指定点附近找一个能放球的位置
+  function findFreeSpot(x0, y0) {
+    if (cueFits(x0, y0)) return { x: x0, y: y0 };
+    for (let r = 18; r <= 460; r += 18) {
+      for (let a = 0; a < 24; a++) {
+        const ang = a * TAU / 24;
+        const x = x0 + Math.cos(ang) * r;
+        const y = y0 + Math.sin(ang) * r;
+        if (cueFits(x, y)) return { x, y };
+      }
+    }
+    return { x: x0, y: y0 };
+  }
+
+  /* ============================================================
+   * 10. 胜负判定与本地战绩
+   * ============================================================ */
+  function endGame(winner, reason) {
+    state.gameOver = true;
+    state.winner = winner;
+    state.phase = 'gameover';
+    state.aiming = false;
+    state.ballInHand = false;
+    state.calledPocket = -1;
+    saveResult(winner);
+    updateStatus();
+    showModal(`${nameOf(winner)} 获胜`, reason, [
+      { label: '一键重新开局', cls: 'primary', onClick: () => resetGame() }
+    ]);
+  }
+
+  const STORE_KEY = 'eightball.records.v1';
+
+  function defaultRecords() {
+    return {
+      pvp: { p1: 0, p2: 0 },
+      ai: {
+        easy: { win: 0, loss: 0 },
+        normal: { win: 0, loss: 0 },
+        hard: { win: 0, loss: 0 }
+      }
+    };
+  }
+
+  function loadRecords() {
+    const base = defaultRecords();
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return base;
+      const o = JSON.parse(raw);
+      if (o && o.pvp) {
+        base.pvp.p1 = Number(o.pvp.p1) || 0;
+        base.pvp.p2 = Number(o.pvp.p2) || 0;
+      }
+      if (o && o.ai) {
+        ['easy', 'normal', 'hard'].forEach(k => {
+          if (o.ai[k]) {
+            base.ai[k].win = Number(o.ai[k].win) || 0;
+            base.ai[k].loss = Number(o.ai[k].loss) || 0;
+          }
+        });
+      }
+      return base;
+    } catch (e) {
+      return base;
+    }
+  }
+
+  let records = loadRecords();
+
+  function saveRecords() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(records));
+    } catch (e) { /* 无痕模式等场景忽略 */ }
+  }
+
+  function saveResult(winner) {
+    if (state.mode === 'pvp') {
+      if (winner === 0) records.pvp.p1++;
+      else records.pvp.p2++;
+    } else {
+      const lv = records.ai[state.aiLevel];
+      if (winner === 0) lv.win++;
+      else lv.loss++;
+    }
+    saveRecords();
+    renderRecords();
+  }
+
+  function renderRecords() {
+    const rows = [
+      `<div class="rec-row"><span class="k">本地双人</span><span class="v">玩家1 <em>${records.pvp.p1}</em> : <em>${records.pvp.p2}</em> 玩家2</span></div>`,
+      `<div class="rec-row"><span class="k">人机 · 简单</span><span class="v">我 <em>${records.ai.easy.win}</em> : <em>${records.ai.easy.loss}</em> AI</span></div>`,
+      `<div class="rec-row"><span class="k">人机 · 普通</span><span class="v">我 <em>${records.ai.normal.win}</em> : <em>${records.ai.normal.loss}</em> AI</span></div>`,
+      `<div class="rec-row"><span class="k">人机 · 困难</span><span class="v">我 <em>${records.ai.hard.win}</em> : <em>${records.ai.hard.loss}</em> AI</span></div>`
+    ];
+    el('recordsBody').innerHTML = rows.join('');
+  }
+
+  // AI 介入钩子（第 5 阶段实现）
+  let maybeStartAI = function () {};
 
   /* ============================================================
    * 10. 弹窗与 HUD
@@ -1133,25 +1551,38 @@ canvas{
   function updateStatus() {
     const isAI = state.mode === 'ai';
     const p = state.turn;
-    let name = p === 0 ? '玩家 1' : (isAI ? '电脑' : '玩家 2');
+    const name = nameOf(p);
+    let title = `${name} 击球`;
     let sub = '';
-    let target = '待定';
 
-    if (state.groups[p] === 'solid') target = '纯色 1-7';
-    else if (state.groups[p] === 'stripe') target = '花色 9-15';
-
-    statusTextEl.textContent = `${name} 击球`;
     if (state.phase === 'shooting') {
-      statusTextEl.textContent = '球在运动中…';
+      title = '球在运动中…';
       sub = '所有球静止后才可继续击球';
-    } else if (state.ballInHand) {
-      statusTextEl.textContent = `${name} · 手中球`;
-      sub = '在开球区拖动母球摆放，再拖拽瞄准';
-    } else {
-      sub = `目标：${target} · 向母球反方向拖拽瞄准，松手击球`;
+    } else if (state.phase === 'gameover') {
+      title = `${nameOf(state.winner)} 获胜`;
+      sub = '点击「一键重新开局」再战一局';
+    } else if (state.phase === 'groupChoice') {
+      title = '请选择球组';
+      sub = '同时打进纯色与花色球，可自选一组';
     }
+
+    if (state.phase === 'aim' && state.ballInHand) {
+      title = `${name} · 手中球`;
+      sub = '在开球区拖动母球摆放，再拖拽瞄准击球';
+    } else if (state.phase === 'aim' && isOnEight(p)) {
+      sub = state.calledPocket >= 0
+        ? `目标：黑八 · 已指定${POCKET_NAMES[state.calledPocket]}，拖拽瞄准`
+        : '目标：黑八 · 先点击袋口指定目标袋';
+    } else if (state.phase === 'aim' && !state.groups[p]) {
+      sub = '目标：待定（开球后首个合法进球锁定球组）· 反方向拖拽瞄准';
+    } else if (state.phase === 'aim') {
+      const left = remainingOf(p);
+      sub = `目标：${state.groups[p] === 'solid' ? '纯色 1-7' : '花色 9-15'}（剩 ${left} 颗）· 反方向拖拽瞄准`;
+    }
+
+    statusTextEl.textContent = title;
     statusSubEl.textContent = sub;
-    turnDotEl.className = 'dot' + (isAI && p === 1 ? ' ai' : '');
+    turnDotEl.className = 'dot' + (isAI && p === 1 ? ' ai' : '') + (state.ballInHand ? ' warn' : '');
   }
 
   function resetGame() {
@@ -1160,14 +1591,15 @@ canvas{
     state.groups = [null, null];
     state.phase = 'aim';
     state.aiming = false;
-    state.showAim = false;
+    state.showAim = true;
     state.power = 0;
     state.locked = false;
     state.gameOver = false;
     state.winner = null;
     state.shot = null;
     state.calledPocket = -1;
-    state.ballInHand = false;
+    state.ballInHand = true;   // 开球：母球可先在开球区内摆放
+    state.breakDone = false;
     state.aimDir = { x: 1, y: 0 };
     physAcc = 0;
     activePointer = null;
@@ -1203,6 +1635,23 @@ canvas{
     toast('重新开局');
   });
 
+  // 清空战绩（带确认提示）
+  el('btnClear').addEventListener('click', () => {
+    showModal('清空战绩', '将清除本地保存的全部战绩记录（含双人与人机），此操作不可撤销。', [
+      { label: '取消', onClick: () => {} },
+      {
+        label: '确定清空',
+        cls: 'danger',
+        onClick: () => {
+          records = defaultRecords();
+          saveRecords();
+          renderRecords();
+          toast('本地战绩已清空');
+        }
+      }
+    ]);
+  });
+
   /* ============================================================
    * 11. 主循环
    * ============================================================ */
@@ -1234,6 +1683,7 @@ canvas{
   function boot() {
     resizeCanvas();
     setupBalls();
+    renderRecords();
     updateStatus();
     updatePowerUI();
     requestAnimationFrame(time => { lastTime = time; frame(time); });
