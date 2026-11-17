@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1119">
+<title>美式八球 · Canvas 台球</title>
+<style>
+/* ============================================================
+ * 页面基础样式
+ * ============================================================ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  min-height:100vh;
+  padding:14px;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  color:#e6eff8;
+  background:radial-gradient(1200px 800px at 50% -20%,#1a2f46 0%,#0a0f16 60%,#070a0f 100%);
+  -webkit-font-smoothing:antialiased;
+}
+.app{max-width:1340px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+
+/* ---------- 顶部：标题 + 模式切换 ---------- */
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand h1{margin:0;font-size:20px;letter-spacing:3px;font-weight:700}
+.brand .tag{font-size:12px;color:#6f8aa6;letter-spacing:1px}
+
+.controls{display:flex;gap:10px;flex-wrap:wrap}
+.seg{display:flex;padding:3px;border-radius:12px;background:#0f1722;border:1px solid #1d2b3c;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.seg button{
+  appearance:none;border:0;background:transparent;color:#93a9bf;
+  font-size:13px;padding:7px 14px;border-radius:9px;cursor:pointer;
+  transition:background .18s,color .18s,transform .1s;white-space:nowrap;
+}
+.seg button:hover{color:#dceaf7}
+.seg button:active{transform:scale(.97)}
+.seg button.active{background:linear-gradient(180deg,#2f9d6c,#1b6b47);color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(31,140,95,.35)}
+
+/* ---------- 主区域 ---------- */
+.main{display:flex;gap:14px;align-items:flex-start}
+.stage{flex:1 1 auto;min-width:0}
+
+/* 画布容器：固定 1120:620 比例，等比缩放不拉伸 */
+.canvas-wrap{
+  position:relative;
+  padding:10px;
+  border-radius:18px;
+  background:linear-gradient(180deg,#0e1621,#080c12);
+  border:1px solid #1b2837;
+  box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);
+}
+/* 关键：width 100% + height auto，画布按自身位图比例缩放，永不拉伸 */
+canvas{
+  display:block;width:100%;height:auto;
+  border-radius:12px;
+  touch-action:none;cursor:crosshair;
+  background:#0a0f14;
+}
+
+/* 画布上的浮层提示（犯规、回放等） */
+#toast{
+  position:absolute;left:50%;top:18px;transform:translate(-50%,-8px);
+  padding:8px 16px;border-radius:10px;font-size:13px;
+  background:rgba(12,20,28,.92);border:1px solid #2a3f55;color:#d8e8f7;
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;white-space:nowrap;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:90%;overflow:hidden;text-overflow:ellipsis;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- 右侧面板 ---------- */
+.panel{width:302px;flex:0 0 302px;display:flex;flex-direction:column;gap:10px}
+.card{background:linear-gradient(180deg,#111a25,#0d151e);border:1px solid #1c2a3a;border-radius:14px;padding:12px 14px}
+
+.status-card{display:flex;flex-direction:column;gap:6px}
+.status-line{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
+.dot{width:9px;height:9px;border-radius:50%;background:#37d08b;box-shadow:0 0 10px rgba(55,208,139,.8);flex:0 0 auto}
+.dot.ai{background:#f2a63d;box-shadow:0 0 10px rgba(242,166,61,.8)}
+.dot.warn{background:#ef5d5d;box-shadow:0 0 10px rgba(239,93,93,.8)}
+.sub{font-size:12px;color:#7e94ab;line-height:1.5}
+
+/* 力度条 */
+.power-head{display:flex;justify-content:space-between;font-size:12px;color:#8ba1b8;margin-bottom:8px}
+.power-track{height:12px;border-radius:8px;background:#0a1119;border:1px solid #1e2c3d;overflow:hidden}
+.power-fill{height:100%;width:0%;border-radius:8px;background:linear-gradient(90deg,#2bb673,#e8c33a 55%,#ef5d5d);transition:width .06s linear}
+
+/* 按钮组：flex-wrap 保证小屏自动换行 */
+.btn-card{display:flex;flex-wrap:wrap;gap:8px;padding:12px}
+.btn{
+  flex:1 1 46%;min-width:112px;appearance:none;cursor:pointer;
+  font-size:13px;padding:10px 8px;border-radius:10px;
+  color:#d7e6f4;background:#16222f;border:1px solid #24374a;
+  transition:background .16s,border-color .16s,transform .1s,opacity .16s;
+}
+.btn:hover{background:#1d2c3c;border-color:#31506b}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn.danger{color:#ffb9b9;border-color:#4a2630;background:#221318}
+.btn.danger:hover{background:#2c181f;border-color:#6d3441}
+
+/* 战绩 */
+.rec-head{font-size:12px;color:#8ba1b8;letter-spacing:1px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.rec-list{display:flex;flex-direction:column;gap:8px;font-size:13px}
+.rec-row{display:flex;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:9px;background:#0b1219;border:1px solid #18242f}
+.rec-row .k{color:#9db1c6}
+.rec-row .v{color:#e8f2fb;font-variant-numeric:tabular-nums;font-weight:600}
+.rec-row .v em{font-style:normal;color:#37d08b}
+
+/* ---------- 弹窗 ---------- */
+.modal{
+  position:fixed;inset:0;z-index:99;display:none;align-items:center;justify-content:center;
+  padding:20px;background:rgba(4,7,11,.72);backdrop-filter:blur(4px);
+}
+.modal.show{display:flex}
+.modal-box{
+  width:min(420px,100%);border-radius:18px;padding:22px;
+  background:linear-gradient(180deg,#152130,#0d151e);
+  border:1px solid #27384b;box-shadow:0 30px 80px rgba(0,0,0,.65);
+  animation:pop .22s ease-out;
+}
+@keyframes pop{from{transform:translateY(10px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+.modal-box h2{margin:0 0 8px;font-size:19px}
+.modal-box p{margin:0 0 18px;font-size:13px;line-height:1.7;color:#93a9bf}
+.modal-actions{display:flex;gap:10px;flex-wrap:wrap}
+.modal-actions .btn{flex:1 1 40%;min-width:110px}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:940px){
+  body{padding:10px}
+  .main{flex-direction:column}
+  .panel{width:100%;flex:1 1 auto}
+  .canvas-wrap{padding:6px}
+  .btn-card{flex-wrap:wrap}
+  .btn{flex:1 1 45%}
+}
+@media (max-width:560px){
+  .brand h1{font-size:17px}
+  .seg button{padding:6px 11px;font-size:12px}
+  .btn{flex:1 1 100%;min-width:0}
+  .status-line{font-size:14px}
+  .rec-list{font-size:12px}
+}
+@media (max-height:520px) and (orientation:landscape){
+  .main{flex-direction:row}
+  .panel{width:260px;flex:0 0 260px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <h1>美式八球</h1>
+      <span class="tag">CANVAS POOL</span>
+    </div>
+    <div class="controls">
+      <div class="seg" id="modeSeg">
+        <button type="button" class="active" data-mode="pvp">本地双人</button>
+        <button type="button" data-mode="ai">人机对战</button>
+      </div>
+      <div class="seg" id="levelSeg" hidden>
+        <button type="button" data-level="easy">简单</button>
+        <button type="button" class="active" data-level="normal">普通</button>
+        <button type="button" data-level="hard">困难</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="stage">
+      <div class="canvas-wrap">
+        <canvas id="table"></canvas>
+        <div id="toast"></div>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <div class="card status-card">
+        <div class="status-line">
+          <span class="dot" id="turnDot"></span>
+          <span id="statusText">玩家 1 击球</span>
+        </div>
+        <div class="sub" id="statusSub">向母球反方向拖动瞄准，松手击球</div>
+      </div>
+
+      <div class="card">
+        <div class="power-head"><span>力度</span><span id="powerVal">0%</span></div>
+        <div class="power-track"><div class="power-fill" id="powerFill"></div></div>
+      </div>
+
+      <div class="card btn-card">
+        <button type="button" class="btn" id="btnRestart">重新开局</button>
+        <button type="button" class="btn" id="btnReplay" disabled>上一杆回放</button>
+        <button type="button" class="btn" id="btnSound">音效：开</button>
+        <button type="button" class="btn danger" id="btnClear">清空战绩</button>
+      </div>
+
+      <div class="card">
+        <div class="rec-head"><span>本地战绩</span><span id="recHint">localStorage</span></div>
+        <div class="rec-list" id="recordsBody"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h2 id="modalTitle"></h2>
+    <p id="modalText"></p>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+   * 0. 常量与几何定义（逻辑坐标，与屏幕像素无关）
+   * ============================================================ */
+  const TAU = Math.PI * 2;
+
+  const VIEW_W = 1120;                 // 逻辑画布宽
+  const VIEW_H = 620;                  // 逻辑画布高
+  const RAIL = 60;                     // 木框宽度（台面外圈）
+  const BALL_R = 14;                   // 球半径
+
+  // 台面（可击球区域）
+  const TABLE = { x: RAIL, y: RAIL, w: VIEW_W - RAIL * 2, h: VIEW_H - RAIL * 2 };
+  const MID_X = TABLE.x + TABLE.w / 2;
+  const MID_Y = TABLE.y + TABLE.h / 2;
+
+  const HEAD_X = TABLE.x + TABLE.w * 0.25;   // 开球线（开球区右边界）
+  const FOOT_X = TABLE.x + TABLE.w * 0.75;   // 置球点（球堆顶点）
+
+  const POCKET_R = 32;      // 袋口视觉半径
+  const CAPTURE_R = 26;     // 落袋判定半径（球心进入该范围才算落袋）
+  const RAIL_GAP = 34;      // 库边在袋口处的留空
+
+  // 六个袋口（上左 上中 上右 下左 下中 下右）
+  const POCKETS = [
+    { x: TABLE.x + 6, y: TABLE.y + 6 },
+    { x: MID_X, y: TABLE.y - 4 },
+    { x: TABLE.x + TABLE.w - 6, y: TABLE.y + 6 },
+    { x: TABLE.x + 6, y: TABLE.y + TABLE.h - 6 },
+    { x: MID_X, y: TABLE.y + TABLE.h + 4 },
+    { x: TABLE.x + TABLE.w - 6, y: TABLE.y + TABLE.h - 6 }
+  ];
+  const POCKET_NAMES = ['左上袋', '中上袋', '右上袋', '左下袋', '中下袋', '右下袋'];
+
+  // 六段库边（线段形式），袋口处断开，球撞到线段端点会产生“袋角回弹”
+  const RAIL_SEGS = [
+    { x1: TABLE.x + RAIL_GAP, y1: TABLE.y, x2: MID_X - RAIL_GAP, y2: TABLE.y },
+    { x1: MID_X + RAIL_GAP, y1: TABLE.y, x2: TABLE.x + TABLE.w - RAIL_GAP, y2: TABLE.y },
+    { x1: TABLE.x + RAIL_GAP, y1: TABLE.y + TABLE.h, x2: MID_X - RAIL_GAP, y2: TABLE.y + TABLE.h },
+    { x1: MID_X + RAIL_GAP, y1: TABLE.y + TABLE.h, x2: TABLE.x + TABLE.w - RAIL_GAP, y2: TABLE.y + TABLE.h },
+    { x1: TABLE.x, y1: TABLE.y + RAIL_GAP, x2: TABLE.x, y2: TABLE.y + TABLE.h - RAIL_GAP },
+    { x1: TABLE.x + TABLE.w, y1: TABLE.y + RAIL_GAP, x2: TABLE.x + TABLE.w, y2: TABLE.y + TABLE.h - RAIL_GAP }
+  ];
+
+  // 1-7 纯色 / 9-15 花色（与 1-7 同色系）
+  const BALL_COLORS = {
+    1: '#f2c53d', 2: '#2f6dd0', 3: '#d64545', 4: '#7b4bc4',
+    5: '#e8853a', 6: '#2f9e57', 7: '#8f2233', 8: '#1b1b1b',
+    9: '#f2c53d', 10: '#2f6dd0', 11: '#d64545', 12: '#7b4bc4',
+    13: '#e8853a', 14: '#2f9e57', 15: '#8f2233'
+  };
+
+  /* ============================================================
+   * 1. 通用工具函数
+   * ============================================================ */
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // 颜色明暗调整（用于球的立体渐变）
+  function shade(hex, k) {
+    const n = parseInt(hex.slice(1), 16);
+    let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    if (k > 0) { r += (255 - r) * k; g += (255 - g) * k; b += (255 - b) * k; }
+    else { r *= 1 + k; g *= 1 + k; b *= 1 + k; }
+    return `rgb(${r | 0},${g | 0},${b | 0})`;
+  }
+
+  /* ============================================================
+   * 2. 游戏状态
+   * ============================================================ */
+  const state = {
+    mode: 'pvp',            // 'pvp' 本地双人 | 'ai' 人机对战
+    aiLevel: 'normal',      // 'easy' | 'normal' | 'hard'
+    balls: [],              // 16 颗球
+    turn: 0,                // 当前击球方：0 玩家1 / 1 玩家2(或AI)
+    groups: [null, null],   // 球组：'solid' 纯色 | 'stripe' 花色
+    phase: 'aim',           // aim | shooting | ballInHand | groupChoice | replay | gameover
+    locked: false,          // 锁定输入（AI 回合、动画中）
+    power: 0,               // 当前力度 0~1
+    aimDir: { x: 1, y: 0 }, // 瞄准方向（单位向量）
+    aiming: false,          // 是否正在拖拽瞄准
+    dragMode: null,         // 'aim' | 'place'
+    calledPocket: -1,       // 黑八阶段指定的袋口
+    ballInHand: false,      // 手中球状态
+    shot: null,             // 当前一杆的统计
+    modalOpen: false,
+    gameOver: false,
+    winner: null
+  };
+
+  /* ============================================================
+   * 3. 球与球堆
+   * ============================================================ */
+  function makeBall(id, x, y) {
+    let kind;
+    if (id === 0) kind = 'cue';
+    else if (id === 8) kind = 'eight';
+    else if (id < 8) kind = 'solid';
+    else kind = 'stripe';
+    return {
+      id, kind,
+      x, y, vx: 0, vy: 0,
+      active: true,
+      color: id === 0 ? '#f7f4ec' : BALL_COLORS[id]
+    };
+  }
+
+  // 生成 1-15 号球的摆球顺序（8 号固定在第三排中间，底排两角一纯一花）
+  function rackOrder() {
+    const solids = [1, 2, 3, 4, 5, 6, 7];
+    const stripes = [9, 10, 11, 12, 13, 14, 15];
+    const shuffle = arr => arr.sort(() => Math.random() - 0.5);
+
+    const s = shuffle(solids.slice());
+    const t = shuffle(stripes.slice());
+    const order = new Array(15).fill(0);
+
+    // 三角堆位置索引：row0[0] / row1[0..1] / row2[0..2] / row3[0..3] / row4[0..4]
+    // 8 号固定在第 3 排（row2）中间 = 索引 4
+    order[4] = 8;
+    // 底排两角：一纯色一花色
+    order[10] = s.pop();     // row4 左角
+    order[14] = t.pop();     // row4 右角
+    // 其余位置交替填充
+    const rest = [0, 1, 2, 3, 5, 6, 7, 8, 9, 11, 12, 13];
+    let flip = Math.random() < 0.5;
+    for (const idx of rest) {
+      const pool = flip ? (s.length ? s : t) : (t.length ? t : s);
+      order[idx] = pool.pop();
+      flip = !flip;
+    }
+    return order;
+  }
+
+  // 重置全部球的位置（开球摆位）
+  function setupBalls() {
+    const balls = [];
+    // 母球放在开球区内（开球线左侧）
+    balls.push(makeBall(0, HEAD_X - 60, MID_Y));
+
+    const order = rackOrder();
+    const dx = BALL_R * 2 * Math.cos(Math.PI / 6) + 0.6;   // 相邻两排的水平间距
+    const dy = BALL_R * 2 + 0.6;                            // 同排球的垂直间距
+    const slots = [];   // [x, y]
+    let k = 0;
+    for (let row = 0; row < 5; row++) {
+      for (let j = 0; j <= row; j++) {
+        const x = FOOT_X + row * dx;
+        const y = MID_Y + (j - row / 2) * dy;
+        slots.push([x, y]);
+      }
+    }
+    for (let i = 0; i < 15; i++) {
+      const [x, y] = slots[i];
+      balls.push(makeBall(order[i], x, y));
+    }
+    state.balls = balls;
+  }
+
+  /* ============================================================
+   * 4. Canvas 初始化与自适应缩放
+   * ============================================================ */
+  const canvas = document.getElementById('table');
+  const ctx = canvas.getContext('2d');
+
+  // 按设备像素比放大位图，保证高分屏清晰；CSS 用 100% 宽 + auto 高，等比不变形
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(VIEW_W * dpr);
+    canvas.height = Math.round(VIEW_H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', resizeCanvas);
+
+  /* ============================================================
+   * 5. 渲染
+   * ============================================================ */
+  function drawFrame() {
+    // 木质外框
+    ctx.save();
+    roundRect(ctx, 2, 2, VIEW_W - 4, VIEW_H - 4, 26);
+    const g = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+    g.addColorStop(0, '#8a5a36');
+    g.addColorStop(0.35, '#6d4128');
+    g.addColorStop(0.72, '#542f1c');
+    g.addColorStop(1, '#38200f');
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    // 外圈高光 + 内圈暗边
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,224,190,.22)';
+    ctx.stroke();
+
+    roundRect(ctx, 16, 16, VIEW_W - 32, VIEW_H - 32, 18);
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = 'rgba(0,0,0,.28)';
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCloth() {
+    ctx.save();
+    // 台呢底色（中心亮、四周暗）
+    const rg = ctx.createRadialGradient(MID_X, MID_Y, 60, MID_X, MID_Y, 660);
+    rg.addColorStop(0, '#1b8f60');
+    rg.addColorStop(0.55, '#0f7350');
+    rg.addColorStop(1, '#08492f');
+    ctx.fillStyle = rg;
+    ctx.fillRect(TABLE.x, TABLE.y, TABLE.w, TABLE.h);
+
+    // 台面内侧阴影，强化凹陷感
+    const sh = ctx.createLinearGradient(0, TABLE.y, 0, TABLE.y + 26);
+    sh.addColorStop(0, 'rgba(0,0,0,.35)');
+    sh.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = sh;
+    ctx.fillRect(TABLE.x, TABLE.y, TABLE.w, 26);
+    const sh2 = ctx.createLinearGradient(0, TABLE.y + TABLE.h, 0, TABLE.y + TABLE.h - 26);
+    sh2.addColorStop(0, 'rgba(0,0,0,.35)');
+    sh2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = sh2;
+    ctx.fillRect(TABLE.x, TABLE.y + TABLE.h - 26, TABLE.w, 26);
+    const sh3 = ctx.createLinearGradient(TABLE.x, 0, TABLE.x + 26, 0);
+    sh3.addColorStop(0, 'rgba(0,0,0,.3)');
+    sh3.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = sh3;
+    ctx.fillRect(TABLE.x, TABLE.y, 26, TABLE.h);
+    const sh4 = ctx.createLinearGradient(TABLE.x + TABLE.w, 0, TABLE.x + TABLE.w - 26, 0);
+    sh4.addColorStop(0, 'rgba(0,0,0,.3)');
+    sh4.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = sh4;
+    ctx.fillRect(TABLE.x + TABLE.w - 26, TABLE.y, 26, TABLE.h);
+
+    // 开球线（虚线，仅做位置提示）
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,.14)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([9, 9]);
+    ctx.beginPath();
+    ctx.moveTo(HEAD_X, TABLE.y + 4);
+    ctx.lineTo(HEAD_X, TABLE.y + TABLE.h - 4);
+    ctx.stroke();
+    ctx.restore();
+
+    // 置球点 & 开球点
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    ctx.beginPath(); ctx.arc(FOOT_X, MID_Y, 2.4, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(HEAD_X + 30, MID_Y, 2.4, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  // 绘制一段库边（在台面边缘外侧铺一层梯形胶条，端点斜切形成袋角）
+  function drawCushion(x1, y1, x2, y2, nx, ny) {
+    const thick = 17, cut = 9;
+    const dx = x2 - x1, dy = y2 - y1;
+    const l = Math.hypot(dx, dy) || 1;
+    const ux = dx / l, uy = dy / l;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.lineTo(x2 + nx * thick - ux * cut, y2 + ny * thick - uy * cut);
+    ctx.lineTo(x1 + nx * thick + ux * cut, y1 + ny * thick + uy * cut);
+    ctx.closePath();
+
+    const g = ctx.createLinearGradient(
+      x1 + nx * thick, y1 + ny * thick,
+      x1, y1
+    );
+    g.addColorStop(0, '#0a4f34');
+    g.addColorStop(0.7, '#0e6b48');
+    g.addColorStop(1, '#15916a');
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    // 靠近台面的高光条
+    ctx.strokeStyle = 'rgba(255,255,255,.13)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+
+  function drawCushions() {
+    ctx.save();
+    drawCushion(TABLE.x + RAIL_GAP, TABLE.y, MID_X - RAIL_GAP, TABLE.y, 0, -1);          // 上-left
+    drawCushion(MID_X + RAIL_GAP, TABLE.y, TABLE.x + TABLE.w - RAIL_GAP, TABLE.y, 0, -1); // 上-right
+    drawCushion(TABLE.x + RAIL_GAP, TABLE.y + TABLE.h, MID_X - RAIL_GAP, TABLE.y + TABLE.h, 0, 1);
+    drawCushion(MID_X + RAIL_GAP, TABLE.y + TABLE.h, TABLE.x + TABLE.w - RAIL_GAP, TABLE.y + TABLE.h, 0, 1);
+    drawCushion(TABLE.x, TABLE.y + RAIL_GAP, TABLE.x, TABLE.y + TABLE.h - RAIL_GAP, -1, 0);
+    drawCushion(TABLE.x + TABLE.w, TABLE.y + RAIL_GAP, TABLE.x + TABLE.w, TABLE.y + TABLE.h - RAIL_GAP, 1, 0);
+    ctx.restore();
+  }
+
+  function drawPockets() {
+    for (let i = 0; i < POCKETS.length; i++) {
+      const p = POCKETS[i];
+      // 袋口外圈木纹
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POCKET_R + 7, 0, TAU);
+      ctx.fillStyle = 'rgba(20,10,4,.45)';
+      ctx.fill();
+
+      // 袋洞
+      const rg = ctx.createRadialGradient(p.x - 6, p.y - 6, 2, p.x, p.y, POCKET_R);
+      rg.addColorStop(0, '#000');
+      rg.addColorStop(0.75, '#050809');
+      rg.addColorStop(1, '#141a1e');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POCKET_R, 0, TAU);
+      ctx.fillStyle = rg;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POCKET_R - 1, 0, TAU);
+      ctx.strokeStyle = 'rgba(255,255,255,.10)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
+
+  // 单颗球
+  function drawBall(b, x, y) {
+    const r = BALL_R;
+
+    // 投影
+    ctx.beginPath();
+    ctx.ellipse(x + 2.5, y + 3.5, r * 0.98, r * 0.86, 0, 0, TAU);
+    ctx.fillStyle = 'rgba(0,0,0,.32)';
+    ctx.fill();
+
+    if (b.kind === 'stripe') {
+      // 花色球：白底 + 中间色带
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, TAU);
+      ctx.fillStyle = '#f6f2e7';
+      ctx.fill();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, TAU);
+      ctx.clip();
+      ctx.fillStyle = b.color;
+      ctx.fillRect(x - r, y - r * 0.56, r * 2, r * 1.12);
+      // 色带上下描边，模拟条纹边界
+      ctx.strokeStyle = 'rgba(0,0,0,.18)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x - r, y - r * 0.56);
+      ctx.lineTo(x + r, y - r * 0.56);
+      ctx.moveTo(x - r, y + r * 0.56);
+      ctx.lineTo(x + r, y + r * 0.56);
+      ctx.stroke();
+      ctx.restore();
+
+      // 边缘球面渐变
+      const sheen = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
+      sheen.addColorStop(0, 'rgba(255,255,255,.28)');
+      sheen.addColorStop(0.6, 'rgba(255,255,255,0)');
+      sheen.addColorStop(1, 'rgba(0,0,0,.35)');
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, TAU);
+      ctx.fillStyle = sheen;
+      ctx.fill();
+    } else {
+      // 纯色球 / 黑八 / 母球：径向渐变
+      const base = b.color;
+      const grad = ctx.createRadialGradient(
+        x - r * 0.36, y - r * 0.42, r * 0.12,
+        x, y, r * 1.02
+      );
+      grad.addColorStop(0, shade(base, 0.5));
+      grad.addColorStop(0.55, base);
+      grad.addColorStop(1, shade(base, -0.42));
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, TAU);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // 号码圈
+    if (b.kind !== 'cue') {
+      ctx.beginPath();
+      ctx.arc(x, y, r * 0.44, 0, TAU);
+      ctx.fillStyle = '#fbfaf6';
+      ctx.fill();
+      ctx.fillStyle = '#151a1f';
+      ctx.font = `bold ${Math.round(r * 0.56)}px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(b.id), x, y + r * 0.02);
+    }
+
+    // 高光
+    ctx.beginPath();
+    ctx.arc(x - r * 0.33, y - r * 0.38, r * 0.22, 0, TAU);
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    ctx.fill();
+  }
+
+  function drawBalls() {
+    for (const b of state.balls) {
+      if (!b.active) continue;
+      drawBall(b, b.x, b.y);
+    }
+  }
+
+  // 主渲染入口：snapshot 不为空时用回放帧数据（阶段 5 使用）
+  function render() {
+    ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+    drawFrame();
+    drawCloth();
+    drawCushions();
+    drawPockets();
+    drawBalls();
+  }
+
+  /* ============================================================
+   * 6. 主循环
+   * ============================================================ */
+  let lastTime = performance.now();
+
+  function frame(now) {
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+    update(dt);
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  function update(dt) {
+    /* 阶段 2 接入物理与击球流程 */
+  }
+
+  /* ============================================================
+   * 7. 启动
+   * ============================================================ */
+  function boot() {
+    resizeCanvas();
+    setupBalls();
+    requestAnimationFrame(time => { lastTime = time; frame(time); });
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
