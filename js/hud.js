@@ -55,8 +55,8 @@ function updatePowerUI() {
 }
 
 function updateStatus() {
-  const isAI = state.mode === 'ai';
   const p = state.turn;
+  const aiSide = isAIPlayer(p);      // 当前这一杆是不是电脑在打
   const name = nameOf(p);
   let title = `${name} 击球`;
   let sub = '';
@@ -79,17 +79,19 @@ function updateStatus() {
     // 开球时的摆放不算手中球，说明文字要和犯规后区分开
     if (!state.breakDone) {
       title = `${name} · 开球`;
-      sub = isAI && p === 1
+      sub = aiSide
         ? '电脑正在摆放母球'
         : '按在母球上拖动能摆放位置，松手后正常拖拽瞄准击球';
     } else {
       title = `${name} · 手中球`;
       sub = (state.lastFoul ? state.lastFoul + ' · ' : '') +
-        (isAI && p === 1 ? '电脑正在摆放母球' : '按在母球上拖动摆放（开球区内），松手后拖拽瞄准击球');
+        (aiSide ? '电脑正在摆放母球' : '按在母球上拖动摆放（开球区内），松手后拖拽瞄准击球');
     }
-  } else if (state.phase === 'aim' && isAI && p === 1) {
-    title = '电脑瞄准中';
-    sub = '电脑回合，玩家操作已锁定';
+  } else if (state.phase === 'aim' && aiSide) {
+    title = `${name} 瞄准中`;
+    sub = state.mode === 'auto'
+      ? '电脑互打 · 双方都由电脑出杆'
+      : '电脑回合，玩家操作已锁定';
   } else if (state.phase === 'aim' && isOnEight(p)) {
     sub = state.calledPocket >= 0
       ? `目标：黑八 · 已指定${POCKET_NAMES[state.calledPocket]}，拖拽瞄准`
@@ -101,11 +103,17 @@ function updateStatus() {
     sub = `目标：${state.groups[p] === 'solid' ? '纯色 1-7' : '花色 9-15'}（剩 ${left} 颗）· 反方向拖拽瞄准`;
   }
 
+  // 电脑互打暂停时，覆盖上面的提示
+  if (state.mode === 'auto' && state.autoPaused && !state.gameOver && state.phase !== 'shooting') {
+    title = `${name} · 已暂停`;
+    sub = '点「继续观战」让电脑接着打';
+  }
+
   statusTextEl.textContent = title;
   statusSubEl.textContent = sub;
   statusSubEl.className = 'sub' +
     (state.phase === 'aim' && state.lastFoul ? ' warn' : '');
-  turnDotEl.className = 'dot' + (isAI && p === 1 ? ' ai' : '') +
+  turnDotEl.className = 'dot' + (aiSide ? ' ai' : '') +
     (state.ballInHand && state.breakDone ? ' warn' : '');
   updateRackStrip();
 }
@@ -126,6 +134,7 @@ function resetGame() {
   state.breakDone = false;
   state.lastFoul = null;
   state.aimDir = { x: 1, y: 0 };
+  state.autoPaused = false;   // 重新开局默认继续自动进行
   physAcc = 0;
   activePointer = null;
   clearTimeout(aiTimer);
@@ -135,8 +144,10 @@ function resetGame() {
   state.replayFrames = null;
   el('btnReplay').disabled = true;
   hideModal();
+  updatePauseBtn();
   updateStatus();
   updatePowerUI();
+  maybeStartAI();            // 电脑互打时由电脑直接开球
 }
 
 // 模式 / 难度切换（都在右侧设置卡里）
@@ -147,9 +158,14 @@ el('modeSeg').addEventListener('click', e => {
   if (mode === state.mode) return;
   state.mode = mode;
   [...el('modeSeg').children].forEach(b => b.classList.toggle('active', b === btn));
-  el('levelRow').hidden = mode !== 'ai';
+  // 人机对战：一行「难度」指电脑；电脑互打：两行分别指电脑 1 / 电脑 2
+  el('levelRow').hidden = mode === 'pvp';
+  el('level0Row').hidden = mode !== 'auto';
+  el('btnAutoPause').hidden = mode !== 'auto';
+  el('levelLabel').textContent = mode === 'auto' ? '电脑 2' : '难度';
   resetGame();
-  toast(mode === 'ai' ? '人机对战：玩家 1 先开球' : '本地双人轮流');
+  toast(mode === 'ai' ? '人机对战：玩家 1 先开球'
+    : mode === 'auto' ? '电脑互打：两边都由电脑出杆，不进战绩' : '本地双人轮流');
 });
 
 el('levelSeg').addEventListener('click', e => {
@@ -159,6 +175,44 @@ el('levelSeg').addEventListener('click', e => {
   [...el('levelSeg').children].forEach(b => b.classList.toggle('active', b === btn));
   resetGame();
   toast('难度：' + btn.textContent);
+});
+
+// 电脑 1 的难度（仅电脑互打）
+el('levelSeg0').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  state.aiLevel0 = btn.dataset.level0;
+  [...el('levelSeg0').children].forEach(b => b.classList.toggle('active', b === btn));
+  resetGame();
+  toast('电脑 1 难度：' + btn.textContent);
+});
+
+// 电脑互打：暂停 / 继续
+function updatePauseBtn() {
+  const btn = el('btnAutoPause');
+  btn.textContent = state.autoPaused ? '继续观战' : '暂停观战';
+  btn.classList.toggle('primary', state.autoPaused);
+}
+
+el('btnAutoPause').addEventListener('click', () => {
+  if (state.mode !== 'auto') return;
+  state.autoPaused = !state.autoPaused;
+  updatePauseBtn();
+  if (state.autoPaused) {
+    // 停在思考中的一杆也要一起断掉，避免暂停后还冷不丁出一杆
+    clearTimeout(aiTimer);
+    clearTimeout(aiShootTimer);
+    state.aiming = false;
+    state.power = 0;
+    state.locked = false;
+    updatePowerUI();
+    updateStatus();
+    toast('已暂停，点「继续观战」接着打');
+  } else {
+    updateStatus();
+    maybeStartAI();
+    toast('继续观战');
+  }
 });
 
 el('btnRestart').addEventListener('click', () => {

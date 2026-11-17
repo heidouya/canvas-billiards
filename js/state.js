@@ -4,8 +4,10 @@
  * 2. 游戏状态
  * ============================================================ */
 const state = {
-  mode: 'pvp',            // 'pvp' 本地双人 | 'ai' 人机对战
-  aiLevel: 'normal',      // 'easy' | 'normal' | 'hard'
+  mode: 'pvp',            // 'pvp' 本地双人 | 'ai' 人机对战 | 'auto' 电脑互打
+  aiLevel: 'normal',      // 电脑 2 的难度（人机对战里的电脑 / 电脑互打里的右侧）
+  aiLevel0: 'normal',     // 电脑 1 的难度（仅电脑互打使用）
+  autoPaused: false,      // 电脑互打是否暂停观战
   balls: [],              // 16 颗球
   turn: 0,                // 当前击球方：0 玩家1 / 1 玩家2(或AI)
   groups: [null, null],   // 球组：'solid' 纯色 | 'stripe' 花色

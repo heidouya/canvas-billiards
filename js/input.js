@@ -16,7 +16,7 @@ function pointerPos(e) {
 function canControl() {
   if (state.modalOpen || state.gameOver || state.locked) return false;
   if (state.phase !== 'aim') return false;
-  if (state.mode === 'ai' && state.turn === 1) return false; // AI 回合锁定玩家操作
+  if (isAIPlayer(state.turn)) return false; // 电脑回合锁定玩家操作
   return true;
 }
 

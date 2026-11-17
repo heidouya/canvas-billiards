@@ -12,11 +12,24 @@ const AI_LEVELS = {
 let aiTimer = 0;
 let aiShootTimer = 0;
 
+// 当前难度配置：玩家 1 侧用 aiLevel0，玩家 2 侧用 aiLevel
+function levelOf(p) {
+  const key = p === 0 ? state.aiLevel0 : state.aiLevel;
+  return AI_LEVELS[key] || AI_LEVELS.normal;
+}
+
+// 这一方是不是电脑：人机对战里只有玩家 2（1）是电脑，电脑互打里两边都是
+function isAIPlayer(p) {
+  if (state.mode === 'ai') return p === 1;
+  if (state.mode === 'auto') return true;
+  return false;
+}
+
 // AI 的合法目标球集合
-function aiTargetBalls() {
-  const g = state.groups[1];
+function aiTargetBalls(p = 1) {
+  const g = state.groups[p];
   const out = [];
-  const cleared = g ? remainingOf(1) === 0 : false;
+  const cleared = g ? remainingOf(p) === 0 : false;
   for (const b of state.balls) {
     if (!b.active || b.id === 0) continue;
     if (!g) {
@@ -52,8 +65,8 @@ function pathClear(a, b, ignoreId) {
 }
 
 // 从指定母球位置搜索最佳进球方案（假想球法）
-function planFrom(cuePos) {
-  const targets = aiTargetBalls();
+function planFrom(cuePos, p = 1) {
+  const targets = aiTargetBalls(p);
   let best = null;
 
   for (const ball of targets) {
@@ -96,8 +109,8 @@ function planFrom(cuePos) {
 }
 
 // 没有好机会时的保守一杆：直接瞄准最近的己方球，保证合法碰球
-function planSafe(cue) {
-  const targets = aiTargetBalls();
+function planSafe(cue, p = 1) {
+  const targets = aiTargetBalls(p);
   if (!targets.length) {
     return { dir: { x: Math.random() < 0.5 ? -1 : 1, y: (Math.random() - 0.5) }, power: 0.45, pocket: -1 };
   }
@@ -127,11 +140,11 @@ function planBreak(cue) {
 }
 
 // 综合出杆方案（含力度换算）
-function aiPlan() {
+function aiPlan(p = 1) {
   const cue = cueBall();
   if (!state.breakDone) return planBreak(cue);
-  const cfg = AI_LEVELS[state.aiLevel] || AI_LEVELS.normal;
-  const best = planFrom({ x: cue.x, y: cue.y });
+  const cfg = levelOf(p);
+  const best = planFrom({ x: cue.x, y: cue.y }, p);
   if (best && Math.random() < cfg.planChance) {
     // 目标球需要滚到袋口 → 反推母球初速
     const vPot = Math.sqrt(2 * ROLL_DECEL * best.dPot * 1.9) + 40;
@@ -139,17 +152,17 @@ function aiPlan() {
     const v0 = Math.sqrt(vContact * vContact + 2 * ROLL_DECEL * best.dCue);
     return { dir: best.dir, power: clamp(v0 / MAX_SPEED * 1.06, 0.16, 1), pocket: best.pocket };
   }
-  return planSafe(cue);
+  return planSafe(cue, p);
 }
 
 // 手中球：在开球区内挑一个能形成最好进攻角度的位置
-function aiPlaceCue() {
+function aiPlaceCue(p = 1) {
   const cue = cueBall();
   let best = null;
   for (let x = TABLE.x + BALL_R + 8; x <= HEAD_X - 8; x += 44) {
     for (let y = TABLE.y + BALL_R + 8; y <= TABLE.y + TABLE.h - BALL_R - 8; y += 44) {
       if (!cueFits(x, y)) continue;
-      const plan = planFrom({ x, y });
+      const plan = planFrom({ x, y }, p);
       const score = plan ? plan.score : -1;
       if (!best || score > best.score) best = { x, y, score };
     }
@@ -172,23 +185,24 @@ function nearestPocketToEight() {
 }
 
 // 电脑回合：思考 → 瞄准展示 → 出杆
-function aiTakeTurn() {
-  if (state.mode !== 'ai' || state.turn !== 1 || state.gameOver || state.phase !== 'aim') {
+function aiTakeTurn(p) {
+  const paused = state.mode === 'auto' && state.autoPaused;
+  if (!isAIPlayer(p) || state.turn !== p || state.gameOver || state.phase !== 'aim' || paused) {
     state.locked = false;
     updateStatus();
     return;
   }
 
-  const cfg = AI_LEVELS[state.aiLevel] || AI_LEVELS.normal;
+  const cfg = levelOf(p);
 
-  if (state.ballInHand) aiPlaceCue();
+  if (state.ballInHand) aiPlaceCue(p);
 
-  const plan = aiPlan();
+  const plan = aiPlan(p);
   const err = (Math.random() * 2 - 1) * cfg.angleErr * Math.PI / 180;
   const angle = Math.atan2(plan.dir.y, plan.dir.x) + err;
   state.aimDir = { x: Math.cos(angle), y: Math.sin(angle) };
 
-  if (isOnEight(1)) {
+  if (isOnEight(p)) {
     state.calledPocket = plan.pocket >= 0 ? plan.pocket : nearestPocketToEight();
   }
 
@@ -201,7 +215,8 @@ function aiTakeTurn() {
   clearTimeout(aiShootTimer);
   aiShootTimer = setTimeout(() => {
     state.aiming = false;
-    if (state.turn === 1 && state.phase === 'aim' && !state.gameOver) {
+    const stillPaused = state.mode === 'auto' && state.autoPaused;
+    if (state.turn === p && state.phase === 'aim' && !state.gameOver && !stillPaused) {
       shoot(power);
     }
     updatePowerUI();
@@ -212,11 +227,14 @@ maybeStartAI = function () {
   clearTimeout(aiTimer);
   clearTimeout(aiShootTimer);
   state.locked = false;
-  if (state.mode !== 'ai' || state.turn !== 1 || state.gameOver || state.phase !== 'aim') {
+  // 该谁出杆由 state.turn 决定，人机对战里只有玩家 2 会交给电脑
+  const p = state.turn;
+  const paused = state.mode === 'auto' && state.autoPaused;
+  if (state.gameOver || state.phase !== 'aim' || !isAIPlayer(p) || paused) {
     updateStatus();
     return;
   }
   state.locked = true;      // 锁定玩家操作
   updateStatus();
-  aiTimer = setTimeout(aiTakeTurn, (AI_LEVELS[state.aiLevel] || AI_LEVELS.normal).delay);
+  aiTimer = setTimeout(() => aiTakeTurn(p), levelOf(p).delay);
 };

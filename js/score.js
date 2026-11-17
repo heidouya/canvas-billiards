@@ -65,6 +65,8 @@ function saveRecords() {
 }
 
 function saveResult(winner) {
+  // 电脑互打是观战局，不计入本地战绩
+  if (state.mode === 'auto') return;
   if (state.mode === 'pvp') {
     if (winner === 0) records.pvp.p1++;
     else records.pvp.p2++;

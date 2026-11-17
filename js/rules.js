@@ -72,6 +72,8 @@ function assignGroups(player, kind) {
 }
 
 function nameOf(player) {
+  // 电脑互打时两边都是电脑，用编号区分
+  if (state.mode === 'auto') return player === 0 ? '电脑 1' : '电脑 2';
   if (player === 1 && state.mode === 'ai') return '电脑';
   return player === 0 ? '玩家 1' : '玩家 2';
 }
@@ -145,7 +147,7 @@ function endShot() {
       else stripes++;
     }
     if (solids && stripes) {
-      if (state.mode === 'ai' && me === 1) {
+      if (isAIPlayer(me)) {
         // 电脑自选：优先选台面上剩余更少的一组
         let solidLeft = 0;
         let stripeLeft = 0;
@@ -154,7 +156,7 @@ function endShot() {
           if (b.id < 8) solidLeft++;
           else stripeLeft++;
         }
-        assignGroups(1, solidLeft <= stripeLeft ? 'solid' : 'stripe');
+        assignGroups(me, solidLeft <= stripeLeft ? 'solid' : 'stripe');
       } else {
         // 同时打进纯色 + 花色：由击球方自选
         state.turn = me;

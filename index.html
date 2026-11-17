@@ -58,16 +58,29 @@
           <div class="seg" id="modeSeg">
             <button type="button" class="active" data-mode="pvp">本地双人</button>
             <button type="button" data-mode="ai">人机对战</button>
+            <button type="button" data-mode="auto">电脑互打</button>
           </div>
         </div>
+        <!-- 电脑 1（只在电脑互打时出现） -->
+        <div class="seg-row" id="level0Row" hidden>
+          <span class="seg-label">电脑 1</span>
+          <div class="seg" id="levelSeg0">
+            <button type="button" data-level0="easy">简单</button>
+            <button type="button" class="active" data-level0="normal">普通</button>
+            <button type="button" data-level0="hard">困难</button>
+          </div>
+        </div>
+        <!-- 难度：人机对战里指电脑；电脑互打里指电脑 2 -->
         <div class="seg-row" id="levelRow" hidden>
-          <span class="seg-label">难度</span>
+          <span class="seg-label" id="levelLabel">难度</span>
           <div class="seg" id="levelSeg">
             <button type="button" data-level="easy">简单</button>
             <button type="button" class="active" data-level="normal">普通</button>
             <button type="button" data-level="hard">困难</button>
           </div>
         </div>
+        <!-- 电脑互打：暂停 / 继续观战 -->
+        <button type="button" class="btn auto-btn" id="btnAutoPause" hidden>暂停观战</button>
       </div>
 
       <div class="card status-card">
