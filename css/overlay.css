@@ -1,0 +1,27 @@
+/* 画布上的浮层提示（犯规、回放等） */
+#toast{
+  position:absolute;left:50%;top:18px;transform:translate(-50%,-8px);
+  padding:8px 16px;border-radius:10px;font-size:13px;
+  background:rgba(12,20,28,.92);border:1px solid #2a3f55;color:#d8e8f7;
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;white-space:nowrap;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:90%;overflow:hidden;text-overflow:ellipsis;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- 弹窗 ---------- */
+.modal{
+  position:fixed;inset:0;z-index:99;display:none;align-items:center;justify-content:center;
+  padding:20px;background:rgba(4,7,11,.72);backdrop-filter:blur(4px);
+}
+.modal.show{display:flex}
+.modal-box{
+  width:min(420px,100%);border-radius:18px;padding:22px;
+  background:linear-gradient(180deg,#152130,#0d151e);
+  border:1px solid #27384b;box-shadow:0 30px 80px rgba(0,0,0,.65);
+  animation:pop .22s ease-out;
+}
+@keyframes pop{from{transform:translateY(10px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+.modal-box h2{margin:0 0 8px;font-size:19px}
+.modal-box p{margin:0 0 18px;font-size:13px;line-height:1.7;color:#93a9bf}
+.modal-actions{display:flex;gap:10px;flex-wrap:wrap}
+.modal-actions .btn{flex:1 1 40%;min-width:110px}

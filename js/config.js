@@ -1,0 +1,61 @@
+'use strict';
+
+/* ============================================================
+ * 0. 常量与几何定义（逻辑坐标，与屏幕像素无关）
+ * ============================================================ */
+const TAU = Math.PI * 2;
+
+const VIEW_W = 1120;                 // 逻辑画布宽
+const VIEW_H = 620;                  // 逻辑画布高
+const RAIL = 60;                     // 木框宽度（台面外圈）
+const BALL_R = 14;                   // 球半径
+
+// 台面（可击球区域）
+const TABLE = { x: RAIL, y: RAIL, w: VIEW_W - RAIL * 2, h: VIEW_H - RAIL * 2 };
+const MID_X = TABLE.x + TABLE.w / 2;
+const MID_Y = TABLE.y + TABLE.h / 2;
+
+const HEAD_X = TABLE.x + TABLE.w * 0.25;   // 开球线（开球区右边界）
+const FOOT_X = TABLE.x + TABLE.w * 0.75;   // 置球点（球堆顶点）
+
+const POCKET_R = 32;      // 袋口视觉半径
+const CAPTURE_R = 26;     // 落袋判定半径（球心进入该范围才算落袋）
+const RAIL_GAP = 34;      // 库边在袋口处的留空
+
+// 六个袋口（上左 上中 上右 下左 下中 下右）
+const POCKETS = [
+  { x: TABLE.x + 6, y: TABLE.y + 6 },
+  { x: MID_X, y: TABLE.y - 4 },
+  { x: TABLE.x + TABLE.w - 6, y: TABLE.y + 6 },
+  { x: TABLE.x + 6, y: TABLE.y + TABLE.h - 6 },
+  { x: MID_X, y: TABLE.y + TABLE.h + 4 },
+  { x: TABLE.x + TABLE.w - 6, y: TABLE.y + TABLE.h - 6 }
+];
+const POCKET_NAMES = ['左上袋', '中上袋', '右上袋', '左下袋', '中下袋', '右下袋'];
+
+// 六段库边（线段形式），袋口处断开，球撞到线段端点会产生“袋角回弹”
+const RAIL_SEGS = [
+  { x1: TABLE.x + RAIL_GAP, y1: TABLE.y, x2: MID_X - RAIL_GAP, y2: TABLE.y },
+  { x1: MID_X + RAIL_GAP, y1: TABLE.y, x2: TABLE.x + TABLE.w - RAIL_GAP, y2: TABLE.y },
+  { x1: TABLE.x + RAIL_GAP, y1: TABLE.y + TABLE.h, x2: MID_X - RAIL_GAP, y2: TABLE.y + TABLE.h },
+  { x1: MID_X + RAIL_GAP, y1: TABLE.y + TABLE.h, x2: TABLE.x + TABLE.w - RAIL_GAP, y2: TABLE.y + TABLE.h },
+  { x1: TABLE.x, y1: TABLE.y + RAIL_GAP, x2: TABLE.x, y2: TABLE.y + TABLE.h - RAIL_GAP },
+  { x1: TABLE.x + TABLE.w, y1: TABLE.y + RAIL_GAP, x2: TABLE.x + TABLE.w, y2: TABLE.y + TABLE.h - RAIL_GAP }
+];
+
+const PHYS_DT = 1 / 240;      // 物理固定步长（防穿透）
+const MAX_SPEED = 1250;       // 满力度球速（逻辑单位/秒）
+const MIN_SHOT_SPEED = 150;   // 最小出杆速度
+const ROLL_DECEL = 200;       // 滚动摩擦减速度
+const STOP_SPEED = 7;         // 低于该速度视为静止
+const CUSHION_RESTI = 0.84;   // 库边弹性
+const BALL_RESTI = 0.96;      // 球球弹性
+const MAX_DRAG = 250;         // 拖拽多远算满力度
+
+// 1-7 纯色 / 9-15 花色（与 1-7 同色系）
+const BALL_COLORS = {
+  1: '#f2c53d', 2: '#2f6dd0', 3: '#d64545', 4: '#7b4bc4',
+  5: '#e8853a', 6: '#2f9e57', 7: '#8f2233', 8: '#1b1b1b',
+  9: '#f2c53d', 10: '#2f6dd0', 11: '#d64545', 12: '#7b4bc4',
+  13: '#e8853a', 14: '#2f9e57', 15: '#8f2233'
+};

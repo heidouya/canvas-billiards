@@ -1,0 +1,30 @@
+/* ---------- 响应式 ---------- */
+@media (max-width:940px){
+  body{padding:10px}
+  .main{flex-direction:column}
+  .panel{width:100%;flex:1 1 auto}
+  .canvas-wrap{padding:6px}
+  .btn-card{flex-wrap:wrap}
+  .btn{flex:1 1 45%}
+  .chip{width:24px;height:24px;font-size:11px}
+  .chips{gap:5px}
+}
+@media (max-width:560px){
+  .brand h1{font-size:17px}
+  .seg button{padding:6px 11px;font-size:12px}
+  .btn{flex:1 1 100%;min-width:0}
+  .status-line{font-size:14px}
+  .rec-list{font-size:12px}
+  /* 球号条：窄屏改成上下两段，小球缩小，一行放下 7 颗 */
+  .rack-strip{gap:6px}
+  .group-panel{flex-direction:column;align-items:flex-start;gap:6px;padding:7px 9px;border-radius:11px}
+  .gp-head{flex-direction:row;align-items:baseline;gap:6px}
+  .gp-owner{font-size:12px}
+  .gp-tag{font-size:10px}
+  .chip{width:18px;height:18px;font-size:9px}
+  .chips{gap:3px;justify-content:flex-start}
+}
+@media (max-height:520px) and (orientation:landscape){
+  .main{flex-direction:row}
+  .panel{width:260px;flex:0 0 260px}
+}

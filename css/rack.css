@@ -1,0 +1,46 @@
+/* ---------- 台面上方：球组分类与球号 ---------- */
+.rack-strip{display:flex;gap:10px}
+.group-panel{
+  flex:1 1 0;min-width:0;display:flex;align-items:center;gap:10px;
+  padding:8px 12px;border-radius:14px;
+  background:linear-gradient(180deg,#111a25,#0d151e);
+  border:1px solid #1c2a3a;
+  transition:border-color .2s,box-shadow .2s,background .2s;
+}
+.gp-head{flex:0 0 auto;display:flex;flex-direction:column;gap:1px;white-space:nowrap}
+.gp-owner{font-size:14px;font-weight:600;color:#7d93a9;line-height:1.3}
+.gp-tag{font-size:11px;color:#617687;letter-spacing:.5px;line-height:1.3}
+.chips{flex:1 1 auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+/* 小球：纯色球为实心，花色球为白底 + 中间色带（与台面渲染一致） */
+.chip{
+  position:relative;flex:0 0 auto;
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-weight:800;font-size:12px;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--tc,#fff);
+  transition:opacity .25s,filter .25s;
+}
+.chip.solid{
+  background:var(--c,#888);
+  text-shadow:0 1px 1px rgba(0,0,0,.35);
+  box-shadow:inset 0 -3px 7px rgba(0,0,0,.3),inset 0 2px 6px rgba(255,255,255,.32);
+}
+.chip.stripe{
+  background:#f6f2e7;
+  box-shadow:inset 0 -3px 7px rgba(0,0,0,.16);
+}
+.chip.stripe::before{
+  content:'';position:absolute;left:0;right:0;top:50%;height:56%;
+  transform:translateY(-50%);background:var(--c,#888);
+}
+.chip span{position:relative;z-index:1}
+/* 已进袋的球：淡出 */
+.chip.out{opacity:.22;filter:grayscale(.85)}
+
+/* 定组后按归属着色：玩家 1 绿、玩家 2 蓝 */
+.group-panel.owner-0{border-color:rgba(55,208,139,.55)}
+.group-panel.owner-0 .gp-owner{color:#37d08b}
+.group-panel.owner-1{border-color:rgba(88,166,255,.55)}
+.group-panel.owner-1 .gp-owner{color:#58a6ff}
+/* 当前击球方的球组更亮一点 */
+.group-panel.current{background:linear-gradient(180deg,#16232f,#101a24);box-shadow:0 0 14px rgba(55,208,139,.12)}

@@ -1,0 +1,31 @@
+/* ---------- 主区域 ---------- */
+.main{display:flex;gap:18px;align-items:flex-start}
+/* 舞台占满剩余宽度，桌子在其中水平居中 */
+.stage{flex:1 1 auto;min-width:0}
+
+/* 桌子列：上方球号条 + 下方画布，整体一起受宽度/高度约束 */
+.table-col{width:100%;max-width:100%;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+
+/* 画布容器：固定 1120:620 比例，等比缩放不拉伸 */
+.canvas-wrap{
+  position:relative;
+  width:100%;
+  max-width:100%;
+  padding:10px;
+  border-radius:18px;
+  background:linear-gradient(180deg,#0e1621,#080c12);
+  border:1px solid #1b2837;
+  box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);
+}
+/* 宽屏：整体宽度同时受可用宽度和窗口高度约束（1.8065 = 1120/620） */
+@media (min-width:941px){
+  .table-col{width:min(100%, calc((100vh - 190px) * 1.8065))}
+  .table-col{width:min(100%, calc((100dvh - 190px) * 1.8065))}
+}
+/* 关键：width 100% + height auto，画布按自身位图比例缩放，永不拉伸 */
+canvas{
+  display:block;width:100%;height:auto;
+  border-radius:12px;
+  touch-action:none;cursor:crosshair;
+  background:#0a0f14;
+}
