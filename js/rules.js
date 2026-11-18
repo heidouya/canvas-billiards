@@ -34,6 +34,7 @@ function shoot(power) {
   state.lastFoul = null;      // 新的一杆开始，上一次犯规提示作废
   state.power = 0;
   state.settleTimer = 0;
+  markGuideDone();          // 第一杆打出去了，新手引导不再出现
   startRecording();
   el('btnReplay').disabled = true;
   updatePowerUI();

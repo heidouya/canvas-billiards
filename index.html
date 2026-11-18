@@ -102,6 +102,7 @@
         <button type="button" class="btn" id="btnReplay" disabled>上一杆回放</button>
         <button type="button" class="btn" id="btnSound">音效：开</button>
         <button type="button" class="btn danger" id="btnClear">清空战绩</button>
+        <button type="button" class="btn" id="btnHelp">玩法</button>
       </div>
 
       <div class="card">
@@ -120,11 +121,11 @@
   </div>
 </div>
 
-<!-- 开局提示卡：进页面第一局弹一次，点「以后不再提示」后不再出现 -->
+<!-- 玩法卡片：点右侧「玩法」按钮才打开，进页面不自动弹 -->
 <div class="modal" id="startModal">
   <div class="modal-box start-box">
     <span class="start-kicker" id="startKicker">本地双人</span>
-    <h2 id="startTitle">准备好了吗</h2>
+    <h2 id="startTitle">玩法提示</h2>
     <p class="start-sub" id="startSub">玩家 1 开球</p>
     <ul class="start-list">
       <li><b>瞄准</b>在台面任意位置按住，往击球的反方向拖，松手出杆</li>
@@ -133,8 +134,7 @@
       <li><b>黑八</b>清完自己的球组后，先点一下袋口指定目标袋</li>
     </ul>
     <div class="modal-actions">
-      <button type="button" class="btn primary" id="btnStart">开始比赛</button>
-      <button type="button" class="btn" id="btnStartNever">以后不再提示</button>
+      <button type="button" class="btn primary" id="btnStart">知道了</button>
     </div>
   </div>
 </div>

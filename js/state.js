@@ -26,7 +26,8 @@ const state = {
   moved: false,           // 本次按下是否发生拖动
   placeOrigin: null,      // 手中球拖动前的原位置
   modalOpen: false,
-  introOpen: false,        // 开局提示卡是否打开（打开时同样锁住操作）
+  introOpen: false,        // 玩法卡片是否打开（打开时同样锁住操作）
+  guideDone: false,        // 新手"往回拉"引导是否已完成（打出一杆后永久隐藏）
   gameOver: false,
   winner: null,
   replayFrames: null,   // 当前一杆的回放帧

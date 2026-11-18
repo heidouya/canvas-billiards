@@ -52,17 +52,25 @@ function hideModal() {
 }
 
 /* ============================================================
- * 开局提示卡（进页面第一局弹一次）
+ * 玩法卡片 + 新手引导
+ * 说明不再自动弹窗，改为：进页面闪一条"比赛开始" + 台面上画一条
+ * "往回拉"的引导箭头，打出一杆后永久消失；想细看就点右侧「玩法」
  * ============================================================ */
 const startModalEl = el('startModal');
 const startKickerEl = el('startKicker');
 const startSubEl = el('startSub');
-const INTRO_KEY = 'eightball.intro.v1';   // 存 'off' 表示"以后不再提示"
+const GUIDE_KEY = 'eightball.guide.v1';   // 存 'done' 表示引导已完成过
 const LEVEL_NAMES = { easy: '简单', normal: '普通', hard: '困难' };
 const levelName = lv => LEVEL_NAMES[lv] || '普通';
 
-function introHidden() {
-  try { return localStorage.getItem(INTRO_KEY) === 'off'; } catch (e) { return false; }
+// 引导标记读写（localStorage 不可用时静默跳过）
+function guideDoneBefore() {
+  try { return localStorage.getItem(GUIDE_KEY) === 'done'; } catch (e) { return false; }
+}
+function markGuideDone() {
+  if (state.guideDone) return;
+  state.guideDone = true;
+  try { localStorage.setItem(GUIDE_KEY, 'done'); } catch (e) { /* 忽略 */ }
 }
 
 // 卡片上那句小标签和副标题跟着模式 / 难度走
@@ -83,30 +91,23 @@ function showIntro() {
   updateIntroText();
   state.introOpen = true;
   state.modalOpen = true;   // 卡片开着的时候不许击球
-  stopClock();              // 读说明的时间不算进本局用时
+  stopClock();              // 看说明的时间不算进本局用时
   startModalEl.classList.add('show');
 }
 
-function closeIntro(remember) {
-  if (remember) {
-    try { localStorage.setItem(INTRO_KEY, 'off'); } catch (e) { /* 隐私模式下写不进去也不影响开打 */ }
-  }
+function closeIntro() {
   startModalEl.classList.remove('show');
   state.introOpen = false;
   state.modalOpen = false;
   startClock();
   updateClockUI();
-  maybeStartAI();           // 电脑互打：卡片关掉后才开始自动开球
+  maybeStartAI();           // 电脑互打：关掉卡片后才开始自动出杆
   updateStatus();
 }
 
-// 第一局弹卡片；选过"以后不再提示"就只闪一条提示
-function maybeShowIntro() {
-  if (introHidden()) {
-    toast(`比赛开始 · ${nameOf(state.turn)} 开球`, 2200);
-    return;
-  }
-  showIntro();
+// 进页面只闪一条提示，不弹任何卡片
+function announceStart() {
+  toast(`比赛开始 · ${nameOf(state.turn)} 开球 · 按住台面往回拉即可出杆`, 2600);
 }
 
 function updatePowerUI() {
@@ -244,8 +245,7 @@ function resetGame() {
     stopClock();
   } else {
     startClock();
-  }
-  updateStatus();
+  }  updateStatus();
   updatePowerUI();
   updateClockUI();
   maybeStartAI();            // 电脑互打时由电脑直接开球
@@ -326,12 +326,9 @@ el('btnRestart').addEventListener('click', () => {
   toast('重新开局');
 });
 
-// 开局提示卡：开始比赛 / 以后不再提示
-el('btnStart').addEventListener('click', () => closeIntro(false));
-el('btnStartNever').addEventListener('click', () => {
-  closeIntro(true);
-  toast('以后进页面不再弹开局提示', 2000);
-});
+// 玩法卡片：右侧「玩法」按钮打开，「知道了」关掉
+el('btnStart').addEventListener('click', () => closeIntro());
+el('btnHelp').addEventListener('click', () => showIntro());
 
 // 上一杆回放
 el('btnReplay').addEventListener('click', startReplay);
