@@ -25,3 +25,29 @@
 .modal-box p{margin:0 0 18px;font-size:13px;line-height:1.7;color:#93a9bf}
 .modal-actions{display:flex;gap:10px;flex-wrap:wrap}
 .modal-actions .btn{flex:1 1 40%;min-width:110px}
+
+/* ---------- 开局提示卡 ---------- */
+.start-box{width:min(460px,100%)}
+.start-kicker{
+  display:inline-block;margin-bottom:10px;padding:3px 10px;border-radius:999px;
+  font-size:12px;letter-spacing:.5px;color:#79d8a4;
+  background:rgba(56,155,106,.16);border:1px solid rgba(79,182,126,.35);
+}
+.start-sub{margin:0 0 14px;font-size:13px;color:#8fa6bc}
+.start-list{
+  margin:0 0 18px;padding:14px 16px;border-radius:12px;list-style:none;
+  background:rgba(10,17,25,.72);border:1px solid #22344a;
+}
+.start-list li{
+  position:relative;padding-left:14px;margin-bottom:9px;
+  font-size:12.5px;line-height:1.65;color:#a8bdd0;
+}
+.start-list li:last-child{margin-bottom:0}
+.start-list li::before{
+  content:'';position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;
+  background:#4fa87a;
+}
+.start-list b{
+  display:inline-block;margin-right:8px;padding:1px 6px;border-radius:6px;
+  font-size:11.5px;font-weight:600;color:#cfe6f5;background:rgba(72,110,150,.28);
+}

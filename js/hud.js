@@ -47,7 +47,66 @@ function showModal(title, text, actions) {
 
 function hideModal() {
   modalEl.classList.remove('show');
+  // 开局卡还开着的话，操作依然锁着
+  state.modalOpen = state.introOpen;
+}
+
+/* ============================================================
+ * 开局提示卡（进页面第一局弹一次）
+ * ============================================================ */
+const startModalEl = el('startModal');
+const startKickerEl = el('startKicker');
+const startSubEl = el('startSub');
+const INTRO_KEY = 'eightball.intro.v1';   // 存 'off' 表示"以后不再提示"
+const LEVEL_NAMES = { easy: '简单', normal: '普通', hard: '困难' };
+const levelName = lv => LEVEL_NAMES[lv] || '普通';
+
+function introHidden() {
+  try { return localStorage.getItem(INTRO_KEY) === 'off'; } catch (e) { return false; }
+}
+
+// 卡片上那句小标签和副标题跟着模式 / 难度走
+function updateIntroText() {
+  if (state.mode === 'auto') {
+    startKickerEl.textContent = '电脑互打 · 观战';
+    startSubEl.textContent = `电脑 1 ${levelName(state.aiLevel0)} / 电脑 2 ${levelName(state.aiLevel)}，两边自动出杆，胜负不计入战绩`;
+  } else if (state.mode === 'ai') {
+    startKickerEl.textContent = `人机对战 · 难度 ${levelName(state.aiLevel)}`;
+    startSubEl.textContent = '你先开球；轮到电脑时操作会自动锁定';
+  } else {
+    startKickerEl.textContent = '本地双人';
+    startSubEl.textContent = '玩家 1 开球，两人在同一台设备上轮流出杆';
+  }
+}
+
+function showIntro() {
+  updateIntroText();
+  state.introOpen = true;
+  state.modalOpen = true;   // 卡片开着的时候不许击球
+  stopClock();              // 读说明的时间不算进本局用时
+  startModalEl.classList.add('show');
+}
+
+function closeIntro(remember) {
+  if (remember) {
+    try { localStorage.setItem(INTRO_KEY, 'off'); } catch (e) { /* 隐私模式下写不进去也不影响开打 */ }
+  }
+  startModalEl.classList.remove('show');
+  state.introOpen = false;
   state.modalOpen = false;
+  startClock();
+  updateClockUI();
+  maybeStartAI();           // 电脑互打：卡片关掉后才开始自动开球
+  updateStatus();
+}
+
+// 第一局弹卡片；选过"以后不再提示"就只闪一条提示
+function maybeShowIntro() {
+  if (introHidden()) {
+    toast(`比赛开始 · ${nameOf(state.turn)} 开球`, 2200);
+    return;
+  }
+  showIntro();
 }
 
 function updatePowerUI() {
@@ -166,7 +225,7 @@ function resetGame() {
   state.lastFoul = null;
   state.aimDir = { x: 1, y: 0 };
   state.autoPaused = false;   // 重新开局默认继续自动进行
-  // 本局计时归零并重新起表
+  // 本局计时归零并重新起表（开局卡还开着就先停着，关掉卡片再起表）
   state.clockMs = 0;
   state.clockSince = 0;
   lastClockText = '';
@@ -180,7 +239,12 @@ function resetGame() {
   el('btnReplay').disabled = true;
   hideModal();
   updatePauseBtn();
-  startClock();
+  if (state.introOpen) {
+    updateIntroText();   // 卡片开着时切了模式 / 难度，文案跟着更新
+    stopClock();
+  } else {
+    startClock();
+  }
   updateStatus();
   updatePowerUI();
   updateClockUI();
@@ -260,6 +324,13 @@ el('btnAutoPause').addEventListener('click', () => {
 el('btnRestart').addEventListener('click', () => {
   resetGame();
   toast('重新开局');
+});
+
+// 开局提示卡：开始比赛 / 以后不再提示
+el('btnStart').addEventListener('click', () => closeIntro(false));
+el('btnStartNever').addEventListener('click', () => {
+  closeIntro(true);
+  toast('以后进页面不再弹开局提示', 2000);
 });
 
 // 上一杆回放

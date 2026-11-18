@@ -120,6 +120,25 @@
   </div>
 </div>
 
+<!-- 开局提示卡：进页面第一局弹一次，点「以后不再提示」后不再出现 -->
+<div class="modal" id="startModal">
+  <div class="modal-box start-box">
+    <span class="start-kicker" id="startKicker">本地双人</span>
+    <h2 id="startTitle">准备好了吗</h2>
+    <p class="start-sub" id="startSub">玩家 1 开球</p>
+    <ul class="start-list">
+      <li><b>瞄准</b>在台面任意位置按住，往击球的反方向拖，松手出杆</li>
+      <li><b>力度</b>拖得越远力度越大，右侧力度条实时显示百分比</li>
+      <li><b>开球</b>按住母球可在开球区内拖动摆位，摆好再瞄准</li>
+      <li><b>黑八</b>清完自己的球组后，先点一下袋口指定目标袋</li>
+    </ul>
+    <div class="modal-actions">
+      <button type="button" class="btn primary" id="btnStart">开始比赛</button>
+      <button type="button" class="btn" id="btnStartNever">以后不再提示</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/util.js"></script>
 <script src="js/state.js"></script>

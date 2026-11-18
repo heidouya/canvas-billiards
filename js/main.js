@@ -12,6 +12,7 @@ function boot() {
     Sound.enabled = localStorage.getItem(SOUND_KEY) !== '0';
   } catch (e) { /* 忽略 */ }
   updateSoundBtn();
+  maybeShowIntro();     // 第一局的开局提示卡（选过“不再提示”就只闪一条 toast）
   requestAnimationFrame(time => { lastTime = time; frame(time); });
 }
 
