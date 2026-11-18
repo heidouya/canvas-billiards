@@ -24,6 +24,7 @@ function shoot(power) {
     potted: [],
     cuePotted: false,
     eightPocket: null,
+    cushionBalls: [],         // 这一杆里碰过库的目标球（去重，开球有效性判定用）
     preRemaining: state.groups[state.turn] ? remainingOf(state.turn) : 99,
     targetKind: targetKind(state.turn),
     isBreak: !state.breakDone
@@ -40,6 +41,29 @@ function shoot(power) {
   updatePowerUI();
   updateStatus();
   sfxCue(power);
+}
+
+/* ---------- 规则集：中式八球 / 美式八球 ---------- */
+// 两套规则 95% 一样，差异只在四处：袋口松紧、犯规后自由球范围、
+// 开球有效性、开球时 8 号进袋的处理
+const RULE_TIPS = {
+  cn: '中式八球',
+  us: '美式八球'
+};
+
+// 切换规则：袋口尺寸跟着变（中式袋口更紧一档）
+function applyRuleSet(rule) {
+  state.ruleSet = (rule === 'us') ? 'us' : 'cn';
+  POCKET_R = state.ruleSet === 'cn' ? POCKET_R_CN : POCKET_R_US;
+  CAPTURE_R = state.ruleSet === 'cn' ? CAPTURE_R_CN : CAPTURE_R_US;
+}
+
+// 手中球允许摆放的右边界：
+//  · 还没开球（开球摆球）→ 开球线左侧，两套规则一样
+//  · 犯规后的自由球：中式可放全台，美式仍限开球区
+function cueZoneRight() {
+  if (!state.breakDone) return HEAD_X;
+  return state.ruleSet === 'cn' ? TABLE.x + TABLE.w : HEAD_X;
 }
 
 /* ---------- 球组 / 目标球相关 ---------- */
@@ -94,6 +118,15 @@ function endShot() {
 
   if (!shot) { updateStatus(); return; }
 
+  // ---------- 0) 中式开球特例：开球把 8 号撞进袋不算输 ----------
+  const pottedAtShot = shot.potted.length;   // 摆回 8 号之前先记下这一杆进了几颗球
+  if (shot.isBreak && state.ruleSet === 'cn' && shot.eightPocket !== null) {
+    respotEight();
+    shot.eightPocket = null;
+    shot.potted = shot.potted.filter(p => p.id !== 8);
+    toast('开球 8 号进袋：中式规则不算输，8 号已摆回台面');
+  }
+
   // ---------- 1) 黑八结算（优先处理胜负） ----------
   if (shot.eightPocket !== null) {
     const called = state.calledPocket;
@@ -133,6 +166,15 @@ function endShot() {
     } else if (hitKind !== shot.targetKind) {
       foul = true;
       foulMsg = hitKind === 'eight' ? '先碰到了黑八' : `先碰到了对方的球（${shot.firstHit} 号）`;
+    }
+  }
+
+  // 开球有效性（仅中式）：至少 1 颗球进袋，或至少 4 颗目标球碰过库，否则算开球犯规
+  if (!foul && shot.isBreak && state.ruleSet === 'cn') {
+    const cushionCount = (shot.cushionBalls || []).length;
+    if (pottedAtShot === 0 && cushionCount < 4) {
+      foul = true;
+      foulMsg = `开球不达标（没有球进袋，碰库只有 ${cushionCount} 颗，中式要求 4 颗）`;
     }
   }
 
@@ -240,11 +282,11 @@ function giveBallInHand(player) {
   state.calledPocket = -1;
 }
 
-// 判断母球该位置是否合规（不压球、不出界、不在袋口、手中球须在开球区）
+// 判断母球该位置是否合规（不压球、不出界、不在袋口、手中球受规则限制的开球区/全台）
 function cueFits(x, y) {
   if (x < TABLE.x + BALL_R || x > TABLE.x + TABLE.w - BALL_R) return false;
   if (y < TABLE.y + BALL_R || y > TABLE.y + TABLE.h - BALL_R) return false;
-  if (state.ballInHand && x > HEAD_X) return false;
+  if (state.ballInHand && x > cueZoneRight()) return false;
   for (const p of POCKETS) {
     if (dist(x, y, p.x, p.y) < CAPTURE_R + BALL_R * 0.4) return false;
   }
@@ -253,6 +295,46 @@ function cueFits(x, y) {
     if (dist(x, y, b.x, b.y) < BALL_R * 2 + 0.6) return false;
   }
   return true;
+}
+
+// 单颗球的位置是否合规（摆回 8 号球用，和母球规则无关）
+function spotFitsForBall(x, y, ignoreId) {
+  if (x < TABLE.x + BALL_R || x > TABLE.x + TABLE.w - BALL_R) return false;
+  if (y < TABLE.y + BALL_R || y > TABLE.y + TABLE.h - BALL_R) return false;
+  for (const p of POCKETS) {
+    if (dist(x, y, p.x, p.y) < CAPTURE_R + BALL_R * 0.4) return false;
+  }
+  for (const b of state.balls) {
+    if (!b.active || b.id === ignoreId) continue;
+    if (dist(x, y, b.x, b.y) < BALL_R * 2 + 0.6) return false;
+  }
+  return true;
+}
+
+// 把 8 号球摆回置球点（被占就从附近螺旋找一个空位）
+function respotEight() {
+  const eight = state.balls.find(b => b.id === 8);
+  if (!eight) return;
+  eight.active = true;
+  eight.vx = 0;
+  eight.vy = 0;
+  if (spotFitsForBall(FOOT_X, MID_Y, 8)) {
+    eight.x = FOOT_X;
+    eight.y = MID_Y;
+    return;
+  }
+  for (let r = 18; r <= 460; r += 18) {
+    for (let a = 0; a < 24; a++) {
+      const ang = a * TAU / 24;
+      const x = FOOT_X + Math.cos(ang) * r;
+      const y = MID_Y + Math.sin(ang) * r;
+      if (spotFitsForBall(x, y, 8)) {
+        eight.x = x;
+        eight.y = y;
+        return;
+      }
+    }
+  }
 }
 
 // 在指定点附近找一个能放球的位置

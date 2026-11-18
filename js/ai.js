@@ -155,11 +155,13 @@ function aiPlan(p = 1) {
   return planSafe(cue, p);
 }
 
-// 手中球：在开球区内挑一个能形成最好进攻角度的位置
+// 手中球：挑一个能形成最好进攻角度的位置
+// 扫描范围跟着规则走：中式自由球可放全台，美式仍只在开球区里找
 function aiPlaceCue(p = 1) {
   const cue = cueBall();
+  const rightLimit = cueZoneRight();
   let best = null;
-  for (let x = TABLE.x + BALL_R + 8; x <= HEAD_X - 8; x += 44) {
+  for (let x = TABLE.x + BALL_R + 8; x <= rightLimit - 8; x += 44) {
     for (let y = TABLE.y + BALL_R + 8; y <= TABLE.y + TABLE.h - BALL_R - 8; y += 44) {
       if (!cueFits(x, y)) continue;
       const plan = planFrom({ x, y }, p);

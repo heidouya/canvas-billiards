@@ -117,6 +117,11 @@ function collideRails(b) {
     if (vn < 0) {
       b.vx -= (1 + CUSHION_RESTI) * vn * nx;
       b.vy -= (1 + CUSHION_RESTI) * vn * ny;
+      // 开球有效性判定要用：记录这一杆里碰过库的目标球（同一颗只算一次）
+      if (state.shot && state.shot.isBreak && b.id !== 0) {
+        const list = state.shot.cushionBalls;
+        if (list && list.indexOf(b.id) < 0) list.push(b.id);
+      }
       sfxHit(Math.min(0.6, Math.abs(vn) / 900));
     }
   }

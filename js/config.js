@@ -18,8 +18,12 @@ const MID_Y = TABLE.y + TABLE.h / 2;
 const HEAD_X = TABLE.x + TABLE.w * 0.25;   // 开球线（开球区右边界）
 const FOOT_X = TABLE.x + TABLE.w * 0.75;   // 置球点（球堆顶点）
 
-const POCKET_R = 32;      // 袋口视觉半径
-const CAPTURE_R = 26;     // 落袋判定半径（球心进入该范围才算落袋）
+const POCKET_R_US = 32;   // 美式：袋口视觉半径
+const CAPTURE_R_US = 26;  // 美式：落袋判定半径（球心进入该范围才算落袋）
+const POCKET_R_CN = 29;   // 中式：袋口收紧一档
+const CAPTURE_R_CN = 23;  //
+let POCKET_R = POCKET_R_US;    // 当前生效的袋口视觉半径（随规则切换）
+let CAPTURE_R = CAPTURE_R_US;  // 当前生效的落袋判定半径
 const RAIL_GAP = 34;      // 库边在袋口处的留空
 
 // 六个袋口（上左 上中 上右 下左 下中 下右）

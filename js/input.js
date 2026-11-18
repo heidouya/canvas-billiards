@@ -82,7 +82,8 @@ function onPointerMove(e) {
   if (state.dragMode === 'place') {
     const cue = cueBall();
     if (!cue) return;
-    const maxX = state.ballInHand ? HEAD_X : TABLE.x + TABLE.w - BALL_R;
+    // 摆球允许的范围由规则决定：开球在开球区，中式犯规后自由球可放全台
+    const maxX = state.ballInHand ? cueZoneRight() : TABLE.x + TABLE.w - BALL_R;
     const tx = clamp(p.x, TABLE.x + BALL_R, maxX);
     const ty = clamp(p.y, TABLE.y + BALL_R, TABLE.y + TABLE.h - BALL_R);
     if (cueFits(tx, ty)) {

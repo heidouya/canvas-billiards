@@ -73,7 +73,7 @@ function markGuideDone() {
   try { localStorage.setItem(GUIDE_KEY, 'done'); } catch (e) { /* 忽略 */ }
 }
 
-// 卡片上那句小标签和副标题跟着模式 / 难度走
+// 卡片上那句小标签和副标题跟着模式 / 难度 / 规则走
 function updateIntroText() {
   if (state.mode === 'auto') {
     startKickerEl.textContent = '电脑互打 · 观战';
@@ -84,6 +84,13 @@ function updateIntroText() {
   } else {
     startKickerEl.textContent = '本地双人';
     startSubEl.textContent = '玩家 1 开球，两人在同一台设备上轮流出杆';
+  }
+  // 规则那一条跟着当前规则集换文案
+  const tip = el('ruleTip');
+  if (tip) {
+    tip.innerHTML = state.ruleSet === 'cn'
+      ? '<b>规则</b>中式八球：犯规后自由球可放全台，开球需进球或 4 球碰库，开球进黑八摆回不判负'
+      : '<b>规则</b>美式八球：犯规后手中球只能摆在开球区，开球进黑八判负';
   }
 }
 
@@ -147,7 +154,10 @@ function updateStatus() {
     } else {
       title = `${name} · 手中球`;
       sub = (state.lastFoul ? state.lastFoul + ' · ' : '') +
-        (aiSide ? '电脑正在摆放母球' : '按在母球上拖动摆放（开球区内），松手后拖拽瞄准击球');
+        (aiSide ? '电脑正在摆放母球'
+          : state.ruleSet === 'cn'
+            ? '按在母球上拖动摆放（自由球，可放台面任意位置），松手后拖拽瞄准击球'
+            : '按在母球上拖动摆放（开球区内），松手后拖拽瞄准击球');
     }
   } else if (state.phase === 'aim' && aiSide) {
     title = `${name} 瞄准中`;
@@ -287,6 +297,32 @@ el('levelSeg0').addEventListener('click', e => {
   [...el('levelSeg0').children].forEach(b => b.classList.toggle('active', b === btn));
   resetGame();
   toast('电脑 1 难度：' + btn.textContent);
+});
+
+// 规则切换：中式八球（默认）/ 美式八球（存 localStorage，换规则直接重开一局）
+const RULE_KEY = 'eightball.rule.v1';
+
+function loadRuleSet() {
+  try {
+    const v = localStorage.getItem(RULE_KEY);
+    return (v === 'cn' || v === 'us') ? v : 'cn';
+  } catch (e) { return 'cn'; }
+}
+
+function syncRuleButtons() {
+  [...el('ruleSeg').children].forEach(b => b.classList.toggle('active', b.dataset.rule === state.ruleSet));
+}
+
+el('ruleSeg').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn || btn.dataset.rule === state.ruleSet) return;
+  applyRuleSet(btn.dataset.rule);
+  syncRuleButtons();
+  try { localStorage.setItem(RULE_KEY, state.ruleSet); } catch (e) { /* 忽略 */ }
+  resetGame();
+  toast(state.ruleSet === 'cn'
+    ? '规则：中式八球 · 犯规自由球可放全台，开球需进球或 4 球碰库'
+    : '规则：美式八球 · 犯规手中球限开球区');
 });
 
 // 辅助线档位：完整 / 短线 / 关闭（存 localStorage，刷新记得住）
