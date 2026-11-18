@@ -148,16 +148,28 @@ function drawPockets() {
   }
 }
 
-// 手中球：高亮开球区，提示可摆放范围
+// 手中球：画出可摆放范围
+// · 受限（开球摆球 / 美式犯规手中球）→ 高亮开球区那块矩形
+// · 中式自由球可放全台 → 不画矩形，只给台面围一圈浅虚线，避免“只能放虚线里”的错觉
 function drawBallInHandArea() {
   if (!state.ballInHand) return;
+  const zoneRight = cueZoneRight();
+  const limited = zoneRight < TABLE.x + TABLE.w - 1;
+
   ctx.save();
-  ctx.fillStyle = 'rgba(120,220,180,.08)';
-  ctx.fillRect(TABLE.x, TABLE.y, HEAD_X - TABLE.x, TABLE.h);
-  ctx.setLineDash([7, 7]);
-  ctx.lineWidth = 1.5;
-  ctx.strokeStyle = 'rgba(140,235,195,.42)';
-  ctx.strokeRect(TABLE.x + 1, TABLE.y + 1, HEAD_X - TABLE.x - 2, TABLE.h - 2);
+  if (limited) {
+    ctx.fillStyle = 'rgba(120,220,180,.08)';
+    ctx.fillRect(TABLE.x, TABLE.y, zoneRight - TABLE.x, TABLE.h);
+    ctx.setLineDash([7, 7]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(140,235,195,.42)';
+    ctx.strokeRect(TABLE.x + 1, TABLE.y + 1, zoneRight - TABLE.x - 2, TABLE.h - 2);
+  } else {
+    ctx.setLineDash([10, 10]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(140,235,195,.26)';
+    ctx.strokeRect(TABLE.x + 3, TABLE.y + 3, TABLE.w - 6, TABLE.h - 6);
+  }
   ctx.restore();
 
   // 母球周围的脉冲圈，提示“可拖动”
