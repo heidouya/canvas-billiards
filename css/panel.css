@@ -7,6 +7,8 @@
 .card{background:linear-gradient(180deg,#111a25,#0d151e);border:1px solid #1c2a3a;border-radius:14px;padding:12px 14px}
 
 .status-card{display:flex;flex-direction:column;gap:6px}
+/* 力度条并进状态卡：一条细分隔线，比单独一张卡省一层面板 */
+.power-block{margin-top:8px;padding-top:9px;border-top:1px solid #1a2735}
 .status-line{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
 /* 本局计时：靠右显示，秒数跳变时不抖 */
 .clock{margin-left:auto;flex:0 0 auto;font-size:12px;font-weight:600;letter-spacing:.6px;
@@ -26,11 +28,12 @@
 
 /* 按钮组：flex-wrap 保证小屏自动换行 */
 .btn-card{display:flex;flex-wrap:wrap;gap:8px;padding:12px}
-/* 对局设置卡：模式 / 难度两行，左边小标题，右边分段按钮铺满 */
+/* 对局设置卡：规则 / 模式 / 难度 / 辅助线，左侧小标题定宽，右侧分段按钮铺满 */
 .setup-card{display:flex;flex-direction:column;gap:8px;padding:10px 12px}
 .seg-row{display:flex;align-items:center;gap:8px}
 .seg-row[hidden]{display:none}
-.seg-label{flex:0 0 auto;font-size:12px;color:#7d93a9;letter-spacing:1px}
+/* 标题列给固定宽度：几行按钮的左边缘才能对齐，不会因为“辅助线/电脑 1”字数不同而参差 */
+.seg-label{flex:0 0 50px;font-size:12px;color:#7d93a9;letter-spacing:.5px}
 .seg-row .seg{flex:1 1 auto;min-width:0}
 .seg-row .seg button{flex:1 1 0;text-align:center;padding:7px 8px}
 /* 电脑互打：整行宽的暂停按钮，占满设置卡 */
@@ -47,6 +50,8 @@
 .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .btn.danger{color:#ffb9b9;border-color:#4a2630;background:#221318}
 .btn.danger:hover{background:#2c181f;border-color:#6d3441}
+/* 独占整行的按钮（危险操作单独一排，和上面的普通按钮分开） */
+.btn.wide{flex:1 1 100%}
 .btn.primary{color:#ffffff;background:linear-gradient(180deg,#2f9d6c,#1b6b47);border-color:#2f9d6c}
 .btn.primary:hover{background:linear-gradient(180deg,#37b27b,#217a52);border-color:#37b27b}
 

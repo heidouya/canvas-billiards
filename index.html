@@ -51,22 +51,22 @@
     </div>
 
     <aside class="panel">
-      <!-- 对局设置：模式与电脑难度，放在最上面；切换后即时开局 -->
+      <!-- 对局设置：规则 / 模式 / 难度，放在最上面；切换后即时开局 -->
       <div class="card setup-card">
-        <div class="seg-row">
-          <span class="seg-label">模式</span>
-          <div class="seg" id="modeSeg">
-            <button type="button" class="active" data-mode="pvp">本地双人</button>
-            <button type="button" data-mode="ai">人机对战</button>
-            <button type="button" data-mode="auto">电脑互打</button>
-          </div>
-        </div>
         <!-- 规则：中式八球（默认）/ 美式八球 -->
         <div class="seg-row">
           <span class="seg-label">规则</span>
           <div class="seg" id="ruleSeg">
             <button type="button" class="active" data-rule="cn">中式八球</button>
             <button type="button" data-rule="us">美式八球</button>
+          </div>
+        </div>
+        <div class="seg-row">
+          <span class="seg-label">模式</span>
+          <div class="seg" id="modeSeg">
+            <button type="button" class="active" data-mode="pvp">本地双人</button>
+            <button type="button" data-mode="ai">人机对战</button>
+            <button type="button" data-mode="auto">电脑互打</button>
           </div>
         </div>
         <!-- 电脑 1（只在电脑互打时出现） -->
@@ -100,6 +100,7 @@
         <button type="button" class="btn auto-btn" id="btnAutoPause" hidden>暂停观战</button>
       </div>
 
+      <!-- 状态 + 力度：合成一张卡，信息从上到下一条线读完 -->
       <div class="card status-card">
         <div class="status-line">
           <span class="dot" id="turnDot"></span>
@@ -107,19 +108,18 @@
           <span class="clock" id="clockText">00:00</span>
         </div>
         <div class="sub" id="statusSub">向母球反方向拖动瞄准，松手击球</div>
-      </div>
-
-      <div class="card">
-        <div class="power-head"><span>力度</span><span id="powerVal">0%</span></div>
-        <div class="power-track"><div class="power-fill" id="powerFill"></div></div>
+        <div class="power-block">
+          <div class="power-head"><span>力度</span><span id="powerVal">0%</span></div>
+          <div class="power-track"><div class="power-fill" id="powerFill"></div></div>
+        </div>
       </div>
 
       <div class="card btn-card">
         <button type="button" class="btn" id="btnRestart">重新开局</button>
         <button type="button" class="btn" id="btnReplay" disabled>上一杆回放</button>
         <button type="button" class="btn" id="btnSound">音效：开</button>
-        <button type="button" class="btn danger" id="btnClear">清空战绩</button>
         <button type="button" class="btn" id="btnHelp">玩法</button>
+        <button type="button" class="btn danger wide" id="btnClear">清空战绩</button>
       </div>
 
       <div class="card">
