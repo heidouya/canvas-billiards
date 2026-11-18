@@ -44,25 +44,17 @@
   .stage{flex:1 1 auto;min-height:0;display:flex}
   .table-col{width:min(100%,calc((100dvh - 76px) * 1.8065));height:100%;gap:4px;margin:0 auto}
 
-  /* 顶部细带：球号条压扁成一行，右端一个「面板」按钮 */
+  /* 顶部细带：球号条压扁成一行，右端「全屏」「面板」两个小按钮
+     宽度不够时最先让位的是“纯色/花色”小字（颜色本身已经分得清），球号一颗都不许裁 */
   .rack-strip{flex:0 0 auto;gap:5px;align-items:center}
-  .group-panel{flex-direction:row;align-items:center;gap:7px;
-    padding:3px 8px;border-radius:9px}
-  .gp-head{flex-direction:row;align-items:baseline;gap:5px}
-  .gp-owner{font-size:11px;line-height:1.2}
-  .gp-tag{font-size:9px}
-  .chips{gap:3px;flex-wrap:nowrap;justify-content:flex-start;overflow:hidden}
-  .chip{width:15px;height:15px;font-size:8px}
-  .panel-toggle{display:flex}
-
-  /* 更窄的横屏（如 iPhone SE 竖屏机型的横屏 568×320）：再省一点，别让球号被裁掉 */
-  @media (max-width:639px){
-    .gp-tag{display:none}
-    .gp-owner{font-size:10px}
-    .chip{width:13px;height:13px;font-size:7px}
-    .chips{gap:2px}
-    .panel-toggle{padding:0 9px;font-size:11px}
-  }
+  .group-panel{flex-direction:row;align-items:center;gap:6px;
+    padding:3px 7px;border-radius:9px;overflow:hidden}
+  .gp-head{flex:0 0 auto;flex-direction:row;align-items:baseline;gap:4px;min-width:0}
+  .gp-owner{font-size:10px;line-height:1.2;white-space:nowrap}
+  .gp-tag{display:none}
+  .chips{gap:2px;flex-wrap:nowrap;justify-content:flex-start;overflow:hidden;min-width:0}
+  .chip{flex:0 0 auto;width:13px;height:13px;font-size:7px}
+  .panel-toggle{display:flex;padding:0 8px;font-size:11px;height:24px}
 
   /* 画布容器：宽度铺满 table-col，高度随之等比缩放 */
   .canvas-wrap{width:100%;padding:4px;border-radius:12px}

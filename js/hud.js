@@ -450,14 +450,16 @@ if (!fsEnabled) {
 // 三条路都挂上：媒体查询 change 在部分环境（iframe / 无头浏览器）不触发，
 // 所以再监听 resize 与 orientationchange 兜底，每次只做一次 matches 判断。
 const COMPACT_QUERY = '(orientation:landscape) and (max-height:560px) and (max-width:1000px)';
-function closePanelIfNotCompact() {
+function syncCompactLayout() {
   if (!window.matchMedia(COMPACT_QUERY).matches) closePanel();
+  // 横竖屏切换时球号条的归属文案要换一种写法（横屏省掉「· 剩 N」）
+  updateRackStrip();
 }
 const compactMq = window.matchMedia(COMPACT_QUERY);
-if (compactMq.addEventListener) compactMq.addEventListener('change', closePanelIfNotCompact);
-else if (compactMq.addListener) compactMq.addListener(closePanelIfNotCompact);
-window.addEventListener('resize', closePanelIfNotCompact);
-window.addEventListener('orientationchange', closePanelIfNotCompact);
+if (compactMq.addEventListener) compactMq.addEventListener('change', syncCompactLayout);
+else if (compactMq.addListener) compactMq.addListener(syncCompactLayout);
+window.addEventListener('resize', syncCompactLayout);
+window.addEventListener('orientationchange', syncCompactLayout);
 
 // 玩法卡片：右侧「玩法」按钮打开，「知道了」关掉
 el('btnStart').addEventListener('click', () => closeIntro());
@@ -549,9 +551,11 @@ function updateRackStrip() {
   for (const [kind, panelId, ownerId] of panels) {
     const owner = ownerOf(kind);
     const panel = el(panelId);
+    // 横屏细带空间紧：只写名字，「· 剩 N」省掉（剩几颗看小球淡出即可），避免把球号挤出可视区
+    const compact = window.matchMedia(COMPACT_QUERY).matches;
     el(ownerId).textContent = owner === null
       ? '球组待定'
-      : `${nameOf(owner)} · 剩 ${remainingOf(owner)}`;
+      : (compact ? nameOf(owner) : `${nameOf(owner)} · 剩 ${remainingOf(owner)}`);
     panel.classList.toggle('owner-0', owner === 0);
     panel.classList.toggle('owner-1', owner === 1);
     panel.classList.toggle('current', owner !== null && owner === state.turn);
