@@ -92,6 +92,13 @@ function updateIntroText() {
       ? '<b>规则</b>中式八球：犯规后自由球可放全台，开球需进球或 4 球碰库，开球进黑八摆回不判负'
       : '<b>规则</b>美式八球：犯规后手中球只能摆在开球区，开球进黑八判负';
   }
+  // 黑八那条也一样：中式不指定袋，美式要指定袋
+  const eightTip = el('eightTip');
+  if (eightTip) {
+    eightTip.innerHTML = state.ruleSet === 'cn'
+      ? '<b>黑八</b>清完自己的球组后打黑八，进任意一个袋都算赢'
+      : '<b>黑八</b>清完自己的球组后，先点一下袋口指定目标袋';
+  }
 }
 
 function showIntro() {
@@ -165,9 +172,12 @@ function updateStatus() {
       ? '电脑互打 · 双方都由电脑出杆'
       : '电脑回合，玩家操作已锁定';
   } else if (state.phase === 'aim' && isOnEight(p)) {
-    sub = state.calledPocket >= 0
-      ? `目标：黑八 · 已指定${POCKET_NAMES[state.calledPocket]}，拖拽瞄准`
-      : '目标：黑八 · 先点击袋口指定目标袋';
+    // 中式八球不指定袋：黑八进任意袋都算赢，只需正常瞄准
+    sub = state.ruleSet === 'cn'
+      ? '目标：黑八 · 进任意一个袋都算赢（中式不指定袋）· 反方向拖拽瞄准'
+      : (state.calledPocket >= 0
+        ? `目标：黑八 · 已指定${POCKET_NAMES[state.calledPocket]}，拖拽瞄准`
+        : '目标：黑八 · 先点击袋口指定目标袋');
   } else if (state.phase === 'aim' && !state.groups[p]) {
     sub = '目标：待定（开球后首个合法进球锁定球组）· 反方向拖拽瞄准';
   } else if (state.phase === 'aim') {

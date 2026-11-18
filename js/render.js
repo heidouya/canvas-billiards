@@ -184,9 +184,10 @@ function drawBallInHandArea() {
   }
 }
 
-// 黑八阶段：提示可选袋口，高亮已指定袋口
+// 黑八阶段：提示可选袋口，高亮已指定袋口（只有美式八球要指定袋，中式进哪都算，不提示）
 function drawPocketHint() {
   if (state.phase !== 'aim') return;
+  if (state.ruleSet !== 'us') return;
   if (!isOnEight(state.turn)) return;
   ctx.save();
   POCKETS.forEach((p, i) => {

@@ -127,8 +127,8 @@ function onPointerUp(e) {
 
   const p = pointerPos(e);
 
-  // 轻点袋口 → 指定黑八目标袋
-  if (!state.moved && isOnEight(state.turn)) {
+  // 轻点袋口 → 指定黑八目标袋（仅美式八球需要；中式任意袋都算，不用选）
+  if (state.ruleSet === 'us' && !state.moved && isOnEight(state.turn)) {
     const idx = pocketAt(p.x, p.y);
     if (idx >= 0) {
       state.calledPocket = idx;

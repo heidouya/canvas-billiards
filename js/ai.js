@@ -204,7 +204,8 @@ function aiTakeTurn(p) {
   const angle = Math.atan2(plan.dir.y, plan.dir.x) + err;
   state.aimDir = { x: Math.cos(angle), y: Math.sin(angle) };
 
-  if (isOnEight(p)) {
+  if (state.ruleSet === 'us' && isOnEight(p)) {
+    // 只有美式八球需要指定袋；中式八球进任意袋都算赢，不用选
     state.calledPocket = plan.pocket >= 0 ? plan.pocket : nearestPocketToEight();
   }
 

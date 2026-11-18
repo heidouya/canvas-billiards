@@ -7,8 +7,8 @@ function shoot(power) {
   const cue = cueBall();
   if (!cue || !cue.active) return;
 
-  // 黑八阶段必须指定袋口
-  if (isOnEight(state.turn) && state.calledPocket < 0) {
+  // 美式八球：黑八阶段必须先指定袋口（中式八球不指定袋，任意袋打进都算赢）
+  if (state.ruleSet === 'us' && isOnEight(state.turn) && state.calledPocket < 0) {
     toast('黑八阶段请先点击袋口指定目标袋');
     state.power = 0;
     updatePowerUI();
@@ -135,7 +135,8 @@ function endShot() {
       loseReason = '还没清完自己的球就打进黑八';
     } else if (shot.cuePotted) {
       loseReason = '打进黑八的同时母球落袋';
-    } else if (called >= 0 && shot.eightPocket !== called) {
+    } else if (state.ruleSet === 'us' && called >= 0 && shot.eightPocket !== called) {
+      // 只有美式八球要求打进指定袋；中式八球不指定袋，进哪个都算赢
       loseReason = `黑八打进了${POCKET_NAMES[shot.eightPocket]}，而不是指定的${POCKET_NAMES[called]}`;
     }
 
