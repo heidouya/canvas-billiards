@@ -448,28 +448,25 @@ if (!fsEnabled) {
 }
 
 /* ---------- 手机竖屏：提醒「横屏 + 全屏」 ----------
-   只在触摸设备 + 竖屏时出现一条不遮台面的小条；点「知道了」就记下来，之后不再打扰 */
-const ROTATE_TIP_KEY = 'eightball.rotateTip.v1';
+   每次打开页面都会提示一次（不写 localStorage，刷新/重进照样出现）；
+   点「知道了」或这次真的把手机横过来了，就只在“本次打开”里不再出现 */
 const rotateTip = el('rotateTip');
 const isTouchDevice = () => (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
 const PORTRAIT_QUERY = '(orientation:portrait) and (max-width:1000px)';
-
-function markRotateTipSeen() {
-  try { localStorage.setItem(ROTATE_TIP_KEY, '1'); } catch (e) { /* 隐私模式忽略 */ }
-}
+let rotateTipSeen = false;   // 本次打开页面内：已点「知道了」或已经横屏打过
 
 function syncRotateTip() {
   rotateTip.hidden = true;
-  if (!isTouchDevice()) return;                       // 桌面端永远不提示
-  if (!window.matchMedia(PORTRAIT_QUERY).matches) {   // 转过屏就说明已经会横屏打了，以后不再打扰
-    markRotateTipSeen();
+  if (rotateTipSeen || !isTouchDevice()) return;      // 桌面端永远不提示
+  if (!window.matchMedia(PORTRAIT_QUERY).matches) {
+    rotateTipSeen = true;                              // 转过屏说明已经会横屏打了，本次不再打扰
     return;
   }
-  rotateTip.hidden = localStorage.getItem(ROTATE_TIP_KEY) === '1';
+  rotateTip.hidden = false;
 }
 
 el('rotateTipOk').addEventListener('click', () => {
-  markRotateTipSeen();
+  rotateTipSeen = true;
   rotateTip.hidden = true;
 });
 
