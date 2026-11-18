@@ -14,6 +14,7 @@ function frame(now) {
 }
 
 function update(dt) {
+  updateClockUI();          // 状态卡上的本局计时
   if (state.phase === 'shooting') {
     stepPhysics(dt);
     tickRecording(dt);

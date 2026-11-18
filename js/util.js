@@ -24,3 +24,28 @@ function shade(hex, k) {
   else { r *= 1 + k; g *= 1 + k; b *= 1 + k; }
   return `rgb(${r | 0},${g | 0},${b | 0})`;
 }
+
+// 对局计时：毫秒 → 「03:15」这种表盘样式
+function formatClock(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  const ss = String(s).padStart(2, '0');
+  if (m >= 60) {
+    return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}:${ss}`;
+  }
+  return `${String(m).padStart(2, '0')}:${ss}`;
+}
+
+// 对局计时：毫秒 → 「3 分 12 秒」这种人话
+function formatDurationText(ms) {
+  const total = Math.max(0, Math.round(ms / 1000));
+  if (total < 60) return `${total} 秒`;
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  if (m >= 60) {
+    const h = Math.floor(m / 60);
+    return `${h} 小时 ${m % 60} 分`;
+  }
+  return s ? `${m} 分 ${s} 秒` : `${m} 分`;
+}

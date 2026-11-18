@@ -29,5 +29,7 @@ const state = {
   gameOver: false,
   winner: null,
   replayFrames: null,   // 当前一杆的回放帧
-  lastFoul: null        // 最近一次犯规的文字（谁犯规 + 原因），下一杆开始时清空
+  lastFoul: null,       // 最近一次犯规的文字（谁犯规 + 原因），下一杆开始时清空
+  clockMs: 0,           // 本局已计时长（毫秒，不含暂停）
+  clockSince: 0         // 本段计时的起点时间戳，0 表示计时暂停中
 };

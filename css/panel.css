@@ -8,6 +8,10 @@
 
 .status-card{display:flex;flex-direction:column;gap:6px}
 .status-line{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
+/* 本局计时：靠右显示，秒数跳变时不抖 */
+.clock{margin-left:auto;flex:0 0 auto;font-size:12px;font-weight:600;letter-spacing:.6px;
+  font-variant-numeric:tabular-nums;color:#8fa7bd}
+.clock[data-paused="1"]{color:#f0a85e}
 .dot{width:9px;height:9px;border-radius:50%;background:#37d08b;box-shadow:0 0 10px rgba(55,208,139,.8);flex:0 0 auto}
 .dot.ai{background:#f2a63d;box-shadow:0 0 10px rgba(242,166,61,.8)}
 .dot.warn{background:#ef5d5d;box-shadow:0 0 10px rgba(239,93,93,.8)}

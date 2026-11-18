@@ -4,6 +4,7 @@
  * 10. 胜负判定与本地战绩
  * ============================================================ */
 function endGame(winner, reason) {
+  stopClock();                 // 本局结束，用时定格
   state.gameOver = true;
   state.winner = winner;
   state.phase = 'gameover';
@@ -14,7 +15,9 @@ function endGame(winner, reason) {
   el('btnReplay').disabled = true;
   saveResult(winner);
   updateStatus();
-  showModal(`${nameOf(winner)} 获胜`, reason, [
+  updateClockUI();
+  const spent = formatDurationText(state.clockMs);
+  showModal(`${nameOf(winner)} 获胜`, `${reason}　本局用时 ${spent}。`, [
     { label: '一键重新开局', cls: 'primary', onClick: () => resetGame() }
   ]);
 }

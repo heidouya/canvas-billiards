@@ -9,6 +9,8 @@ const statusSubEl = el('statusSub');
 const turnDotEl = el('turnDot');
 const powerFillEl = el('powerFill');
 const powerValEl = el('powerVal');
+const clockTextEl = el('clockText');
+let lastClockText = '';
 const toastEl = el('toast');
 const modalEl = el('modal');
 const modalTitleEl = el('modalTitle');
@@ -118,6 +120,35 @@ function updateStatus() {
   updateRackStrip();
 }
 
+/* ============================================================
+ * 14.2 本局计时
+ * 用开始时间戳 + 累计时长表示，支持暂停（电脑互打暂停时停表）
+ * ============================================================ */
+function startClock() {
+  if (state.clockSince) return;
+  state.clockSince = performance.now();
+}
+
+function stopClock() {
+  if (!state.clockSince) return;
+  state.clockMs += performance.now() - state.clockSince;
+  state.clockSince = 0;
+}
+
+// 当前用时（含正在跑的这一段）
+function elapsedMs() {
+  return state.clockMs + (state.clockSince ? performance.now() - state.clockSince : 0);
+}
+
+// 把毫秒写进状态卡右上角的表盘，秒数没变就不重绘
+function updateClockUI() {
+  const txt = formatClock(elapsedMs());
+  if (txt !== lastClockText) {
+    lastClockText = txt;
+    clockTextEl.textContent = txt;
+  }
+}
+
 function resetGame() {
   setupBalls();
   state.turn = 0;
@@ -135,6 +166,10 @@ function resetGame() {
   state.lastFoul = null;
   state.aimDir = { x: 1, y: 0 };
   state.autoPaused = false;   // 重新开局默认继续自动进行
+  // 本局计时归零并重新起表
+  state.clockMs = 0;
+  state.clockSince = 0;
+  lastClockText = '';
   physAcc = 0;
   activePointer = null;
   clearTimeout(aiTimer);
@@ -145,8 +180,10 @@ function resetGame() {
   el('btnReplay').disabled = true;
   hideModal();
   updatePauseBtn();
+  startClock();
   updateStatus();
   updatePowerUI();
+  updateClockUI();
   maybeStartAI();            // 电脑互打时由电脑直接开球
 }
 
@@ -192,6 +229,7 @@ function updatePauseBtn() {
   const btn = el('btnAutoPause');
   btn.textContent = state.autoPaused ? '继续观战' : '暂停观战';
   btn.classList.toggle('primary', state.autoPaused);
+  clockTextEl.dataset.paused = state.autoPaused ? '1' : '0';
 }
 
 el('btnAutoPause').addEventListener('click', () => {
@@ -199,6 +237,7 @@ el('btnAutoPause').addEventListener('click', () => {
   state.autoPaused = !state.autoPaused;
   updatePauseBtn();
   if (state.autoPaused) {
+    stopClock();             // 暂停观战 = 停表，不然这局用时会被"看别人打"的时间带偏
     // 停在思考中的一杆也要一起断掉，避免暂停后还冷不丁出一杆
     clearTimeout(aiTimer);
     clearTimeout(aiShootTimer);
@@ -207,9 +246,12 @@ el('btnAutoPause').addEventListener('click', () => {
     state.locked = false;
     updatePowerUI();
     updateStatus();
+    updateClockUI();
     toast('已暂停，点「继续观战」接着打');
   } else {
+    startClock();
     updateStatus();
+    updateClockUI();
     maybeStartAI();
     toast('继续观战');
   }
