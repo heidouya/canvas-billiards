@@ -38,9 +38,32 @@
 .chip.out{opacity:.22;filter:grayscale(.85)}
 
 /* 定组后按归属着色：玩家 1 绿、玩家 2 蓝 */
-.group-panel.owner-0{border-color:rgba(55,208,139,.55)}
+.group-panel.owner-0{border-color:rgba(55,208,139,.45)}
 .group-panel.owner-0 .gp-owner{color:#37d08b}
-.group-panel.owner-1{border-color:rgba(88,166,255,.55)}
+.group-panel.owner-1{border-color:rgba(88,166,255,.45)}
 .group-panel.owner-1 .gp-owner{color:#58a6ff}
-/* 当前击球方的球组更亮一点 */
-.group-panel.current{background:linear-gradient(180deg,#16232f,#101a24);box-shadow:0 0 14px rgba(55,208,139,.12)}
+
+/* 当前击球方：外圈加粗 + 发光，一眼看出轮到谁（用 box-shadow 画粗边，不挤动布局） */
+.group-panel.current{
+  background:linear-gradient(180deg,#1b2a38,#121c26);
+  border-color:#3f5f7d;
+  box-shadow:0 0 0 2px rgba(120,160,200,.45),0 0 20px rgba(88,166,255,.22);
+}
+.group-panel.current .gp-owner{color:#dbe9f7}
+/* 归属已知时，粗边和光晕用归属色：绿=玩家 1、蓝=玩家 2 */
+.group-panel.current.owner-0{
+  border-color:#37d08b;
+  box-shadow:0 0 0 2px rgba(55,208,139,.55),0 0 22px rgba(55,208,139,.35);
+}
+.group-panel.current.owner-0 .gp-owner{color:#5ce3a6}
+.group-panel.current.owner-1{
+  border-color:#58a6ff;
+  box-shadow:0 0 0 2px rgba(88,166,255,.55),0 0 22px rgba(88,166,255,.35);
+}
+.group-panel.current.owner-1 .gp-owner{color:#8ac6ff}
+/* 轮到谁，就在名字前面点一颗同色小圆点 */
+.group-panel.current .gp-owner::before{
+  content:'';display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:currentColor;margin-right:6px;vertical-align:1px;
+  box-shadow:0 0 8px currentColor;
+}
