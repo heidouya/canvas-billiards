@@ -245,7 +245,8 @@ function resetGame() {
     stopClock();
   } else {
     startClock();
-  }  updateStatus();
+  }
+  updateStatus();
   updatePowerUI();
   updateClockUI();
   maybeStartAI();            // 电脑互打时由电脑直接开球
@@ -286,6 +287,31 @@ el('levelSeg0').addEventListener('click', e => {
   [...el('levelSeg0').children].forEach(b => b.classList.toggle('active', b === btn));
   resetGame();
   toast('电脑 1 难度：' + btn.textContent);
+});
+
+// 辅助线档位：完整 / 短线 / 关闭（存 localStorage，刷新记得住）
+const AIM_KEY = 'eightball.aim.v1';
+
+function loadAimMode() {
+  try {
+    const v = localStorage.getItem(AIM_KEY);
+    return (v === 'full' || v === 'short' || v === 'off') ? v : 'full';
+  } catch (e) { return 'full'; }
+}
+
+function applyAimMode(mode) {
+  state.aimMode = mode;
+  [...el('aimSeg').children].forEach(b => b.classList.toggle('active', b.dataset.aim === mode));
+}
+
+el('aimSeg').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn || btn.dataset.aim === state.aimMode) return;
+  applyAimMode(btn.dataset.aim);
+  try { localStorage.setItem(AIM_KEY, state.aimMode); } catch (e) { /* 忽略 */ }
+  toast(state.aimMode === 'full' ? '辅助线：完整（含碰撞点与终点箭头）'
+    : state.aimMode === 'short' ? '辅助线：短线（只提示方向，不给结果）'
+      : '辅助线已关闭，靠球杆判断角度');
 });
 
 // 电脑互打：暂停 / 继续

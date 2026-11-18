@@ -35,6 +35,7 @@ function raycastAim(from, dir, maxDist) {
 
 function drawAim() {
   if (state.phase !== 'aim' || state.modalOpen) return;
+  if (state.aimMode === 'off') return;      // 关闭档：什么都不画，只靠球杆判断方向
   const cue = cueBall();
   if (!cue || !cue.active) return;
 
@@ -42,42 +43,55 @@ function drawAim() {
   ctx.globalAlpha = state.aiming ? 1 : 0.5;
 
   const dir = state.aimDir;
-  const len = raycastAim(cue, dir, 1400);
+  const hitLen = raycastAim(cue, dir, 1400);
+  // 「短线」档只画母球附近一小段方向，不给碰撞点和终点
+  const len = state.aimMode === 'short' ? Math.min(hitLen, AIM_SHORT_LEN) : hitLen;
   const ex = cue.x + dir.x * len;
   const ey = cue.y + dir.y * len;
+  const sx = cue.x + dir.x * (BALL_R + 2);
+  const sy = cue.y + dir.y * (BALL_R + 2);
 
   // 虚线
   ctx.save();
   ctx.setLineDash([9, 7]);
   ctx.lineWidth = 2;
-  ctx.strokeStyle = 'rgba(255,255,255,.62)';
+  if (state.aimMode === 'short') {
+    // 短线末端渐隐，看起来像"方向提示"而不是"结果提示"
+    const g = ctx.createLinearGradient(sx, sy, ex, ey);
+    g.addColorStop(0, 'rgba(255,255,255,.8)');
+    g.addColorStop(1, 'rgba(255,255,255,.22)');
+    ctx.strokeStyle = g;
+  } else {
+    ctx.strokeStyle = 'rgba(255,255,255,.62)';
+  }
   ctx.beginPath();
-  ctx.moveTo(cue.x + dir.x * (BALL_R + 2), cue.y + dir.y * (BALL_R + 2));
+  ctx.moveTo(sx, sy);
   ctx.lineTo(ex, ey);
   ctx.stroke();
   ctx.restore();
 
-  // 起点光点
-  const rg = ctx.createRadialGradient(cue.x, cue.y, 2, cue.x, cue.y, BALL_R * 2.4);
-  rg.addColorStop(0, 'rgba(255,255,255,.42)');
-  rg.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = rg;
-  ctx.beginPath();
-  ctx.arc(cue.x, cue.y, BALL_R * 2.4, 0, TAU);
-  ctx.fill();
+  // 起点光点、终点箭头只在「完整」档出现（这些是"结果信息"）
+  if (state.aimMode === 'full') {
+    const rg = ctx.createRadialGradient(cue.x, cue.y, 2, cue.x, cue.y, BALL_R * 2.4);
+    rg.addColorStop(0, 'rgba(255,255,255,.42)');
+    rg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.arc(cue.x, cue.y, BALL_R * 2.4, 0, TAU);
+    ctx.fill();
 
-  // 终点小箭头
-  ctx.save();
-  ctx.translate(ex, ey);
-  ctx.rotate(Math.atan2(dir.y, dir.x));
-  ctx.fillStyle = 'rgba(255,255,255,.5)';
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(-8, -4);
-  ctx.lineTo(-8, 4);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
+    ctx.save();
+    ctx.translate(ex, ey);
+    ctx.rotate(Math.atan2(dir.y, dir.x));
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-8, -4);
+    ctx.lineTo(-8, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
 
   ctx.restore();
 }

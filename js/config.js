@@ -51,6 +51,7 @@ const STOP_SPEED = 7;         // 低于该速度视为静止
 const CUSHION_RESTI = 0.84;   // 库边弹性
 const BALL_RESTI = 0.96;      // 球球弹性
 const MAX_DRAG = 250;         // 拖拽多远算满力度
+const AIM_SHORT_LEN = 132;    // 辅助线「短线」档：只画母球方向这么一小段（逻辑像素）
 
 // 1-7 纯色 / 9-15 花色（与 1-7 同色系）
 const BALL_COLORS = {
