@@ -402,8 +402,18 @@ el('panelScrim').addEventListener('click', closePanel);
 document.querySelector('.panel').addEventListener('click', e => {
   if (e.target.closest('button')) closePanel();
 });
-// 转回竖屏时收起抽屉，别让它在竖屏里留下状态
-window.addEventListener('orientationchange', closePanel);
+// 退出横屏全屏布局（转回竖屏、窗口变大变高）时收起抽屉，别让它留下状态。
+// 三条路都挂上：媒体查询 change 在部分环境（iframe / 无头浏览器）不触发，
+// 所以再监听 resize 与 orientationchange 兜底，每次只做一次 matches 判断。
+const COMPACT_QUERY = '(orientation:landscape) and (max-height:560px) and (max-width:1000px)';
+function closePanelIfNotCompact() {
+  if (!window.matchMedia(COMPACT_QUERY).matches) closePanel();
+}
+const compactMq = window.matchMedia(COMPACT_QUERY);
+if (compactMq.addEventListener) compactMq.addEventListener('change', closePanelIfNotCompact);
+else if (compactMq.addListener) compactMq.addListener(closePanelIfNotCompact);
+window.addEventListener('resize', closePanelIfNotCompact);
+window.addEventListener('orientationchange', closePanelIfNotCompact);
 
 // 玩法卡片：右侧「玩法」按钮打开，「知道了」关掉
 el('btnStart').addEventListener('click', () => closeIntro());
