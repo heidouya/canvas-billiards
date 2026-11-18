@@ -46,6 +46,15 @@
           <button type="button" class="panel-toggle" id="btnPanel" aria-label="打开设置面板">面板</button>
         </div>
 
+        <!-- 手机竖屏第一次进来时的轻提示：横屏 / 全屏打得更顺手，点「知道了」之后不再打扰 -->
+        <div class="rotate-tip" id="rotateTip" hidden>
+          <div class="rt-text">
+            <span class="rt-title">横屏 + 全屏，打起来更顺手</span>
+            <span class="rt-desc">把手机横过来，台面能铺满屏幕，瞄准和看袋口都清楚</span>
+          </div>
+          <button type="button" class="rt-btn" id="rotateTipOk">知道了</button>
+        </div>
+
         <div class="canvas-wrap">
           <canvas id="table"></canvas>
           <div id="toast"></div>

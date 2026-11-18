@@ -97,3 +97,25 @@
   /* 抽屉里一行一个按钮更好点 */
   .btn{flex:1 1 100%}
 }
+
+/* ============================================================
+   手机竖屏轻提示：提醒横屏 + 全屏更好打
+   —— 只做一条不遮台面的小条，点「知道了」后写进 localStorage 不再出现
+   ============================================================ */
+.rotate-tip{display:none}
+@media (orientation:portrait) and (max-width:1000px){
+  .rotate-tip:not([hidden]){
+    display:flex;align-items:center;gap:10px;
+    margin:0 2px 6px;padding:8px 10px;border-radius:10px;
+    border:1px solid #2a4257;background:linear-gradient(180deg,#16222f,#111a25);
+    box-shadow:0 6px 18px rgba(0,0,0,.35);
+  }
+  .rotate-tip .rt-text{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .rotate-tip .rt-title{font-size:13px;font-weight:600;color:#e8f2fa}
+  .rotate-tip .rt-desc{font-size:11px;line-height:1.35;color:#93a8bb}
+  .rotate-tip .rt-btn{
+    flex:0 0 auto;padding:6px 12px;border-radius:8px;cursor:pointer;
+    border:1px solid #31506b;background:#1d2c3c;color:#d7e6f2;font-size:12px;
+  }
+  .rotate-tip .rt-btn:hover{background:#24384c}
+}

@@ -446,6 +446,39 @@ if (!fsEnabled) {
   document.addEventListener('fullscreenchange', onFsChange);
   document.addEventListener('webkitfullscreenchange', onFsChange);
 }
+
+/* ---------- 手机竖屏：提醒「横屏 + 全屏」 ----------
+   只在触摸设备 + 竖屏时出现一条不遮台面的小条；点「知道了」就记下来，之后不再打扰 */
+const ROTATE_TIP_KEY = 'eightball.rotateTip.v1';
+const rotateTip = el('rotateTip');
+const isTouchDevice = () => (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
+const PORTRAIT_QUERY = '(orientation:portrait) and (max-width:1000px)';
+
+function markRotateTipSeen() {
+  try { localStorage.setItem(ROTATE_TIP_KEY, '1'); } catch (e) { /* 隐私模式忽略 */ }
+}
+
+function syncRotateTip() {
+  rotateTip.hidden = true;
+  if (!isTouchDevice()) return;                       // 桌面端永远不提示
+  if (!window.matchMedia(PORTRAIT_QUERY).matches) {   // 转过屏就说明已经会横屏打了，以后不再打扰
+    markRotateTipSeen();
+    return;
+  }
+  rotateTip.hidden = localStorage.getItem(ROTATE_TIP_KEY) === '1';
+}
+
+el('rotateTipOk').addEventListener('click', () => {
+  markRotateTipSeen();
+  rotateTip.hidden = true;
+});
+
+syncRotateTip();
+window.addEventListener('resize', syncRotateTip);
+window.addEventListener('orientationchange', syncRotateTip);
+const portraitMq = window.matchMedia(PORTRAIT_QUERY);
+if (portraitMq.addEventListener) portraitMq.addEventListener('change', syncRotateTip);
+else if (portraitMq.addListener) portraitMq.addListener(syncRotateTip);
 // 退出横屏全屏布局（转回竖屏、窗口变大变高）时收起抽屉，别让它留下状态。
 // 三条路都挂上：媒体查询 change 在部分环境（iframe / 无头浏览器）不触发，
 // 所以再监听 resize 与 orientationchange 兜底，每次只做一次 matches 判断。
