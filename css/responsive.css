@@ -24,7 +24,84 @@
   .chip{width:18px;height:18px;font-size:9px}
   .chips{gap:3px;justify-content:flex-start}
 }
-@media (max-height:520px) and (orientation:landscape){
-  .main{flex-direction:row}
-  .panel{width:260px;flex:0 0 260px}
+
+/* ============================================================
+   手机横屏：全屏台面（只留必要信息），面板收进右侧抽屉
+   —— 竖屏保持上面那套「台面在上、面板在下」的布局不变
+   ============================================================ */
+@media (orientation:landscape) and (max-height:560px) and (max-width:1000px){
+  html,body{height:100%;overflow:hidden}
+  body{padding:0;background:#05080d}
+  .app{height:100dvh;padding:0 6px;gap:0}
+
+  /* 页头收起来，把纵向空间全留给台面 */
+  header{display:none}
+  .main{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
+    gap:4px;padding:4px 0 36px}
+
+  /* 台面：宽度由可用高度反推（1120/620 ≈ 1.8065），等比不变形；
+     多出来的两侧留黑，手指也不容易挡住球 */
+  .stage{flex:1 1 auto;min-height:0;display:flex}
+  .table-col{width:min(100%,calc((100dvh - 76px) * 1.8065));height:100%;gap:4px;margin:0 auto}
+
+  /* 顶部细带：球号条压扁成一行，右端一个「面板」按钮 */
+  .rack-strip{flex:0 0 auto;gap:5px;align-items:center}
+  .group-panel{flex-direction:row;align-items:center;gap:7px;
+    padding:3px 8px;border-radius:9px}
+  .gp-head{flex-direction:row;align-items:baseline;gap:5px}
+  .gp-owner{font-size:11px;line-height:1.2}
+  .gp-tag{font-size:9px}
+  .chips{gap:3px;flex-wrap:nowrap;justify-content:flex-start;overflow:hidden}
+  .chip{width:15px;height:15px;font-size:8px}
+  .panel-toggle{display:flex}
+
+  /* 更窄的横屏（如 iPhone SE 竖屏机型的横屏 568×320）：再省一点，别让球号被裁掉 */
+  @media (max-width:639px){
+    .gp-tag{display:none}
+    .gp-owner{font-size:10px}
+    .chip{width:13px;height:13px;font-size:7px}
+    .chips{gap:2px}
+    .panel-toggle{padding:0 9px;font-size:11px}
+  }
+
+  /* 画布容器：宽度铺满 table-col，高度随之等比缩放 */
+  .canvas-wrap{width:100%;padding:4px;border-radius:12px}
+
+  /* 底部状态条：一行读完「轮到谁 + 力度」，固定不占台面高度 */
+  .status-card{
+    position:fixed;left:0;right:0;bottom:0;z-index:39;
+    flex-direction:row;align-items:center;gap:10px;
+    padding:5px 10px calc(5px + env(safe-area-inset-bottom,0px));
+    border-radius:0;border-left:0;border-right:0;border-bottom:0;
+    background:rgba(9,14,20,.97);
+    box-shadow:0 -8px 22px rgba(0,0,0,.45);
+    transition:opacity .16s;
+  }
+  .status-card .sub{display:none}
+  .status-card .status-line{flex:0 1 auto;min-width:0;font-size:13px;gap:6px}
+  .status-card .status-line #statusText{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .status-card .clock{font-size:11px;margin-left:8px}
+  .status-card .power-block{flex:1 1 auto;min-width:0;margin:0;padding:0;border-top:0;
+    display:flex;align-items:center;gap:8px}
+  .status-card .power-head{margin:0;flex:0 0 auto;gap:6px;font-size:11px}
+  .status-card .power-track{flex:1 1 auto;height:9px}
+
+  /* 面板：右侧抽屉，点「面板」滑出，点遮罩或选完即收起 */
+  .panel{
+    position:fixed;top:0;right:calc(-1 * min(340px,88vw));z-index:41;
+    width:min(340px,88vw);height:100dvh;max-height:100dvh;
+    overflow-y:auto;overscroll-behavior:contain;
+    padding:10px max(10px,env(safe-area-inset-right,0px)) 58px 10px;
+    background:#0a1119;border-left:1px solid #1b2837;border-radius:0;
+    transition:right .22s ease;
+  }
+  body.panel-open .panel{right:0}
+  body.panel-open .panel-scrim{
+    display:block;position:fixed;inset:0;z-index:40;background:rgba(3,7,12,.66);
+  }
+  /* 抽屉展开时先藏起底部状态条，免得挡住战绩 */
+  body.panel-open .status-card{opacity:0;pointer-events:none}
+
+  /* 抽屉里一行一个按钮更好点 */
+  .btn{flex:1 1 100%}
 }

@@ -41,6 +41,8 @@
             </div>
             <div class="chips" id="chipsStripe"></div>
           </div>
+          <!-- 手机横屏全屏打球时，面板收进右侧抽屉，这里放一个唤出按钮 -->
+          <button type="button" class="panel-toggle" id="btnPanel" aria-label="打开设置面板">面板</button>
         </div>
 
         <div class="canvas-wrap">
@@ -128,6 +130,9 @@
       </div>
     </aside>
   </div>
+
+  <!-- 抽屉遮罩：只在手机横屏、面板弹出时显示，点一下收起 -->
+  <div class="panel-scrim" id="panelScrim"></div>
 </div>
 
 <div class="modal" id="modal">

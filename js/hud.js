@@ -388,6 +388,23 @@ el('btnRestart').addEventListener('click', () => {
   toast('重新开局');
 });
 
+/* ---------- 手机横屏：设置面板做成右侧抽屉 ---------- */
+// 竖屏/桌面下面板是常驻的，这里的开合只在横屏全屏台面布局下有意义
+function openPanel() {
+  document.body.classList.add('panel-open');
+}
+function closePanel() {
+  document.body.classList.remove('panel-open');
+}
+el('btnPanel').addEventListener('click', openPanel);
+el('panelScrim').addEventListener('click', closePanel);
+// 抽屉里点了任何按钮（切规则/模式/难度、重开、回放…）就收起，把台面还给玩家
+document.querySelector('.panel').addEventListener('click', e => {
+  if (e.target.closest('button')) closePanel();
+});
+// 转回竖屏时收起抽屉，别让它在竖屏里留下状态
+window.addEventListener('orientationchange', closePanel);
+
 // 玩法卡片：右侧「玩法」按钮打开，「知道了」关掉
 el('btnStart').addEventListener('click', () => closeIntro());
 el('btnHelp').addEventListener('click', () => showIntro());
