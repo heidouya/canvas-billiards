@@ -179,7 +179,6 @@ function endShot() {
   }
 
   const potted = shot.potted.filter(p => p.id !== 8);
-  const pottedAny = shot.potted.length > 0;
 
   // ---------- 3) 球组归属（开球/首次进球 → 锁定球组） ----------
   if (!foul && !state.groups[me] && potted.length) {
@@ -229,12 +228,21 @@ function endShot() {
     return;
   }
 
-  if (pottedAny) {
-    // 进球继续击球
+  // 只有打进"自己组"的目标球才续杆：
+  // 未定组时本杆的首个合法进球会锁定球组，算自己的球；已定组时对方的球不算
+  const myKind = state.groups[me];
+  const ownPotted = myKind ? potted.filter(p => ballKind(p.id) === myKind) : potted;
+
+  if (ownPotted.length) {
+    // 进了自己的球：继续击球
     state.turn = me;
     updateStatus();
     maybeStartAI();
   } else {
+    // 没进自己的球（只进了对方的球不算犯规，但不续杆）或没进球：换手
+    if (!foul && potted.length) {
+      toast(`${nameOf(me)} 只打进了对方的球，换 ${nameOf(opp)} 击球`);
+    }
     state.turn = opp;
     updateStatus();
     maybeStartAI();
