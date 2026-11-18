@@ -54,7 +54,7 @@ const ROLL_DECEL = 200;       // 滚动摩擦减速度
 const STOP_SPEED = 7;         // 低于该速度视为静止
 const CUSHION_RESTI = 0.84;   // 库边弹性
 const BALL_RESTI = 0.96;      // 球球弹性
-const MAX_DRAG = 84;          // 拖拽多远算满力度（原 250，改成原来的 1/3：少拖一点就满力）
+const MAX_DRAG = 50;          // 拖拽多远算满力度（原 250，改成原来的 1/5：很小一段就满力）
 const AIM_SHORT_LEN = 132;    // 辅助线「短线」档：只画母球方向这么一小段（逻辑像素）
 
 // 1-7 纯色 / 9-15 花色（与 1-7 同色系）
