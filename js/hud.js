@@ -402,6 +402,50 @@ el('panelScrim').addEventListener('click', closePanel);
 document.querySelector('.panel').addEventListener('click', e => {
   if (e.target.closest('button')) closePanel();
 });
+
+/* ---------- 手机横屏：全屏按钮 ---------- */
+// 只用浏览器原生 fullscreen：不支持的（iPhone Safari、部分内置浏览器）直接不显示按钮，
+// 免得点了没反应；支持的情况下按钮文案跟着 fullscreenchange 在「全屏 / 退出全屏」之间同步
+const btnFull = el('btnFull');
+const fsEnabled = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+
+function updateFullBtn() {
+  btnFull.textContent = fsElement() ? '退出全屏' : '全屏';
+}
+
+async function toggleFullscreen() {
+  closePanel(); // 进全屏前先收起抽屉，别把面板一起拉成全屏
+  try {
+    if (fsElement()) {
+      if (document.exitFullscreen) await document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    } else {
+      const root = document.documentElement;
+      if (root.requestFullscreen) await root.requestFullscreen({ navigationUI: 'hide' });
+      else if (root.webkitRequestFullscreen) root.webkitRequestFullscreen();
+    }
+  } catch (err) {
+    // 被浏览器拒绝（例如不是用户手势触发）时给一句提示，不让按钮变成“死键”
+    toast('这个浏览器不允许进入全屏');
+  }
+}
+
+if (!fsEnabled) {
+  btnFull.hidden = true;
+} else {
+  btnFull.hidden = false;
+  btnFull.addEventListener('click', toggleFullscreen);
+  updateFullBtn();
+  // 进/出全屏后视图尺寸变了：重算画布位图并重绘，同时同步按钮文案
+  const onFsChange = () => {
+    updateFullBtn();
+    resizeCanvas();
+    render();
+  };
+  document.addEventListener('fullscreenchange', onFsChange);
+  document.addEventListener('webkitfullscreenchange', onFsChange);
+}
 // 退出横屏全屏布局（转回竖屏、窗口变大变高）时收起抽屉，别让它留下状态。
 // 三条路都挂上：媒体查询 change 在部分环境（iframe / 无头浏览器）不触发，
 // 所以再监听 resize 与 orientationchange 兜底，每次只做一次 matches 判断。

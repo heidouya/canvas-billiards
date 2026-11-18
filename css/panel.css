@@ -65,6 +65,8 @@
 }
 .panel-toggle:hover{background:#1d2c3c;border-color:#31506b}
 .panel-toggle:active{transform:scale(.97)}
+/* 全屏按钮：浏览器不支持 Element.requestFullscreen 时由 JS 打上 hidden，这里要压过上面的 display:flex */
+.panel-toggle[hidden]{display:none}
 /* 抽屉遮罩：默认不存在，横屏面板展开时才覆盖台面 */
 .panel-scrim{display:none}
 
