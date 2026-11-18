@@ -133,9 +133,3 @@ ai.js        AI 回合选球 → 规划 → 带误差出杆 → 释放输入锁
 电脑互打走的是同一条链路，区别只在 `state.turn` 轮到哪一方都算电脑：`ai.js` 的 `maybeStartAI()` 会按 `isAIPlayer(turn)` 排给对应那一方，`endShot()` 结算完再接着排下一杆。
 
 常用可调参数都在 `js/config.js`：`VIEW_W/VIEW_H`（逻辑画布 1120×620）、`TABLE`（台面 1000×500）、`BALL_R`（球半径）、`MAX_SPEED` / `ROLL_DECEL` / `STOP_SPEED`（运动手感）、`POCKET_R` / `CAPTURE_R` / `RAIL_GAP`（袋口宽容度）、`MAX_DRAG`（拖拽满力距离）。
-
-## 设计取舍与边界
-
-- **单文件还是分文件**：早期需求里"CSS / JS 分文件"与"所有代码写在一个 html"冲突，先按单文件实现，后来改成分文件；现在 `index.html` 只留结构与外链，仍然是双击即玩，不需要构建或本地服务器。
-- **手中球限制在开球区**：按需求原文执行。想改成全台任意摆放，把 `js/rules.js` 里 `cueFits()` 的 `state.ballInHand` 边界判断放开即可。
-- **刻意不做**：联机对战、碰撞后轨迹预测、整局长时间回放、分数导出、贴库球 / 推杆等职业判罚、双指缩放旋转手势。
