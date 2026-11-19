@@ -172,14 +172,16 @@ function drawBallInHandArea() {
   }
   ctx.restore();
 
-  // 母球周围的脉冲圈，提示“可拖动”
+  // 母球周围的一圈提示环，提示“可以按住拖动摆位”
+  // 慢（2.8 秒一轮）而淡：淡入淡出都走正弦，没有硬起硬停，看起来像轻轻呼一口气
   const cue = cueBall();
   if (cue && cue.active) {
-    const t = (performance.now() / 900) % 1;
+    const t = (performance.now() % 2800) / 2800;
+    const a = 0.26 * Math.sin(Math.PI * t);
     ctx.beginPath();
-    ctx.arc(cue.x, cue.y, BALL_R + 6 + t * 10, 0, TAU);
-    ctx.strokeStyle = `rgba(140,235,195,${0.5 * (1 - t)})`;
-    ctx.lineWidth = 2;
+    ctx.arc(cue.x, cue.y, BALL_R + 4 + t * 8, 0, TAU);
+    ctx.strokeStyle = `rgba(140,235,195,${a.toFixed(3)})`;
+    ctx.lineWidth = 1.6;
     ctx.stroke();
   }
 }
@@ -310,10 +312,10 @@ function drawCueHalo() {
   if (!cue || !cue.active) return;
 
   const now = performance.now();
-  const t = (now % 2200) / 2200;                    // 约 2.2 秒一轮，慢到不抢注意力
+  const t = (now % 3800) / 3800;                    // 约 3.8 秒一轮：慢到像一口气的起伏，不抢注意力
   const pulse = 0.5 - 0.5 * Math.cos(t * TAU);      // 0→1→0，平滑呼吸不出硬边
-  const alpha = 0.12 + pulse * 0.20;
-  const r = BALL_R * 1.4 + pulse * 3;
+  const alpha = 0.07 + pulse * 0.13;                // 振幅压低，只留极淡的亮暗差
+  const r = BALL_R * 1.4 + pulse * 4;               // 外扩也放缓，看起来是"柔和晕开"而不是"跳动"
   const outer = r + BALL_R * 0.6;
 
   ctx.save();
@@ -327,8 +329,8 @@ function drawCueHalo() {
   ctx.fill();
 
   // 一圈细描边：亮绿台布上单靠柔光有时看不清轮廓，加条淡环就有了边界
-  ctx.strokeStyle = `rgba(255,255,255,${(0.10 + pulse * 0.12).toFixed(3)})`;
-  ctx.lineWidth = 1.4;
+  ctx.strokeStyle = `rgba(255,255,255,${(0.06 + pulse * 0.08).toFixed(3)})`;
+  ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.arc(cue.x, cue.y, r, 0, TAU);
   ctx.stroke();
