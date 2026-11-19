@@ -17,12 +17,39 @@ const modalTitleEl = el('modalTitle');
 const modalTextEl = el('modalText');
 const modalActionsEl = el('modalActions');
 
+// 提示条时长：短句 1.8 秒就够，长句按字数往上加，封顶 6 秒（再长就该精简文案了）
+const TOAST_BASE_MS = 1400;
+const TOAST_PER_CHAR_MS = 100;
+const TOAST_MIN_MS = 1800;
+const TOAST_MAX_MS = 6000;
+function toastDuration(msg) {
+  const len = (msg || '').replace(/\s+/g, '').length;
+  const ms = TOAST_BASE_MS + TOAST_PER_CHAR_MS * len;
+  return Math.max(TOAST_MIN_MS, Math.min(TOAST_MAX_MS, ms));
+}
+
 let toastTimer = 0;
+function hideToast() {
+  clearTimeout(toastTimer);
+  toastTimer = 0;
+  toastEl.classList.remove('show');
+}
+
+// ms 不传就按字数自动算时长；文案换了会覆盖上一条，计时重来
 function toast(msg, ms) {
   toastEl.textContent = msg;
   toastEl.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toastEl.classList.remove('show'), ms || 1600);
+  toastTimer = setTimeout(hideToast, ms || toastDuration(msg));
+}
+
+// 点一下提示条就收起来，长句不用干等，也不挡视线
+if (toastEl) {
+  toastEl.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    hideToast();
+  });
 }
 
 function showModal(title, text, actions) {

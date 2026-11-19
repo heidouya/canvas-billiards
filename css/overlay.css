@@ -3,10 +3,12 @@
   position:absolute;left:50%;top:18px;transform:translate(-50%,-8px);
   padding:8px 16px;border-radius:10px;font-size:13px;
   background:rgba(12,20,28,.92);border:1px solid #2a3f55;color:#d8e8f7;
-  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;white-space:nowrap;
-  box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:90%;overflow:hidden;text-overflow:ellipsis;
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+  /* 长文案换行显示完整，不再截断省略；宽度兜在台面以内 */
+  white-space:normal;text-align:center;line-height:1.5;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:min(92%,620px);
 }
-#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto;cursor:pointer}
 
 /* ---------- 弹窗 ---------- */
 .modal{

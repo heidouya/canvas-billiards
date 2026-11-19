@@ -18,6 +18,7 @@ function shoot(power) {
   const speed = Math.max(MIN_SHOT_SPEED, MAX_SPEED * power);
   cue.vx = state.aimDir.x * speed;
   cue.vy = state.aimDir.y * speed;
+  hideToast();      // 出杆了，上一句提示不必再挂着
 
   state.shot = {
     firstHit: null,
