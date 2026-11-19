@@ -299,6 +299,42 @@ function drawBalls() {
   }
 }
 
+// 母球提示：轮到你、手还没按下时，白球外面有一圈很慢的呼吸光，方便在满台球里一眼找到它。
+// 只在这一种状态出现（手中球也是同一档，不做加强）；一按下瞄准/摆位、出杆、电脑回合就立刻停，
+// 静止画面不该长时间“乱动”，动只是提醒“该你了”
+function drawCueHalo() {
+  if (state.phase !== 'aim' || state.modalOpen) return;
+  if (state.aiming || state.dragMode) return;      // 正在操作：让位给瞄准线和摆球提示
+  if (isAIPlayer(state.turn)) return;              // 电脑回合不提示
+  const cue = cueBall();
+  if (!cue || !cue.active) return;
+
+  const now = performance.now();
+  const t = (now % 2200) / 2200;                    // 约 2.2 秒一轮，慢到不抢注意力
+  const pulse = 0.5 - 0.5 * Math.cos(t * TAU);      // 0→1→0，平滑呼吸不出硬边
+  const alpha = 0.12 + pulse * 0.20;
+  const r = BALL_R * 1.4 + pulse * 3;
+  const outer = r + BALL_R * 0.6;
+
+  ctx.save();
+  const g = ctx.createRadialGradient(cue.x, cue.y, BALL_R * 0.9, cue.x, cue.y, outer);
+  g.addColorStop(0, `rgba(255,255,255,${alpha.toFixed(3)})`);
+  g.addColorStop(0.55, `rgba(255,255,255,${(alpha * 0.35).toFixed(3)})`);
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cue.x, cue.y, outer, 0, TAU);
+  ctx.fill();
+
+  // 一圈细描边：亮绿台布上单靠柔光有时看不清轮廓，加条淡环就有了边界
+  ctx.strokeStyle = `rgba(255,255,255,${(0.10 + pulse * 0.12).toFixed(3)})`;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.arc(cue.x, cue.y, r, 0, TAU);
+  ctx.stroke();
+  ctx.restore();
+}
+
 // 主渲染入口：snapshot 不为空时用回放帧数据（阶段 5 使用）
 function render() {
   ctx.clearRect(0, 0, VIEW_W, VIEW_H);
@@ -309,6 +345,7 @@ function render() {
   drawBallInHandArea();
   drawPocketHint();
   drawBalls();
+  drawCueHalo();
   drawAim();
   drawGuide();
   drawCueStick();
