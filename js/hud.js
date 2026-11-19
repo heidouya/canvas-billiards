@@ -17,11 +17,12 @@ const modalTitleEl = el('modalTitle');
 const modalTextEl = el('modalText');
 const modalActionsEl = el('modalActions');
 
-// 提示条时长：短句 1.8 秒就够，长句按字数往上加，封顶 6 秒（再长就该精简文案了）
-const TOAST_BASE_MS = 1400;
-const TOAST_PER_CHAR_MS = 100;
-const TOAST_MIN_MS = 1800;
-const TOAST_MAX_MS = 6000;
+// 提示条时长：既然点一下就能关，宁可给足阅读时间——最短 3 秒，之后每多一个字加 0.15 秒，
+// 封顶 8 秒（再长就该精简文案了，不是靠挂着不走解决）
+const TOAST_BASE_MS = 1800;
+const TOAST_PER_CHAR_MS = 150;
+const TOAST_MIN_MS = 3000;
+const TOAST_MAX_MS = 8000;
 function toastDuration(msg) {
   const len = (msg || '').replace(/\s+/g, '').length;
   const ms = TOAST_BASE_MS + TOAST_PER_CHAR_MS * len;
