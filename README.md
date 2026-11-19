@@ -9,6 +9,7 @@
 - 台面上方的球号条实时显示双方球组归属与剩余数量
 
 > **想从零学着自己做一个？** 附带一套 22 章的入门教程（假定你没写过 JavaScript）：[`docs/tutorial/00-导读.md`](./docs/tutorial/00-导读.md)，从"第一个网页"一路做到"能打、有规则、有对手、手机上也能玩"。
+> 想看成一整本书的感觉，直接双击 [`docs/tutorial/index.html`](./docs/tutorial/index.html)，左侧就是目录，章节可点可翻。
 
 电脑端：
 
