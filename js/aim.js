@@ -36,7 +36,8 @@ function raycastAim(from, dir, maxDist) {
 function drawAim() {
   if (state.phase !== 'aim' || state.modalOpen) return;
   if (state.aimMode === 'off') return;      // 关闭档：什么都不画，只靠球杆判断方向
-  if (!state.grabCue) return;               // 没按住母球就不画，台面保持干净
+  // 只要在拖动（瞄准，或者按着母球摆位）就画线；没按下时台面保持干净
+  if (!state.aiming && state.dragMode !== 'place') return;
   const cue = cueBall();
   if (!cue || !cue.active) return;
 

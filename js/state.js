@@ -17,7 +17,6 @@ const state = {
   power: 0,               // 当前力度 0~1
   aimDir: { x: 1, y: 0 }, // 瞄准方向（单位向量）
   aiming: false,          // 是否正在拖拽瞄准
-  grabCue: false,         // 本次按下是否按在母球本体上（没选中母球就不画辅助线）
   settleTimer: 0,         // 停球后的结算延时
   dragMode: null,         // 'aim' | 'place'
   calledPocket: -1,       // 黑八阶段指定的袋口

@@ -56,12 +56,9 @@ function onPointerDown(e) {
   state.moved = false;
 
   const cue = cueBall();
-  // 是否按在母球本体上（约 2.6 倍球半径内）：只有选中母球，瞄准辅助线才出现
-  state.grabCue = !!(cue && cue.active && dist(p.x, p.y, cue.x, cue.y) < BALL_R * 2.6);
-
   // 手中球状态：只有按在母球本体上（约 2.6 倍球半径内）才算拖动摆放，
   // 半径太小容易误触摆球、太大又会让想瞄准的玩家一直被当成摆球
-  if (state.ballInHand && state.grabCue) {
+  if (state.ballInHand && cue && dist(p.x, p.y, cue.x, cue.y) < BALL_R * 2.6) {
     state.dragMode = 'place';
     state.aiming = false;
     state.placeOrigin = { x: cue.x, y: cue.y };
@@ -105,7 +102,6 @@ function onPointerUp(e) {
 
   const wasPlace = state.dragMode === 'place';
   state.dragMode = null;
-  state.grabCue = false;      // 抬手即取消“选中母球”，辅助线跟着收起
 
   // 摆放结束：落点不合法则回到原位，之后仍可继续拖拽瞄准
   if (wasPlace) {
