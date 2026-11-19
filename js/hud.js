@@ -11,11 +11,6 @@ const powerFillEl = el('powerFill');
 const powerValEl = el('powerVal');
 const clockTextEl = el('clockText');
 let lastClockText = '';
-/* 沉浸模式下页头 / 面板都藏起来了，状态与计时改由台面上方这条细带显示 */
-const focusTitleEl = el('focusTitle');
-const focusSubEl = el('focusSub');
-const focusDotEl = el('focusDot');
-const focusClockEl = el('focusClock');
 const toastEl = el('toast');
 const modalEl = el('modal');
 const modalTitleEl = el('modalTitle');
@@ -202,13 +197,6 @@ function updateStatus() {
     (state.phase === 'aim' && state.lastFoul ? ' warn' : '');
   turnDotEl.className = 'dot' + (aiSide ? ' ai' : '') +
     (state.ballInHand && state.breakDone ? ' warn' : '');
-  // 沉浸细带：同一份内容再写一次，省得藏起来的卡片里信息看不到
-  focusTitleEl.textContent = title;
-  focusSubEl.textContent = sub;
-  focusSubEl.className = 'fb-sub' +
-    (state.phase === 'aim' && state.lastFoul ? ' warn' : '');
-  focusDotEl.className = 'dot' + (aiSide ? ' ai' : '') +
-    (state.ballInHand && state.breakDone ? ' warn' : '');
   updateRackStrip();
 }
 
@@ -238,7 +226,6 @@ function updateClockUI() {
   if (txt !== lastClockText) {
     lastClockText = txt;
     clockTextEl.textContent = txt;
-    focusClockEl.textContent = txt;   // 沉浸细带里的表盘
   }
 }
 
@@ -379,7 +366,6 @@ function updatePauseBtn() {
   btn.textContent = state.autoPaused ? '继续观战' : '暂停观战';
   btn.classList.toggle('primary', state.autoPaused);
   clockTextEl.dataset.paused = state.autoPaused ? '1' : '0';
-  focusClockEl.dataset.paused = state.autoPaused ? '1' : '0';
 }
 
 el('btnAutoPause').addEventListener('click', () => {
@@ -427,15 +413,19 @@ document.querySelector('.panel').addEventListener('click', e => {
   if (e.target.closest('button')) closePanel();
 });
 
-/* ---------- 手机横屏：全屏按钮 ---------- */
+/* ---------- 全屏按钮（手机横屏细带 + 桌面页头共用一套） ---------- */
 // 只用浏览器原生 fullscreen：不支持的（iPhone Safari、部分内置浏览器）直接不显示按钮，
 // 免得点了没反应；支持的情况下按钮文案跟着 fullscreenchange 在「全屏 / 退出全屏」之间同步
-const btnFull = el('btnFull');
+const btnFull = el('btnFull');           // 手机横屏细带里的
+const btnFullTop = el('btnFullTop');     // 桌面页头里的（窄屏隐藏，见 responsive.css）
 const fsEnabled = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
 const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
 
 function updateFullBtn() {
-  btnFull.textContent = fsElement() ? '退出全屏' : '全屏';
+  const on = !!fsElement();
+  btnFull.textContent = on ? '退出全屏' : '全屏';
+  btnFullTop.textContent = on ? '退出全屏' : '全屏';
+  btnFullTop.title = on ? '退出全屏（按 Esc 也行）' : '全屏后纵向空间更大，台面也会更大';
 }
 
 async function toggleFullscreen() {
@@ -457,9 +447,11 @@ async function toggleFullscreen() {
 
 if (!fsEnabled) {
   btnFull.hidden = true;
+  btnFullTop.hidden = true;
 } else {
   btnFull.hidden = false;
   btnFull.addEventListener('click', toggleFullscreen);
+  btnFullTop.addEventListener('click', toggleFullscreen);
   updateFullBtn();
   // 进/出全屏后视图尺寸变了：重算画布位图并重绘，同时同步按钮文案
   const onFsChange = () => {
@@ -547,33 +539,7 @@ const desktopMq = window.matchMedia(DESKTOP_QUERY);
 if (desktopMq.addEventListener) desktopMq.addEventListener('change', applyPanelShow);
 else if (desktopMq.addListener) desktopMq.addListener(applyPanelShow);
 
-/* ---------- 桌面端：沉浸模式 ----------
-   藏掉页头与右侧面板，只留顶部一条细带 + 球号条 + 台面；Esc 或细带上的按钮退出。
-   不是浏览器全屏（F11），所以不申请全屏权限、不占窗口状态；只在桌面（并排布局）生效 */
-const btnFocus = el('btnFocus');
-const btnFocusExit = el('btnFocusExit');
-let focusMode = false;
-
-function applyFocusMode(on) {
-  // 窄屏该退出，避免和手机横屏的抽屉/细带界面打架
-  focusMode = !!on && window.matchMedia(DESKTOP_QUERY).matches;
-  if (focusMode) document.body.classList.add('focus-mode');
-  else document.body.classList.remove('focus-mode');
-  btnFocus.textContent = focusMode ? '退出沉浸' : '沉浸模式';
-}
-
-btnFocus.addEventListener('click', () => applyFocusMode(!focusMode));
-btnFocusExit.addEventListener('click', () => applyFocusMode(false));
-// Esc 退出（沉浸时页头没了，这是最容易想到的退路）
-window.addEventListener('keydown', e => {
-  if (focusMode && (e.key === 'Escape' || e.key === 'Esc')) applyFocusMode(false);
-});
-// 拖窄窗口到窄屏布局就自动退出，别留一个没有页头的窄屏界面
-window.addEventListener('resize', () => {
-  if (focusMode && !window.matchMedia(DESKTOP_QUERY).matches) applyFocusMode(false);
-});
-const focusMq = window.matchMedia(DESKTOP_QUERY);
-if (focusMq.addEventListener) focusMq.addEventListener('change', () => { if (!focusMq.matches) applyFocusMode(false); });
+/* 桌面端的全屏按钮由 14.6 那段（手机横屏全屏按钮）一并接管，这里不再重复实现 */
 
 // 玩法卡片：右侧「玩法」按钮打开，「知道了」关掉
 el('btnStart').addEventListener('click', () => closeIntro());
