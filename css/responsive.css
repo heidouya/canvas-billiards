@@ -78,7 +78,6 @@
   .status-card .sub{display:none}
   .status-card .status-line{flex:0 1 auto;min-width:0;font-size:13px;gap:6px}
   .status-card .status-line #statusText{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .status-card .clock{font-size:11px;margin-left:8px}
   .status-card .power-block{flex:1 1 auto;min-width:0;margin:0;padding:0;border-top:0;
     display:flex;align-items:center;gap:8px}
   .status-card .power-head{margin:0;flex:0 0 auto;gap:6px;font-size:11px}

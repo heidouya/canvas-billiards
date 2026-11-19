@@ -34,4 +34,18 @@ canvas{
 }
 
 /* 页头右侧的小按钮（全屏 / 收起面板）排一行 */
-.head-actions{display:flex;gap:8px;flex:0 0 auto}
+.head-actions{display:flex;gap:8px;flex:1 1 0;justify-content:flex-end}
+/* 左侧品牌也吃等宽，这样中间的计时才是真居中 */
+.brand{flex:1 1 0;min-width:0}
+
+/* 顶栏中间的本局计时：左右两侧等宽后它才是真居中；字号压到比标题小一档，只做参考 */
+.header .head-clock,.head-clock{
+  flex:0 0 auto;display:flex;align-items:center;gap:7px;
+  font-size:12px;font-weight:600;letter-spacing:.6px;
+  font-variant-numeric:tabular-nums;color:#8fa7bd;
+}
+/* 前缀「本局用时」：比数字更淡，不抢视线 */
+.head-clock::before{content:'本局用时';font-size:11px;font-weight:500;letter-spacing:0;color:#5f7488}
+.head-clock[data-paused="1"]{color:#f0a85e}
+/* 窄屏页头空间紧张，这枚计时收起来 */
+@media (max-width:560px){.head-clock{display:none}}

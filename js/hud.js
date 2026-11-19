@@ -9,7 +9,7 @@ const statusSubEl = el('statusSub');
 const turnDotEl = el('turnDot');
 const powerFillEl = el('powerFill');
 const powerValEl = el('powerVal');
-const clockTextEl = el('clockText');
+const clockTextEl = el('headClock');
 let lastClockText = '';
 const toastEl = el('toast');
 const modalEl = el('modal');
@@ -248,7 +248,7 @@ function elapsedMs() {
   return state.clockMs + (state.clockSince ? performance.now() - state.clockSince : 0);
 }
 
-// 把毫秒写进状态卡右上角的表盘，秒数没变就不重绘
+// 把毫秒写进顶栏中间的计时（秒数没变就不重绘）
 function updateClockUI() {
   const txt = formatClock(elapsedMs());
   if (txt !== lastClockText) {

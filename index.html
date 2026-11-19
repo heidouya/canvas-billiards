@@ -20,6 +20,8 @@
       <h1>八球台球</h1>
       <span class="tag">CANVAS POOL</span>
     </div>
+    <!-- 本局计时：顶栏中间，字号压得比标题小一档，只做"这局打了多久"的参考 -->
+    <div class="head-clock" id="headClock" aria-label="本局用时">00:00</div>
     <div class="head-actions">
       <!-- 桌面端：浏览器全屏，可用高度变大后台面也跟着变大（手机横屏另有细带上的全屏按钮） -->
       <button type="button" class="panel-mini" id="btnFullTop">全屏</button>
@@ -123,7 +125,6 @@
         <div class="status-line">
           <span class="dot" id="turnDot"></span>
           <span id="statusText">玩家 1 击球</span>
-          <span class="clock" id="clockText">00:00</span>
         </div>
         <div class="sub" id="statusSub">向母球反方向拖动瞄准，松手击球</div>
         <div class="power-block">
