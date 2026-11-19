@@ -11,6 +11,11 @@ const powerFillEl = el('powerFill');
 const powerValEl = el('powerVal');
 const clockTextEl = el('clockText');
 let lastClockText = '';
+/* 沉浸模式下页头 / 面板都藏起来了，状态与计时改由台面上方这条细带显示 */
+const focusTitleEl = el('focusTitle');
+const focusSubEl = el('focusSub');
+const focusDotEl = el('focusDot');
+const focusClockEl = el('focusClock');
 const toastEl = el('toast');
 const modalEl = el('modal');
 const modalTitleEl = el('modalTitle');
@@ -197,6 +202,13 @@ function updateStatus() {
     (state.phase === 'aim' && state.lastFoul ? ' warn' : '');
   turnDotEl.className = 'dot' + (aiSide ? ' ai' : '') +
     (state.ballInHand && state.breakDone ? ' warn' : '');
+  // 沉浸细带：同一份内容再写一次，省得藏起来的卡片里信息看不到
+  focusTitleEl.textContent = title;
+  focusSubEl.textContent = sub;
+  focusSubEl.className = 'fb-sub' +
+    (state.phase === 'aim' && state.lastFoul ? ' warn' : '');
+  focusDotEl.className = 'dot' + (aiSide ? ' ai' : '') +
+    (state.ballInHand && state.breakDone ? ' warn' : '');
   updateRackStrip();
 }
 
@@ -226,6 +238,7 @@ function updateClockUI() {
   if (txt !== lastClockText) {
     lastClockText = txt;
     clockTextEl.textContent = txt;
+    focusClockEl.textContent = txt;   // 沉浸细带里的表盘
   }
 }
 
@@ -366,6 +379,7 @@ function updatePauseBtn() {
   btn.textContent = state.autoPaused ? '继续观战' : '暂停观战';
   btn.classList.toggle('primary', state.autoPaused);
   clockTextEl.dataset.paused = state.autoPaused ? '1' : '0';
+  focusClockEl.dataset.paused = state.autoPaused ? '1' : '0';
 }
 
 el('btnAutoPause').addEventListener('click', () => {
@@ -532,6 +546,34 @@ window.addEventListener('orientationchange', applyPanelShow);
 const desktopMq = window.matchMedia(DESKTOP_QUERY);
 if (desktopMq.addEventListener) desktopMq.addEventListener('change', applyPanelShow);
 else if (desktopMq.addListener) desktopMq.addListener(applyPanelShow);
+
+/* ---------- 桌面端：沉浸模式 ----------
+   藏掉页头与右侧面板，只留顶部一条细带 + 球号条 + 台面；Esc 或细带上的按钮退出。
+   不是浏览器全屏（F11），所以不申请全屏权限、不占窗口状态；只在桌面（并排布局）生效 */
+const btnFocus = el('btnFocus');
+const btnFocusExit = el('btnFocusExit');
+let focusMode = false;
+
+function applyFocusMode(on) {
+  // 窄屏该退出，避免和手机横屏的抽屉/细带界面打架
+  focusMode = !!on && window.matchMedia(DESKTOP_QUERY).matches;
+  if (focusMode) document.body.classList.add('focus-mode');
+  else document.body.classList.remove('focus-mode');
+  btnFocus.textContent = focusMode ? '退出沉浸' : '沉浸模式';
+}
+
+btnFocus.addEventListener('click', () => applyFocusMode(!focusMode));
+btnFocusExit.addEventListener('click', () => applyFocusMode(false));
+// Esc 退出（沉浸时页头没了，这是最容易想到的退路）
+window.addEventListener('keydown', e => {
+  if (focusMode && (e.key === 'Escape' || e.key === 'Esc')) applyFocusMode(false);
+});
+// 拖窄窗口到窄屏布局就自动退出，别留一个没有页头的窄屏界面
+window.addEventListener('resize', () => {
+  if (focusMode && !window.matchMedia(DESKTOP_QUERY).matches) applyFocusMode(false);
+});
+const focusMq = window.matchMedia(DESKTOP_QUERY);
+if (focusMq.addEventListener) focusMq.addEventListener('change', () => { if (!focusMq.matches) applyFocusMode(false); });
 
 // 玩法卡片：右侧「玩法」按钮打开，「知道了」关掉
 el('btnStart').addEventListener('click', () => closeIntro());

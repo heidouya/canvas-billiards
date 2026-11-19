@@ -34,3 +34,36 @@ canvas{
 @media (min-width:941px){
   body.panel-off .panel{display:none}
 }
+
+/* ---------- 桌面端：沉浸模式 ---------- */
+/* 页头右侧的两个小按钮排一行 */
+.head-actions{display:flex;gap:8px;flex:0 0 auto}
+
+/* 沉浸细带：默认不占位，body.focus-mode 时才出现 */
+.focus-bar{display:none;align-items:center;gap:10px;min-width:0}
+.focus-bar .fb-title{font-size:14px;font-weight:600;white-space:nowrap}
+/* 提示文字（含犯规提示）太长就省略，别把细带撑开 */
+.focus-bar .fb-sub{flex:1 1 auto;min-width:0;font-size:12px;color:#7e94ab;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.focus-bar .fb-sub.warn{color:#f0a85e}
+.focus-bar .fb-exit{
+  flex:0 0 auto;height:24px;padding:0 10px;border-radius:7px;cursor:pointer;
+  border:1px solid #26405a;background:#16222f;color:#cfe0ee;font-size:12px;
+}
+.focus-bar .fb-exit:hover{background:#1d2c3c;border-color:#31506b}
+
+/* 沉浸模式：藏页头与右侧面板，纵向只留一条细带 + 球号条，台面吃满剩余空间 */
+@media (min-width:941px){
+  body.focus-mode{padding:8px}
+  body.focus-mode header{display:none}
+  body.focus-mode .panel{display:none}
+  body.focus-mode .focus-bar{display:flex;height:26px}
+  body.focus-mode .app{gap:10px}
+  /* 台面按可用高度反算宽度（1.8065 = 1120/620）；124px = 边距 + 细带 + 球号条 + 间距 */
+  body.focus-mode .table-col{width:min(100%,calc((100dvh - 124px) * 1.8065));gap:8px}
+  body.focus-mode .canvas-wrap{padding:8px;border-radius:14px}
+  /* 球号条收紧一点，把纵向空间还给台面 */
+  body.focus-mode .group-panel{padding:6px 10px}
+  body.focus-mode .chip{width:26px;height:26px;font-size:11px}
+}
+

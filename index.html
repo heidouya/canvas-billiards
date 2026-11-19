@@ -20,9 +20,22 @@
       <h1>八球台球</h1>
       <span class="tag">CANVAS POOL</span>
     </div>
-    <!-- 桌面端：收起/展开右侧面板，把宽度让给台面（手机端不显示，手机用横屏细带上的「面板」按钮） -->
-    <button type="button" class="panel-mini" id="btnPanelTop" aria-label="收起或展开右侧面板">面板</button>
+    <div class="head-actions">
+      <!-- 桌面端：沉浸模式，藏起页头与右侧面板，只留台面 -->
+      <button type="button" class="panel-mini" id="btnFocus">沉浸模式</button>
+      <!-- 桌面端：收起/展开右侧面板，把宽度让给台面（手机端不显示） -->
+      <button type="button" class="panel-mini" id="btnPanelTop" aria-label="收起或展开右侧面板">收起面板</button>
+    </div>
   </header>
+
+  <!-- 沉浸模式专用细带：页头与面板都藏起来后，轮到谁 / 犯规提示 / 本局计时都在这里 -->
+  <div class="focus-bar" id="focusBar">
+    <span class="dot" id="focusDot"></span>
+    <span class="fb-title" id="focusTitle">玩家 1 · 开球</span>
+    <span class="fb-sub" id="focusSub"></span>
+    <span class="clock" id="focusClock">00:00</span>
+    <button type="button" class="fb-exit" id="btnFocusExit">退出沉浸 · Esc</button>
+  </div>
 
   <div class="main">
     <div class="stage">
