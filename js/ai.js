@@ -211,6 +211,7 @@ function aiTakeTurn(p) {
 
   const power = clamp(plan.power * (1 + (Math.random() * 2 - 1) * cfg.powerErr), 0.12, 1);
   state.aiming = true;
+  state.grabCue = true;      // 电脑出杆前同样“握着母球”，辅助线照旧可见
   state.power = power;
   updatePowerUI();
   updateStatus();
@@ -218,6 +219,7 @@ function aiTakeTurn(p) {
   clearTimeout(aiShootTimer);
   aiShootTimer = setTimeout(() => {
     state.aiming = false;
+    state.grabCue = false;
     const stillPaused = state.mode === 'auto' && state.autoPaused;
     if (state.turn === p && state.phase === 'aim' && !state.gameOver && !stillPaused) {
       shoot(power);

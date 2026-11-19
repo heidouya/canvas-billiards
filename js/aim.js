@@ -36,11 +36,12 @@ function raycastAim(from, dir, maxDist) {
 function drawAim() {
   if (state.phase !== 'aim' || state.modalOpen) return;
   if (state.aimMode === 'off') return;      // 关闭档：什么都不画，只靠球杆判断方向
+  if (!state.grabCue) return;               // 没按住母球就不画，台面保持干净
   const cue = cueBall();
   if (!cue || !cue.active) return;
 
   ctx.save();
-  ctx.globalAlpha = state.aiming ? 1 : 0.5;
+  ctx.globalAlpha = 1;
 
   const dir = state.aimDir;
   const hitLen = raycastAim(cue, dir, 1400);

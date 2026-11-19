@@ -56,9 +56,12 @@ function onPointerDown(e) {
   state.moved = false;
 
   const cue = cueBall();
+  // 是否按在母球本体上（约 2.6 倍球半径内）：只有选中母球，瞄准辅助线才出现
+  state.grabCue = !!(cue && cue.active && dist(p.x, p.y, cue.x, cue.y) < BALL_R * 2.6);
+
   // 手中球状态：只有按在母球本体上（约 2.6 倍球半径内）才算拖动摆放，
   // 半径太小容易误触摆球、太大又会让想瞄准的玩家一直被当成摆球
-  if (state.ballInHand && cue && dist(p.x, p.y, cue.x, cue.y) < BALL_R * 2.6) {
+  if (state.ballInHand && state.grabCue) {
     state.dragMode = 'place';
     state.aiming = false;
     state.placeOrigin = { x: cue.x, y: cue.y };
@@ -90,6 +93,14 @@ function onPointerMove(e) {
       cue.x = tx;
       cue.y = ty;
     }
+    // 摆球时也按住着母球，辅助线跟着出现；方向按“从按下点拉开的方向的反方向”更新，
+    // 免得画出一条停在上一杆的旧方向
+    if (state.grabCue && state.downPos) {
+      const dx = state.downPos.x - p.x;
+      const dy = state.downPos.y - p.y;
+      const d = Math.hypot(dx, dy);
+      if (d > 0.5) state.aimDir = { x: dx / d, y: dy / d };
+    }
     return;
   }
 
@@ -102,6 +113,7 @@ function onPointerUp(e) {
 
   const wasPlace = state.dragMode === 'place';
   state.dragMode = null;
+  state.grabCue = false;      // 抬手即取消“选中母球”，辅助线跟着收起
 
   // 摆放结束：落点不合法则回到原位，之后仍可继续拖拽瞄准
   if (wasPlace) {
