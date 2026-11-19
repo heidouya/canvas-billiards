@@ -29,3 +29,8 @@ canvas{
   touch-action:none;cursor:crosshair;
   background:#0a0f14;
 }
+
+/* 桌面端（并排布局）：面板收起时把宽度全给台面，画布自带 1120:620 比例会自己长大 */
+@media (min-width:941px){
+  body.panel-off .panel{display:none}
+}

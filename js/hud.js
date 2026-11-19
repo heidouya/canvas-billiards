@@ -501,6 +501,42 @@ else if (compactMq.addListener) compactMq.addListener(syncCompactLayout);
 window.addEventListener('resize', syncCompactLayout);
 window.addEventListener('orientationchange', syncCompactLayout);
 
+/* ---------- 桌面端：右侧面板可以收起，把宽度让给台面 ----------
+   页头右上角的「面板」按钮和面板里的「常显示面板」开关控制同一个状态，存 localStorage */
+const PANEL_SHOW_KEY = 'eightball.panelShow.v1';
+const DESKTOP_QUERY = '(min-width:941px)';       // 与 layout.css 的并排布局断点一致
+const btnPanelTop = el('btnPanelTop');
+const swPanel = el('swPanel');
+const swPanelText = el('swPanelText');
+let panelShow = localStorage.getItem(PANEL_SHOW_KEY) !== '0';   // 默认常显示
+
+function applyPanelShow() {
+  const desktop = window.matchMedia(DESKTOP_QUERY).matches;
+  // 窄屏下面板在台面下方，没有“收起”这回事，类名一律清掉（用 add/remove，别用 toggle）
+  if (desktop && !panelShow) document.body.classList.add('panel-off');
+  else document.body.classList.remove('panel-off');
+  swPanel.setAttribute('aria-checked', panelShow ? 'true' : 'false');
+  swPanelText.textContent = panelShow ? '开' : '关';
+  btnPanelTop.textContent = panelShow ? '收起面板' : '显示面板';
+  btnPanelTop.title = panelShow ? '把右侧面板收起来，台面能更大' : '把右侧面板展开';
+}
+
+function setPanelShow(show) {
+  panelShow = !!show;
+  try { localStorage.setItem(PANEL_SHOW_KEY, panelShow ? '1' : '0'); } catch (e) { /* 忽略 */ }
+  applyPanelShow();
+}
+
+swPanel.addEventListener('click', () => setPanelShow(!panelShow));
+btnPanelTop.addEventListener('click', () => setPanelShow(!panelShow));
+
+applyPanelShow();
+window.addEventListener('resize', applyPanelShow);
+window.addEventListener('orientationchange', applyPanelShow);
+const desktopMq = window.matchMedia(DESKTOP_QUERY);
+if (desktopMq.addEventListener) desktopMq.addEventListener('change', applyPanelShow);
+else if (desktopMq.addListener) desktopMq.addListener(applyPanelShow);
+
 // 玩法卡片：右侧「玩法」按钮打开，「知道了」关掉
 el('btnStart').addEventListener('click', () => closeIntro());
 el('btnHelp').addEventListener('click', () => showIntro());

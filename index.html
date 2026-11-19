@@ -20,6 +20,8 @@
       <h1>八球台球</h1>
       <span class="tag">CANVAS POOL</span>
     </div>
+    <!-- 桌面端：收起/展开右侧面板，把宽度让给台面（手机端不显示，手机用横屏细带上的「面板」按钮） -->
+    <button type="button" class="panel-mini" id="btnPanelTop" aria-label="收起或展开右侧面板">面板</button>
   </header>
 
   <div class="main">
@@ -110,6 +112,14 @@
         </div>
         <!-- 电脑互打：暂停 / 继续观战 -->
         <button type="button" class="btn auto-btn" id="btnAutoPause" hidden>暂停观战</button>
+        <!-- 桌面端：是否常显示这块面板（关掉就把宽度让给台面；手机端此开关隐藏） -->
+        <div class="seg-row panel-show-row" id="panelShowRow">
+          <span class="seg-label">常显示</span>
+          <button type="button" class="switch" id="swPanel" role="switch" aria-checked="true" title="关掉后面板收起，台面更大">
+            <span class="knob"></span>
+            <span class="sw-text" id="swPanelText">开</span>
+          </button>
+        </div>
       </div>
 
       <!-- 状态 + 力度：合成一张卡，信息从上到下一条线读完 -->

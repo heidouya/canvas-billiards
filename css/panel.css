@@ -77,3 +77,32 @@
 .rec-row .k{color:#9db1c6}
 .rec-row .v{color:#e8f2fb;font-variant-numeric:tabular-nums;font-weight:600}
 .rec-row .v em{font-style:normal;color:#37d08b}
+
+/* ---------- 桌面端：面板收起开关 ---------- */
+/* 页头右上角的小按钮：收起后面板整块让位给台面 */
+.panel-mini{
+  flex:0 0 auto;display:inline-flex;align-items:center;height:26px;padding:0 12px;
+  border-radius:8px;border:1px solid #26405a;background:#16222f;color:#cfe0ee;
+  font-size:12px;cursor:pointer;transition:background .15s,border-color .15s;
+}
+.panel-mini:hover{background:#1d2c3c;border-color:#31506b}
+.panel-mini:active{transform:scale(.97)}
+
+/* 面板内「常显示面板」的开关（药丸 + 滑钮） */
+.switch{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:3px 10px 3px 3px;border-radius:999px;
+  border:1px solid #26405a;background:#0d1520;color:#8ea3b6;
+  font-size:12px;cursor:pointer;transition:border-color .16s,color .16s;
+}
+.switch .knob{
+  position:relative;width:30px;height:16px;border-radius:999px;
+  background:#22303f;transition:background .16s;
+}
+.switch .knob::after{
+  content:'';position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;
+  background:#7f93a6;transition:transform .16s,background .16s;
+}
+.switch[aria-checked="true"]{color:#cfe0ee;border-color:#2f6f52}
+.switch[aria-checked="true"] .knob{background:#17553a}
+.switch[aria-checked="true"] .knob::after{transform:translateX(14px);background:#4ade80}
