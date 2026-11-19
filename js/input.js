@@ -93,14 +93,6 @@ function onPointerMove(e) {
       cue.x = tx;
       cue.y = ty;
     }
-    // 摆球时也按住着母球，辅助线跟着出现；方向按“从按下点拉开的方向的反方向”更新，
-    // 免得画出一条停在上一杆的旧方向
-    if (state.grabCue && state.downPos) {
-      const dx = state.downPos.x - p.x;
-      const dy = state.downPos.y - p.y;
-      const d = Math.hypot(dx, dy);
-      if (d > 0.5) state.aimDir = { x: dx / d, y: dy / d };
-    }
     return;
   }
 
