@@ -49,7 +49,11 @@ function onPointerDown(e) {
   if (!canControl() || activePointer !== null) return;
   e.preventDefault();
   activePointer = e.pointerId;
-  if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
+  // 捕获指针能让鼠标拖到画布外也继续收 move/up；个别环境（合成事件、旧内核）会抛错，
+  // 这里吞掉异常，避免整次按下被打断、后面再也按不动
+  if (canvas.setPointerCapture) {
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* 忽略 */ }
+  }
 
   const p = pointerPos(e);
   state.downPos = p;
@@ -149,8 +153,38 @@ function onPointerUp(e) {
   }
 }
 
+// 指针被系统打断（切到后台、系统手势、指针捕获丢失、窗口失焦……）：
+// 这次拖拽算“作废”，不能当成松手。否则手中球会在还没松手时自己落位
+function abortDrag() {
+  if (activePointer === null) return;
+  activePointer = null;
+
+  const wasPlace = state.dragMode === 'place';
+  const wasAim = state.aiming;
+  state.dragMode = null;
+  state.moved = false;
+
+  if (wasPlace) {
+    const cue = cueBall();
+    if (cue && state.placeOrigin) {
+      cue.x = state.placeOrigin.x;
+      cue.y = state.placeOrigin.y;
+    }
+    state.placeOrigin = null;      // 手中球仍保留，可以重新按住母球拖
+  }
+  if (wasAim) {
+    state.aiming = false;
+    state.power = 0;
+    updatePowerUI();
+  }
+  updateStatus();
+  render();
+}
+
 canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
 canvas.addEventListener('pointermove', onPointerMove, { passive: false });
 canvas.addEventListener('pointerup', onPointerUp);
-canvas.addEventListener('pointercancel', onPointerUp);
+// pointercancel 不能当成 pointerup：那会在没松手的情况下把摆位提交掉
+canvas.addEventListener('pointercancel', abortDrag);
+window.addEventListener('blur', abortDrag);
 canvas.addEventListener('contextmenu', e => e.preventDefault());
