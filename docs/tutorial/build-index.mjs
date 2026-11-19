@@ -9,6 +9,13 @@ const DIR = path.dirname(fileURLToPath(import.meta.url));
 /* ============================ Markdown → HTML ============================ */
 
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const plainText = html => html
+  .replace(/<br\s*\/?>/gi, ' ')
+  .replace(/<\/(p|div|li|ul|ol|h[1-6]|td|th|tr|table|thead|tbody|pre|blockquote|hr)>/gi, ' ')
+  .replace(/<[^>]*>/g, '')
+  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  .replace(/\s+/g, ' ').trim();
 
 function inline(s) {
   const stash = [];
@@ -177,6 +184,9 @@ const chapters = files.map((f, idx) => {
   const title = titleLine.replace(/^第\s*\d+\s*章\s*·\s*/, '');
   const chars = raw.replace(/\s/g, '').length;
   const minutes = Math.max(5, Math.round(chars / 350));
+  // 章内的「01-先跑起来.md」这类链接，改成页内跳转；开头的一级标题由页面自己渲染，正文里去掉避免重复
+  const bodyHtml = renderBlocks(raw.replace(/^#\s+.*(\r?\n)+/, ''))
+    .replace(/href="(?:\.\/)?(\d{2})-[^"]*\.md"/g, 'href="#$1"');
   return {
     id: String(num).padStart(2, '0'),
     file: f,
@@ -186,13 +196,20 @@ const chapters = files.map((f, idx) => {
     minutes,
     no: num,
     intro: num === 0,
-    // 章内的「01-先跑起来.md」这类链接，改成页内跳转；开头的一级标题由页面自己渲染，正文里去掉避免重复
-    html: renderBlocks(raw.replace(/^#\s+.*(\r?\n)+/, ''))
-      .replace(/href="(?:\.\/)?(\d{2})-[^"]*\.md"/g, 'href="#$1"')
+    html: bodyHtml,
+    // 搜索用的纯文本（去掉标签、合并空白；不含章标题，标题单独参与匹配）
+    text: plainText(bodyHtml)
   };
 });
 
 const totalChapters = chapters.filter(c => !c.intro).length;
+
+// 内联到 <script> 里：把 < 转成 \u003c，否则正文里出现 </script> 字样会提前截断脚本
+const chaptersJson = JSON.stringify(chapters.map(c => ({
+  id: c.id, title: c.title, part: c.part, minutes: c.minutes,
+  no: c.no, intro: c.intro, html: c.html, text: c.text
+}))).replace(/</g, '\\u003c');
+
 const toc = [];
 let lastPart = '';
 for (const c of chapters) {
@@ -225,12 +242,27 @@ a:hover{text-decoration:underline}
 
 /* 侧栏 */
 .nav{width:276px;flex:0 0 276px;border-right:1px solid var(--line);background:linear-gradient(180deg,#0b131c,#080d13);
-  position:sticky;top:0;height:100dvh;overflow:auto;padding:18px 12px 26px}
+  position:sticky;top:0;height:100dvh;overflow:auto;padding:0 12px 26px}
 .nav::-webkit-scrollbar{width:8px}
 .nav::-webkit-scrollbar-thumb{background:#22303f;border-radius:4px}
-.brand{padding:0 8px 14px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.sidehead{position:sticky;top:0;z-index:6;background:#0b131c;padding:18px 0 10px;margin-bottom:10px}
+.brand{padding:0 8px 12px;border-bottom:1px solid var(--line);margin-bottom:10px}
 .brand .t{font-size:15px;font-weight:700;letter-spacing:.5px}
 .brand .s{font-size:11.5px;color:var(--dim2);margin-top:4px;letter-spacing:.4px}
+.qwrap{padding:0 8px}
+.q{width:100%;padding:7px 10px;font-size:12.5px;border-radius:9px;border:1px solid #22303f;background:#0e1720;
+  color:var(--txt);outline:none;font-family:inherit}
+.q:focus{border-color:#2f6a52;background:#101a25}
+.q::placeholder{color:#4d6478}
+.res{padding:2px 0}
+.res .cnt{font-size:11.5px;color:var(--dim2);padding:2px 8px 8px;letter-spacing:.3px}
+.res-i{display:block;padding:8px 9px;border-radius:9px;border:1px solid transparent;cursor:pointer}
+.res-i:hover{background:#101a25;border-color:#1c2b3b;text-decoration:none}
+.res-i .h{font-size:12.5px;color:#d3e3f0;line-height:1.5}
+.res-i .sn{font-size:11.5px;color:var(--dim2);line-height:1.65;margin-top:3px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.res .empty{font-size:12px;color:var(--dim2);padding:4px 8px 10px;line-height:1.7}
+mark{background:rgba(240,168,94,.18);color:#ffd9a8;border-radius:3px;padding:0 1px}
 .part{font-size:11px;color:var(--dim2);letter-spacing:.8px;margin:14px 8px 6px}
 .item{display:flex;gap:8px;align-items:baseline;padding:7px 9px;border-radius:9px;cursor:pointer;
   font-size:13px;color:var(--dim);line-height:1.45;border:1px solid transparent}
@@ -302,14 +334,20 @@ a:hover{text-decoration:underline}
 <body>
 <div class="app">
   <nav class="nav" id="nav">
-    <div class="brand">
-      <div class="t">八球台球 · 从零教程</div>
-      <div class="s">${totalChapters} 章 + 导读 · 从第一个网页到能玩的游戏</div>
+    <div class="sidehead">
+      <div class="brand">
+        <div class="t">八球台球 · 从零教程</div>
+        <div class="s">${totalChapters} 章 + 导读 · 从第一个网页到能玩的游戏</div>
+      </div>
+      <div class="qwrap"><input id="q" class="q" type="search" placeholder="搜一下，如 碰撞 / 手中球" autocomplete="off"></div>
     </div>
+    <div class="toc" id="toc">
     ${toc.map(it => it.part
       ? `<div class="part">${esc(it.part)}</div>`
       : `<a class="item" data-id="${it.id}" href="#${it.id}"><span class="no">${it.id}</span><span class="tt">${esc(it.title)}</span></a>`
     ).join('\n    ')}
+    </div>
+    <div class="res" id="results" hidden></div>
   </nav>
   <div class="scrim" id="scrim"></div>
 
@@ -323,7 +361,7 @@ a:hover{text-decoration:underline}
 </div>
 
 <script>
-const CHAPTERS = ${JSON.stringify(chapters.map(c => ({ id: c.id, title: c.title, part: c.part, minutes: c.minutes, no: c.no, intro: c.intro, html: c.html })))};
+const CHAPTERS = ${chaptersJson};
 const TOTAL = ${totalChapters};
 const KEY = 'pool.tutorial.last';
 
@@ -360,7 +398,133 @@ function route() {
   const id = (location.hash || '').replace('#', '');
   const ok = CHAPTERS.some(c => c.id === id);
   renderChapter(ok ? id : (localStorage.getItem(KEY) || '00'), false);
+  if (pendingQuery) { const p = pendingQuery; pendingQuery = ''; applyHighlight(p); }
 }
+
+/* ---------------------------- 搜索 ---------------------------- */
+const qEl = document.getElementById('q');
+const resEl = document.getElementById('results');
+const tocEl = document.getElementById('toc');
+let pendingQuery = '';
+
+const INDEX = CHAPTERS.map(c => ({ c: c, lowAll: (c.title + ' ' + c.part + ' ' + c.text).toLowerCase(), lowBody: c.text.toLowerCase() }));
+
+function markInto(el, text, low) {
+  let i = 0;
+  while (i < text.length) {
+    const at = text.toLowerCase().indexOf(low, i);
+    if (at < 0) { el.appendChild(document.createTextNode(text.slice(i))); break; }
+    if (at > i) el.appendChild(document.createTextNode(text.slice(i, at)));
+    const m = document.createElement('mark');
+    m.textContent = text.slice(at, at + low.length);
+    el.appendChild(m);
+    i = at + low.length;
+  }
+}
+
+function go(id, qq) {
+  if (location.hash === '#' + id) {
+    renderChapter(id, false);
+    applyHighlight(qq);
+  } else {
+    pendingQuery = qq;
+    location.hash = '#' + id;
+  }
+  nav.classList.remove('open');
+}
+
+function runSearch(raw) {
+  const qq = String(raw || '').trim();
+  if (!qq) {
+    resEl.hidden = true; resEl.innerHTML = ''; tocEl.hidden = false;
+    return;
+  }
+  const low = qq.toLowerCase();
+  const hits = [];
+  INDEX.forEach(rec => {
+    const at = rec.lowAll.indexOf(low);
+    if (at < 0) return;
+    const inTitle = rec.c.title.toLowerCase().indexOf(low) >= 0;
+    let count = 0, p = 0;
+    while ((p = rec.lowBody.indexOf(low, p)) >= 0) { count++; p += low.length; }
+    const src = rec.c.text;
+    const bodyAt = rec.lowBody.indexOf(low);
+    let snip;
+    if (bodyAt < 0) snip = src.slice(0, 70) + '…';
+    else snip = (bodyAt > 24 ? '…' : '') + src.slice(Math.max(0, bodyAt - 24), bodyAt + low.length + 36) + '…';
+    hits.push({ c: rec.c, count: count, inTitle: inTitle, snip: snip });
+  });
+  hits.sort((a, b) => (b.inTitle - a.inTitle) || (b.count - a.count));
+
+  resEl.innerHTML = '';
+  resEl.hidden = false;
+  tocEl.hidden = true;
+
+  const head = document.createElement('div');
+  head.className = 'cnt';
+  head.textContent = hits.length ? '找到 ' + hits.length + ' 章 · 点一条跳过去' : '';
+  if (hits.length) resEl.appendChild(head);
+
+  if (!hits.length) {
+    const em = document.createElement('div');
+    em.className = 'empty';
+    em.textContent = '没找到「' + qq + '」。换个词试试：碰撞、手中球、音效、回放、响应式…';
+    resEl.appendChild(em);
+    return;
+  }
+
+  hits.forEach(h => {
+    const a = document.createElement('a');
+    a.className = 'res-i';
+    a.href = '#' + h.c.id;
+    const t = document.createElement('div');
+    t.className = 'h';
+    markInto(t, (h.c.intro ? '导读 · ' : '第 ' + h.c.no + ' 章 · ') + h.c.title, low);
+    const s = document.createElement('div');
+    s.className = 'sn';
+    markInto(s, h.snip, low);
+    a.appendChild(t); a.appendChild(s);
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      go(h.c.id, qq);
+    });
+    resEl.appendChild(a);
+  });
+}
+
+function applyHighlight(qq) {
+  const low = qq.toLowerCase();
+  const walker = document.createTreeWalker(doc, NodeFilter.SHOW_TEXT, null);
+  const nodes = [];
+  while (walker.nextNode()) {
+    const n = walker.currentNode;
+    const p = n.parentNode;
+    if (!p || p.nodeName === 'MARK' || !n.nodeValue || n.nodeValue.toLowerCase().indexOf(low) < 0) continue;
+    // 标题和 meta 不刷高亮：标题已经写着这章讲什么，滚动应该落到正文第一处
+    if (p.closest && p.closest('h1,.meta')) continue;
+    nodes.push(n);
+  }
+  let left = 120;
+  nodes.forEach(n => {
+    if (left <= 0) return;
+    const frag = document.createDocumentFragment();
+    const holder = document.createElement('span');
+    markInto(holder, n.nodeValue, low);
+    left -= holder.querySelectorAll('mark').length;
+    while (holder.firstChild) frag.appendChild(holder.firstChild);
+    n.parentNode.replaceChild(frag, n);
+  });
+  const first = doc.querySelector('mark');
+  if (first) first.scrollIntoView({ block: 'center' });
+}
+
+if (qEl) qEl.addEventListener('input', () => runSearch(qEl.value));
+if (qEl) qEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const first = resEl.querySelector('.res-i');
+    if (first) { e.preventDefault(); first.click(); }
+  }
+});
 
 document.querySelectorAll('.item').forEach(a => {
   a.addEventListener('click', () => { nav.classList.remove('open'); });
@@ -369,7 +533,14 @@ document.querySelectorAll('.item').forEach(a => {
 document.getElementById('btnNav').addEventListener('click', () => nav.classList.toggle('open'));
 document.getElementById('scrim').addEventListener('click', () => nav.classList.remove('open'));
 window.addEventListener('keydown', e => {
-  if (e.key === 'Escape') nav.classList.remove('open');
+  if (e.key === 'Escape') {
+    if (qEl && document.activeElement === qEl && qEl.value) { qEl.value = ''; runSearch(''); }
+    else nav.classList.remove('open');
+  }
+  if (e.key === '/' && qEl && document.activeElement !== qEl
+      && !/^(INPUT|TEXTAREA)$/.test((document.activeElement.tagName || ''))) {
+    e.preventDefault(); nav.classList.add('open'); qEl.focus();
+  }
 });
 window.addEventListener('hashchange', route);
 route();
