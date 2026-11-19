@@ -222,3 +222,60 @@ function drawCueStick() {
     ctx.stroke();
   }
 }
+
+// 拖拽瞄准时，在力度光晕旁边浮一个百分比，省得总去看右侧力度条
+// 位置放在“垂直于击球方向”的一侧：手指和球杆在反方向、虚线在正方向，都不会被它挡住
+// 字号按画布缩放反算（手机上画布被缩小，按逻辑像素写字会小到看不清）
+function drawPowerBadge() {
+  if (!state.aiming) return;
+  const cue = cueBall();
+  if (!cue || !cue.active || state.power <= 0.02) return;
+
+  const dir = state.aimDir;
+  const ringR = BALL_R + 4 + state.power * 10;          // 与力度光晕同一个半径
+  const cssScale = canvas.getBoundingClientRect().width / VIEW_W;
+  const fs = clamp(Math.round(12 / cssScale), 13, 30);
+  const text = Math.round(state.power * 100) + '%';
+  const color = state.power < 0.35 ? '#63e2a4' : state.power < 0.7 ? '#ffd85c' : '#ff8a8a';
+
+  ctx.save();
+  ctx.font = `700 ${fs}px system-ui,-apple-system,"Segoe UI",sans-serif`;
+  const tw = ctx.measureText(text).width;
+  const padX = Math.round(fs * 0.55);
+  const boxH = Math.round(fs * 1.7);
+  const gap = Math.round(fs * 0.75);
+
+  // 垂直于击球方向的两侧都算一遍，挑被台面夹得最少的那侧（贴库时会自动换到空的一边）
+  const px = -dir.y, py = dir.x;
+  const off = ringR + gap + boxH / 2;
+  const halfW = tw / 2 + padX + 6, halfH = boxH / 2 + 6;
+  const insideX = x => clamp(x, TABLE.x + halfW, TABLE.x + TABLE.w - halfW);
+  const insideY = y => clamp(y, TABLE.y + halfH, TABLE.y + TABLE.h - halfH);
+  let cx = 0, cy = 0, dist = Infinity;
+  for (const sign of [1, -1]) {
+    const rawX = cue.x + px * off * sign;
+    const rawY = cue.y + py * off * sign;
+    const nx = insideX(rawX), ny = insideY(rawY);
+    const d = (nx - rawX) ** 2 + (ny - rawY) ** 2;
+    if (d < dist) { dist = d; cx = nx; cy = ny; }
+  }
+
+  // 药丸底色 + 细描边，保证在绿色台布上看得清
+  const bx0 = cx - tw / 2 - padX, by0 = cy - boxH / 2;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(bx0, by0, tw + padX * 2, boxH, Math.round(boxH / 2));
+  else ctx.rect(bx0, by0, tw + padX * 2, boxH);
+  ctx.fillStyle = 'rgba(8,14,20,.82)';
+  ctx.fill();
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = 0.55;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, cx, cy);
+  ctx.restore();
+}

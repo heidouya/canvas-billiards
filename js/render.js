@@ -312,4 +312,5 @@ function render() {
   drawAim();
   drawGuide();
   drawCueStick();
+  drawPowerBadge();
 }
