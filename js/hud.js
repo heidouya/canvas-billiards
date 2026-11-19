@@ -10,6 +10,8 @@ const turnDotEl = el('turnDot');
 const powerFillEl = el('powerFill');
 const powerValEl = el('powerVal');
 const clockTextEl = el('headClock');
+// 手机横屏那套布局里球组条太窄，计时改挂在底部状态条右端（桌面上是隐藏的）
+const barClockEl = el('barClock');
 let lastClockText = '';
 const toastEl = el('toast');
 const modalEl = el('modal');
@@ -248,12 +250,13 @@ function elapsedMs() {
   return state.clockMs + (state.clockSince ? performance.now() - state.clockSince : 0);
 }
 
-// 把毫秒写进顶栏中间的计时（秒数没变就不重绘）
+// 把毫秒写进球组条中间的计时（秒数没变就不重绘）
 function updateClockUI() {
   const txt = formatClock(elapsedMs());
   if (txt !== lastClockText) {
     lastClockText = txt;
     clockTextEl.textContent = txt;
+    if (barClockEl) barClockEl.textContent = txt;
   }
 }
 
@@ -393,7 +396,9 @@ function updatePauseBtn() {
   const btn = el('btnAutoPause');
   btn.textContent = state.autoPaused ? '继续观战' : '暂停观战';
   btn.classList.toggle('primary', state.autoPaused);
-  clockTextEl.dataset.paused = state.autoPaused ? '1' : '0';
+  const pausedFlag = state.autoPaused ? '1' : '0';
+  clockTextEl.dataset.paused = pausedFlag;
+  if (barClockEl) barClockEl.dataset.paused = pausedFlag;
 }
 
 el('btnAutoPause').addEventListener('click', () => {

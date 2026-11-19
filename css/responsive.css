@@ -20,12 +20,24 @@
   .rec-list{font-size:12px}
   /* 球号条：窄屏改成上下两段，小球缩小，一行放下 7 颗 */
   .rack-strip{gap:6px}
+  /* 计时跟着收一档，别把两颗球号挤到换行 */
+  .rack-clock{flex:0 0 56px;font-size:15px}
+  .rack-clock::before,.rack-clock::after{height:20px}
   .group-panel{flex-direction:column;align-items:flex-start;gap:6px;padding:7px 9px;border-radius:11px}
   .gp-head{flex-direction:row;align-items:baseline;gap:6px}
   .gp-owner{font-size:12px}
   .gp-tag{font-size:10px}
   .chip{width:18px;height:18px;font-size:9px}
   .chips{gap:3px;justify-content:flex-start}
+}
+
+/* 手机竖屏再窄一档（≤560px）：计时压到最小、球号缩小一点，保住“7 颗球号一行不裁” */
+@media (max-width:560px){
+  .rack-clock{flex:0 0 46px;font-size:13px;letter-spacing:0}
+  .rack-clock::before,.rack-clock::after{height:18px}
+  .group-panel{padding:6px 8px;gap:5px}
+  .chip{width:17px;height:17px;font-size:8px}
+  .chips{gap:2px}
 }
 
 /* ============================================================
@@ -101,6 +113,11 @@
 
   /* 抽屉里一行一个按钮更好点 */
   .btn{flex:1 1 100%}
+
+  /* 顶部细带宽度太紧（球号一颗都不许裁），横屏把计时放回底部状态条右端；
+     布局细节用 display 切换，桌面上这两条互斥，不会同时出现两个表 */
+  .rack-clock{display:none}
+  .bar-clock{display:inline;font-size:11px;color:#a8bccd;margin-left:2px}
 }
 
 /* ============================================================

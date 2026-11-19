@@ -20,8 +20,7 @@
       <h1>八球台球</h1>
       <span class="tag">CANVAS POOL</span>
     </div>
-    <!-- 本局计时：顶栏中间，字号压得比标题小一档，只做"这局打了多久"的参考 -->
-    <div class="head-clock" id="headClock" aria-label="本局用时">00:00</div>
+    <!-- 本局计时挪到了台面上方的球组条中间（跟台面同宽，才不会因为右侧面板开合而错位） -->
     <div class="head-actions">
       <!-- 桌面端：浏览器全屏，可用高度变大后台面也跟着变大（手机横屏另有细带上的全屏按钮） -->
       <button type="button" class="panel-mini" id="btnFullTop">全屏</button>
@@ -42,6 +41,8 @@
             </div>
             <div class="chips" id="chipsSolid"></div>
           </div>
+          <!-- 本局计时：夹在两组球号中间，正好落在台面正中心线上（右侧面板开合都不会让它偏） -->
+          <div class="rack-clock" id="headClock" aria-label="本局用时">00:00</div>
           <div class="group-panel" id="panelStripe">
             <div class="gp-head">
               <span class="gp-owner" id="ownerStripe">球组待定</span>
@@ -125,6 +126,8 @@
         <div class="status-line">
           <span class="dot" id="turnDot"></span>
           <span id="statusText">玩家 1 击球</span>
+          <!-- 只在手机横屏出现（球组条那行宽度太紧，计时改挂在状态条右端）；桌面端这行隐藏，计时在球组条中间 -->
+          <span class="bar-clock" id="barClock">00:00</span>
         </div>
         <div class="sub" id="statusSub">向母球反方向拖动瞄准，松手击球</div>
         <div class="power-block">
