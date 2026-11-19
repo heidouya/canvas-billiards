@@ -33,6 +33,24 @@ function raycastAim(from, dir, maxDist) {
   return Math.max(0, best);
 }
 
+// 手中球摆位时用：找出当前玩家“能打”的球里离母球最近的一颗，返回单位方向。
+// 规则跟着 aiTargetBalls 走：没定组→任意非黑八；定组→己方球；己方清完→黑八
+function nearestPlayableDir(cue) {
+  const list = aiTargetBalls(state.turn);
+  let best = null;
+  let bestD = Infinity;
+  for (const b of list) {
+    const d = dist(cue.x, cue.y, b.x, b.y);
+    if (d < bestD) { bestD = d; best = b; }
+  }
+  if (!best) return null;
+  const dx = best.x - cue.x;
+  const dy = best.y - cue.y;
+  const d = Math.hypot(dx, dy);
+  if (d < 1) return null;
+  return { x: dx / d, y: dy / d };
+}
+
 function drawAim() {
   if (state.phase !== 'aim' || state.modalOpen) return;
   if (state.aimMode === 'off') return;      // 关闭档：什么都不画，只靠球杆判断方向
@@ -44,7 +62,9 @@ function drawAim() {
   ctx.save();
   ctx.globalAlpha = 1;
 
-  const dir = state.aimDir;
+  // 手中球摆位阶段还没有角度可谈，线改为指向“离母球最近的可打球”，拖到哪儿就重新找一次；
+  // 找不到可打球（理论上不会）时退回原来的方向，不至于没线
+  const dir = (state.dragMode === 'place' ? nearestPlayableDir(cue) : null) || state.aimDir;
   const hitLen = raycastAim(cue, dir, 1400);
   // 「短线」档只画母球附近一小段方向，不给碰撞点和终点
   const len = state.aimMode === 'short' ? Math.min(hitLen, AIM_SHORT_LEN) : hitLen;
