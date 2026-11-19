@@ -245,6 +245,68 @@ function drawCueStick() {
   }
 }
 
+// 手中球：在母球旁边浮一句「按住母球拖动摆位」。
+// 视线本来就在球上，右侧状态卡那行字很容易漏看；这里只在“该摆、还没按”时出现，
+// 一按下（瞄准或摆位）就消失，不挡母球和辅助线；电脑回合、弹窗打开时也不出现
+function drawPlaceLabel() {
+  if (state.phase !== 'aim' || state.modalOpen) return;
+  if (!state.ballInHand) return;
+  if (state.aiming || state.dragMode) return;
+  if (isAIPlayer(state.turn)) return;
+  const cue = cueBall();
+  if (!cue || !cue.active) return;
+
+  const text = '按住母球拖动摆位';
+  const cssScale = canvas.getBoundingClientRect().width / VIEW_W;
+  const fs = clamp(Math.round(12 / cssScale), 13, 30);
+
+  ctx.save();
+  ctx.font = `600 ${fs}px system-ui,-apple-system,"Segoe UI",sans-serif`;
+  const tw = ctx.measureText(text).width;
+  const padX = Math.round(fs * 0.7);
+  const boxH = Math.round(fs * 1.8);
+  const gap = BALL_R + Math.round(fs * 0.8);
+  const bw = tw + padX * 2;
+
+  // 上/下两侧各算一次：出界的、压到别的球的扣分，挑更干净的一侧
+  const overlaps = (x0, y0) => {
+    for (const b of state.balls) {
+      if (!b.active || b.id === 0) continue;
+      if (Math.abs(b.x - (x0 + bw / 2)) < bw / 2 + BALL_R &&
+          Math.abs(b.y - (y0 + boxH / 2)) < boxH / 2 + BALL_R) return true;
+    }
+    return false;
+  };
+  let best = null;
+  for (const dir of [1, -1]) {
+    const rawX = cue.x - bw / 2;
+    const rawY = dir > 0 ? cue.y + gap : cue.y - gap - boxH;
+    const x0 = clamp(rawX, TABLE.x + 2, TABLE.x + TABLE.w - bw - 2);
+    const y0 = clamp(rawY, TABLE.y + 2, TABLE.y + TABLE.h - boxH - 2);
+    const score = (x0 - rawX) ** 2 + (y0 - rawY) ** 2 + (overlaps(x0, y0) ? 24000 : 0);
+    if (!best || score < best.score) best = { x0, y0, score };
+  }
+  if (!best) { ctx.restore(); return; }
+
+  // 药丸底 + 细描边，绿台布上也看得清；颜色跟手中球提示环同一族
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(best.x0, best.y0, bw, boxH, Math.round(fs * 0.6));
+  else ctx.rect(best.x0, best.y0, bw, boxH);
+  ctx.fillStyle = 'rgba(9,30,24,.86)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(140,235,195,.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#bfeede';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, best.x0 + bw / 2, best.y0 + boxH / 2 + 1);
+  ctx.restore();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
 // 拖拽瞄准时，在力度光晕旁边浮一个百分比，省得总去看右侧力度条
 // 位置放在“垂直于击球方向”的一侧：手指和球杆在反方向、虚线在正方向，都不会被它挡住
 // 字号按画布缩放反算（手机上画布被缩小，按逻辑像素写字会小到看不清）

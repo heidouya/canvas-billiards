@@ -348,6 +348,7 @@ function render() {
   drawPocketHint();
   drawBalls();
   drawCueHalo();
+  drawPlaceLabel();
   drawAim();
   drawGuide();
   drawCueStick();
