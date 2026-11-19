@@ -76,9 +76,9 @@
         <div class="seg-row">
           <span class="seg-label">模式</span>
           <div class="seg" id="modeSeg">
-            <button type="button" data-mode="ai">人机对战</button>
+            <button type="button" class="active" data-mode="ai">人机对战</button>
             <button type="button" data-mode="auto">电脑互打</button>
-            <button type="button" class="active" data-mode="pvp">本地双人</button>
+            <button type="button" data-mode="pvp">本地双人</button>
           </div>
         </div>
         <!-- 电脑 1（只在电脑互打时出现） -->
@@ -91,11 +91,11 @@
           </div>
         </div>
         <!-- 难度：人机对战里指电脑；电脑互打里指电脑 2 -->
-        <div class="seg-row" id="levelRow" hidden>
+        <div class="seg-row" id="levelRow">
           <span class="seg-label" id="levelLabel">难度</span>
           <div class="seg" id="levelSeg">
-            <button type="button" data-level="easy">简单</button>
-            <button type="button" class="active" data-level="normal">普通</button>
+            <button type="button" class="active" data-level="easy">简单</button>
+            <button type="button" data-level="normal">普通</button>
             <button type="button" data-level="hard">困难</button>
           </div>
         </div>
@@ -156,7 +156,7 @@
 <!-- 玩法卡片：点右侧「玩法」按钮才打开，进页面不自动弹 -->
 <div class="modal" id="startModal">
   <div class="modal-box start-box">
-    <span class="start-kicker" id="startKicker">本地双人</span>
+    <span class="start-kicker" id="startKicker">人机对战 · 难度 简单</span>
     <h2 id="startTitle">玩法提示</h2>
     <p class="start-sub" id="startSub">玩家 1 开球</p>
     <ul class="start-list">
