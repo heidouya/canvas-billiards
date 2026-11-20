@@ -44,6 +44,22 @@
 }
 .jump-close:hover{background:#1d2c3c;border-color:#31506b}
 
+/* 瞄准圈开关：只关掉蓝色假想圈，袋口那条金线一直留着 */
+.jump-hint{
+  flex:0 0 auto;appearance:none;cursor:pointer;font-family:inherit;
+  display:inline-flex;align-items:center;gap:7px;
+  height:26px;padding:0 11px;border-radius:8px;font-size:12px;
+  border:1px solid #26405a;background:#16222f;color:#cfe0ee;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.jump-hint:hover{background:#1d2c3c;border-color:#31506b}
+.jump-hint .hint-dot{
+  width:6px;height:6px;border-radius:50%;background:#63c9ff;
+  box-shadow:0 0 7px rgba(99,201,255,.75);transition:background .15s,box-shadow .15s;
+}
+.jump-hint.off{color:#8fa2b5}
+.jump-hint.off .hint-dot{background:#4a5b6e;box-shadow:none}
+
 .jump-stage{
   position:relative;display:flex;justify-content:center;
   border-radius:14px;overflow:hidden;

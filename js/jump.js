@@ -22,6 +22,8 @@
   const retryBtn = document.getElementById('jumpRetry');
   const closeBtn = document.getElementById('jumpClose');
   const levelBox = document.getElementById('jumpLevels');
+  const hintBtn = document.getElementById('jumpHint');
+  const hintText = document.getElementById('jumpHintText');
 
   /* ---------------- 参数 ---------------- */
   const G = 1500;                        // 重力（逻辑单位/秒²）
@@ -35,10 +37,12 @@
   const JUMP_DECEL = 300;                // 落地滚动的摩擦（比主台面稍大，别让球满台乱窜）
   const GRAB = CAPTURE_R + 7;            // 袋口吃球半径（略放宽，贴库滑进袋也能吃到）
   const JUMP_KEY = 'eightball.jump.v1';
+  const HINT_KEY = 'eightball.jump.hint.v1';   // 瞄准圈开关（默认开）
 
   // 难度是递进的：第 1 关正对袋口（教），第 2 关偏 15° + 3 杆，第 3 关偏 25° + 5 杆。
   // 偏角关里目标球不再和「母球→球心」这条线共线，得打到「假想球」那个点上，
-  // 所以这两关会在假想球位置画一个虚线圈当瞄准点（不然差半度的事，纯靠蒙）。
+  // 所以这两关会在假想球位置画一个虚线圈当瞄准点（不然差半度的事，纯靠蒙）；
+  // 圈可以用页头的「瞄准圈」开关关掉，关掉以后只剩袋口那条金虚线指路。
   const LEVELS = [
     {
       cue: { x: 250, y: 430 }, target: { x: 515, y: 110, num: 6 },
@@ -48,14 +52,14 @@
       hint: '第 1 关 · 跳过 8 号，把 6 号送进中上袋 · 正对袋口，先找手感'
     },
     {
-      cue: { x: 200, y: 420 }, target: { x: 950, y: 140, num: 3 },
+      cue: { x: 267, y: 400 }, target: { x: 923, y: 159, num: 3 },
       pocket: { x: 1054, y: 66, name: '右上袋' },
       blocks: [{ t: 0.50, num: 8 }, { t: 0.70, num: 5 }],
       maxShots: 3,
       hint: '第 2 关 · 跳过 8、5 号，把 3 号送进右上袋 · 袋口偏 15°，3 杆内过'
     },
     {
-      cue: { x: 121, y: 340 }, target: { x: 930, y: 470, num: 5 },
+      cue: { x: 182, y: 331 }, target: { x: 893, y: 445, num: 5 },
       pocket: { x: 1054, y: 554, name: '右下袋' },
       blocks: [{ t: 0.42, num: 8 }, { t: 0.55, num: 4 }, { t: 0.68, num: 7 }],
       maxShots: 5,
@@ -66,11 +70,38 @@
   /* ---------------- 局面 ---------------- */
   let level = 0;
   let best = loadBest();
+  let hintOn = loadHint();
   let s = null;                 // 当前局面
   let running = false;
   let pausedClock = false;
   let rafId = 0;
   let lastTime = 0;
+
+  function loadHint() {
+    try {
+      const v = localStorage.getItem(HINT_KEY);
+      return v === null ? true : v === '1';
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function paintHint() {
+    if (!hintBtn) return;
+    hintBtn.classList.toggle('off', !hintOn);
+    hintBtn.setAttribute('aria-pressed', hintOn ? 'true' : 'false');
+    if (hintText) hintText.textContent = hintOn ? '瞄准圈 开' : '瞄准圈 关';
+  }
+
+  // 这一关一进来该说什么：开着瞄准圈就讲圈，关了就说回拉出杆
+  function idleMsg() {
+    const L = LEVELS[level];
+    const name = L.target.num ? L.target.num + ' 号' : '目标球';
+    if (hintOn && s && s.cutDeg > 3) {
+      return '把白球滚进蓝圈再出杆：停在圈里，' + name + '才会往袋里走';
+    }
+    return '按住台面往回拉（跟击球方向相反），松手起跳';
+  }
 
   function loadBest() {
     try {
@@ -128,11 +159,7 @@
   function resetLevel(i) {
     level = i;
     s = makeState(i);
-    // 偏角关一进来就把瞄准点讲清楚：白球得停在蓝圈上，目标球才会往袋里走
-    const lv = LEVELS[i];
-    s.msg = s.cutDeg > 3
-      ? '把白球滚进蓝圈再出杆：停在圈里，' + (lv.target.num ? lv.target.num + ' 号' : '目标球') + '才会往袋里走'
-      : '按住台面往回拉（跟击球方向相反），松手起跳';
+    s.msg = idleMsg();
     nextBtn.hidden = true;
     syncLevels();
     paintMsg('', true);
@@ -676,22 +703,23 @@
   // 假想球：偏角关的瞄准点。白球停在这个圈上，目标球才会朝袋口走。
   // 单独在球上面画，免得被目标球挡掉一半、看不清瞄准点。
   function drawGhostHint() {
+    if (!hintOn) return;
     if (!s.ghost || s.cutDeg <= 3) return;
     if (s.phase !== 'aim') return;
     if (!s.balls[s.balls.length - 1].active) return;
     ctx.save();
     ctx.beginPath();
     ctx.arc(s.ghost.x, s.ghost.y, BALL_R, 0, TAU);
-    ctx.setLineDash([5, 4]);
-    ctx.strokeStyle = 'rgba(170,235,255,.85)';
-    ctx.lineWidth = 1.8;
+    ctx.setLineDash([5 * Math.min(cssScale, 2), 4 * Math.min(cssScale, 2)]);
+    ctx.strokeStyle = 'rgba(170,235,255,.88)';
+    ctx.lineWidth = 1.8 * cssScale;
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(170,235,255,.10)';
     ctx.fill();
     // 圈心一个实心点：这就是母球该停的位置
     ctx.beginPath();
-    ctx.arc(s.ghost.x, s.ghost.y, 2.4, 0, TAU);
+    ctx.arc(s.ghost.x, s.ghost.y, 2.4 * cssScale, 0, TAU);
     ctx.fillStyle = 'rgba(215,247,255,.95)';
     ctx.fill();
     ctx.restore();
@@ -787,11 +815,17 @@
     rafId = requestAnimationFrame(tick);
   }
 
+  // 画布被 CSS 缩小显示时（手机窄屏），细线会缩到看不见，
+  // 关键提示（瞄准圈）按这个系数加粗，保持差不多 1.5 个屏幕像素
+  let cssScale = 1;
+
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = Math.round(VIEW_W * dpr);
     cv.height = Math.round(VIEW_H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const w = cv.getBoundingClientRect().width;
+    cssScale = w ? Math.min(3, Math.max(1, VIEW_W / w)) : 1;
   }
   window.addEventListener('resize', () => { if (running) resize(); });
 
@@ -838,6 +872,21 @@
 
   closeBtn.addEventListener('click', close);
 
+  // 瞄准圈开关：只关蓝圈，袋口那条金虚线一直留着
+  if (hintBtn) {
+    hintBtn.addEventListener('click', () => {
+      hintOn = !hintOn;
+      try { localStorage.setItem(HINT_KEY, hintOn ? '1' : '0'); } catch (e) { /* 忽略 */ }
+      paintHint();
+      if (s && s.phase === 'aim' && !s.aim) {
+        s.msg = idleMsg();
+        paintMsg('', true);
+      }
+      if (s) draw();
+    });
+  }
+  paintHint();
+
   overlay.addEventListener('pointerdown', e => {
     if (e.target === overlay) close();
   });
@@ -865,3 +914,5 @@
 
   window.JumpChallenge = { open, close, step, state: () => s };
 })();
+
+
