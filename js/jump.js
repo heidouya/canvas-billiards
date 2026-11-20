@@ -36,26 +36,30 @@
   const GRAB = CAPTURE_R + 7;            // 袋口吃球半径（略放宽，贴库滑进袋也能吃到）
   const JUMP_KEY = 'eightball.jump.v1';
 
-  // 三关都排成一条直线：母球 → 挡球 → 目标球 → 指定袋口。
-  // 目标球离袋口只有 130–160，正对着袋，打准厚度就能进；挡球挡在这条线的中段。
+  // 难度是递进的：第 1 关正对袋口（教），第 2 关偏 15° + 3 杆，第 3 关偏 25° + 5 杆。
+  // 偏角关里目标球不再和「母球→球心」这条线共线，得打到「假想球」那个点上，
+  // 所以这两关会在假想球位置画一个虚线圈当瞄准点（不然差半度的事，纯靠蒙）。
   const LEVELS = [
     {
       cue: { x: 250, y: 430 }, target: { x: 515, y: 110, num: 6 },
       pocket: { x: 560, y: 56, name: '中上袋' },
       blocks: [{ t: 0.45, num: 8 }],
-      hint: '第 1 关 · 跳过 8 号，把 6 号送进中上袋'
+      maxShots: 0,
+      hint: '第 1 关 · 跳过 8 号，把 6 号送进中上袋 · 正对袋口，先找手感'
     },
     {
-      cue: { x: 210, y: 460 }, target: { x: 981, y: 100, num: 3 },
+      cue: { x: 200, y: 420 }, target: { x: 950, y: 140, num: 3 },
       pocket: { x: 1054, y: 66, name: '右上袋' },
-      blocks: [{ t: 0.44, num: 8 }, { t: 0.60, num: 5 }],
-      hint: '第 2 关 · 两颗挡球，把 3 号送进右上袋'
+      blocks: [{ t: 0.50, num: 8 }, { t: 0.70, num: 5 }],
+      maxShots: 3,
+      hint: '第 2 关 · 跳过 8、5 号，把 3 号送进右上袋 · 袋口偏 15°，3 杆内过'
     },
     {
-      cue: { x: 180, y: 280 }, target: { x: 968, y: 527, num: 5 },
+      cue: { x: 121, y: 340 }, target: { x: 930, y: 470, num: 5 },
       pocket: { x: 1054, y: 554, name: '右下袋' },
-      blocks: [{ t: 0.40, num: 8 }, { t: 0.52, num: 4 }, { t: 0.64, num: 7 }],
-      hint: '第 3 关 · 三颗挡球，把 5 号送进右下袋'
+      blocks: [{ t: 0.42, num: 8 }, { t: 0.55, num: 4 }, { t: 0.68, num: 7 }],
+      maxShots: 5,
+      hint: '第 3 关 · 跳过三颗挡球，把 5 号送进右下袋 · 偏 25°，5 杆内过'
     }
   ];
 
@@ -83,8 +87,23 @@
 
   function makeState(i) {
     const L = LEVELS[i];
-    const dx = L.target.x - L.cue.x;
-    const dy = L.target.y - L.cue.y;
+    // 假想球：母球要落到这个点上，目标球才会沿「球心→袋口」那条线走
+    const px = L.pocket.x - L.target.x;
+    const py = L.pocket.y - L.target.y;
+    const pd = Math.hypot(px, py) || 1;
+    const ux = px / pd;
+    const uy = py / pd;
+    const ghost = { x: L.target.x - ux * BALL_R * 2, y: L.target.y - uy * BALL_R * 2 };
+    // 薄厚度：母球「来」的方向和目标球「去」的方向，本来应该是一条直线；
+    // 差多少度就是打薄了多少度（15°、25° 都是这么算的）
+    const v1x = L.cue.x - L.target.x, v1y = L.cue.y - L.target.y;
+    const v2x = L.pocket.x - L.target.x, v2y = L.pocket.y - L.target.y;
+    const cosA = (v1x * v2x + v1y * v2y) / (Math.hypot(v1x, v1y) * Math.hypot(v2x, v2y));
+    const ang = Math.acos(Math.min(1, Math.max(-1, cosA))) * 180 / Math.PI;
+    const cutDeg = Math.abs(180 - ang);
+
+    const dx = ghost.x - L.cue.x;
+    const dy = ghost.y - L.cue.y;
     const balls = [
       { id: 0, cue: true, color: '#f7f4ea', x: L.cue.x, y: L.cue.y, z: 0, vx: 0, vy: 0, vz: 0, active: true }
     ];
@@ -100,7 +119,8 @@
       x: L.target.x, y: L.target.y, z: 0, vx: 0, vy: 0, vz: 0, active: true
     });
     return {
-      balls, pocket: L.pocket, phase: 'aim', aim: null, result: null, msg: '', acc: 0,
+      balls, pocket: L.pocket, ghost, cutDeg, maxShots: L.maxShots || 0,
+      phase: 'aim', aim: null, result: null, msg: '', acc: 0,
       attempts: 0, settle: 0, level: i
     };
   }
@@ -108,7 +128,11 @@
   function resetLevel(i) {
     level = i;
     s = makeState(i);
-    s.msg = '按住台面往回拉（跟击球方向相反），松手起跳';
+    // 偏角关一进来就把瞄准点讲清楚：白球得停在蓝圈上，目标球才会往袋里走
+    const lv = LEVELS[i];
+    s.msg = s.cutDeg > 3
+      ? '把白球滚进蓝圈再出杆：停在圈里，' + (lv.target.num ? lv.target.num + ' 号' : '目标球') + '才会往袋里走'
+      : '按住台面往回拉（跟击球方向相反），松手起跳';
     nextBtn.hidden = true;
     syncLevels();
     paintMsg('', true);
@@ -136,7 +160,8 @@
   function paintCount() {
     const b = best[level];
     const n = Math.max(1, s.attempts);
-    countEl.textContent = '本关第 ' + n + ' 杆' + (b ? ' · 最好 ' + b + ' 杆' : '');
+    const budget = s.maxShots ? ' / ' + s.maxShots : '';
+    countEl.textContent = '本关 ' + n + budget + ' 杆' + (b ? ' · 最好 ' + b + ' 杆' : '');
   }
 
   /* ---------------- 出手 ---------------- */
@@ -353,9 +378,10 @@
   }
 
   function finishShot() {
-    s.phase = 'done';
     const r = s.result;
+
     if (r && r.kind === 'ok' && r.potted) {
+      s.phase = 'done';
       const t = s.balls[s.balls.length - 1];
       setMsg('漂亮！跳过挡球，' + (t && t.num ? t.num + ' 号' : '目标球') + '进袋了 · 用了 ' + s.attempts + ' 杆', 'ok');
       if (!best[level] || s.attempts < best[level]) {
@@ -366,15 +392,32 @@
       nextBtn.hidden = false;
       nextBtn.textContent = level < LEVELS.length - 1 ? '下一关' : '回到第 1 关';
       if (typeof Sound !== 'undefined') Sound.tone(880, 0.12, 0.16, 'triangle', 1200);
-    } else if (r && r.kind === 'ok') {
-      setMsg('跳过去了、也碰到球了，但没进袋：往袋口那条线再压实一点', 'bad');
-    } else if (r && r.kind === 'blocked') {
-      setMsg('撞在挡球上了：弧线太矮，加点力度再跳一次', 'bad');
-    } else if (r && r.kind === 'pocket') {
-      setMsg('母球自己掉袋了：力度小一点，或者往旁边偏一点', 'bad');
-    } else {
-      setMsg('跳过去了，但没碰到目标球：落点差一截，调一下力度', 'bad');
+      return;
     }
+
+    let fail = '跳过去了，但没碰到目标球：落点差一截，调一下力度';
+    if (r && r.kind === 'ok') fail = '跳过去了、也碰到球了，但没进袋：往袋口那条线再压实一点';
+    else if (r && r.kind === 'blocked') fail = '撞在挡球上了：弧线太矮，加点力度再跳一次';
+    else if (r && r.kind === 'pocket') fail = '母球自己掉袋了：力度小一点，或者往旁边偏一点';
+
+    // 杆数预算用完了：这一关就到此为止，只能点「重试」重开
+    if (s.maxShots && s.attempts >= s.maxShots) {
+      s.phase = 'done';
+      nextBtn.hidden = true;
+      setMsg(fail + ' · ' + s.maxShots + ' 杆用完了，点「重试」重开这一关', 'bad');
+      paintCount();
+      return;
+    }
+
+    // 还有杆数：摆回这一关的原位，接着打下一杆（每杆都从头摆，方便反复找手感）
+    const used = s.attempts;
+    s = makeState(level);
+    s.attempts = used;
+    s.phase = 'aim';
+    nextBtn.hidden = true;
+    const left = s.maxShots ? '还剩 ' + (s.maxShots - used) + ' 杆，再来一杆' : '再来一杆，力度慢慢调';
+    setMsg(fail + ' · ' + left, 'bad');
+    paintCount();
   }
 
   /* ---------------- 瞄准与预览 ---------------- */
@@ -609,6 +652,7 @@
 
     if (!t || !t.active) return;
 
+    // 假想球虚线圈（在球上面单独画，见 drawGhostHint）
     // 目标球到袋口那条线：只有瞄准时才画，别干扰看落点
     if (p && s.phase === 'aim') {
       ctx.save();
@@ -629,6 +673,30 @@
     ctx.stroke();
   }
 
+  // 假想球：偏角关的瞄准点。白球停在这个圈上，目标球才会朝袋口走。
+  // 单独在球上面画，免得被目标球挡掉一半、看不清瞄准点。
+  function drawGhostHint() {
+    if (!s.ghost || s.cutDeg <= 3) return;
+    if (s.phase !== 'aim') return;
+    if (!s.balls[s.balls.length - 1].active) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(s.ghost.x, s.ghost.y, BALL_R, 0, TAU);
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = 'rgba(170,235,255,.85)';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(170,235,255,.10)';
+    ctx.fill();
+    // 圈心一个实心点：这就是母球该停的位置
+    ctx.beginPath();
+    ctx.arc(s.ghost.x, s.ghost.y, 2.4, 0, TAU);
+    ctx.fillStyle = 'rgba(215,247,255,.95)';
+    ctx.fill();
+    ctx.restore();
+  }
+
   function draw() {
     ctx.clearRect(0, 0, VIEW_W, VIEW_H);
     drawTable();
@@ -637,6 +705,7 @@
     for (let i = 0; i < s.balls.length; i++) {
       if (s.balls[i].active) drawBall(s.balls[i]);
     }
+    drawGhostHint();
   }
 
   /* ---------------- 输入 ---------------- */
