@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="css/panel.css">
 <link rel="stylesheet" href="css/overlay.css">
 <link rel="stylesheet" href="css/responsive.css">
+<link rel="stylesheet" href="css/jump.css">
 </head>
 <body>
 <div class="app">
@@ -22,6 +23,8 @@
     </div>
     <!-- 本局计时挪到了台面上方的球组条中间（跟台面同宽，才不会因为右侧面板开合而错位） -->
     <div class="head-actions">
+      <!-- 跳球挑战：独立小玩法，点开是覆盖式浮层，关掉就回到原局 -->
+      <button type="button" class="panel-mini" id="btnJump">跳球挑战</button>
       <!-- 桌面端：浏览器全屏，可用高度变大后台面也跟着变大（手机横屏另有细带上的全屏按钮） -->
       <button type="button" class="panel-mini" id="btnFullTop">全屏</button>
       <!-- 桌面端：收起/展开右侧面板，把宽度让给台面（手机端不显示） -->
@@ -141,6 +144,8 @@
         <button type="button" class="btn" id="btnReplay" disabled>上一杆回放</button>
         <button type="button" class="btn" id="btnSound">音效：开</button>
         <button type="button" class="btn" id="btnHelp">玩法</button>
+        <!-- 手机上页头按钮会隐藏，所以面板里再放一个入口 -->
+        <button type="button" class="btn" id="btnJump2">跳球挑战</button>
         <button type="button" class="btn danger wide" id="btnClear">清空战绩</button>
       </div>
 
@@ -182,6 +187,30 @@
   </div>
 </div>
 
+<!-- 跳球挑战：覆盖式浮层，独用一块画布，关掉不影响对局 -->
+<div class="jump" id="jumpMode">
+  <div class="jump-box">
+    <div class="jump-head">
+      <div class="jump-title">跳球挑战<span class="jump-sub" id="jumpSub">第 1 关 · 跳过挡球碰到目标球</span></div>
+      <div class="jump-levels" id="jumpLevels">
+        <button type="button" data-lv="0" class="active">1</button>
+        <button type="button" data-lv="1">2</button>
+        <button type="button" data-lv="2">3</button>
+      </div>
+      <button type="button" class="jump-close" id="jumpClose">关闭</button>
+    </div>
+    <div class="jump-stage"><canvas id="jumpCanvas"></canvas></div>
+    <div class="jump-foot">
+      <div class="jump-msg" id="jumpMsg">按住台面往回拉（跟击球方向相反），松手起跳</div>
+      <div class="jump-actions">
+        <span class="jump-count" id="jumpCount">本关第 1 杆</span>
+        <button type="button" class="btn" id="jumpRetry">重试</button>
+        <button type="button" class="btn primary" id="jumpNext" hidden>下一关</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/util.js"></script>
 <script src="js/state.js"></script>
@@ -199,5 +228,6 @@
 <script src="js/hud.js"></script>
 <script src="js/loop.js"></script>
 <script src="js/main.js"></script>
+<script src="js/jump.js"></script>
 </body>
 </html>
