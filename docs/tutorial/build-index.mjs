@@ -1,4 +1,4 @@
-// 生成 docs/tutorial/index.html：把 22 章 md 内联成一个可双击打开的单页（离线可用）
+// 生成 docs/tutorial/index.html：把 23 章 md 内联成一个可双击打开的单页（离线可用）
 // 用法：node docs/tutorial/build-index.mjs
 import fs from 'node:fs';
 import path from 'node:path';
@@ -619,3 +619,4 @@ route();
 
 fs.writeFileSync(path.join(DIR, 'index.html'), PAGE, 'utf8');
 console.log('已生成 index.html：' + chapters.length + ' 章，' + Math.round(PAGE.length / 1024) + ' KB');
+
