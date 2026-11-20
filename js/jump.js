@@ -32,23 +32,30 @@
   const LIFT = 0.30;                     // 高度 → 屏幕上的抬升量（俯视图靠这个表现飞起来）
   const AIR_SCALE = 320;                 // 高度 → 半径放大，越小放得越大
   const BOUNCE = 0.32;                   // 落地后残余的竖向弹跳
+  const JUMP_DECEL = 300;                // 落地滚动的摩擦（比主台面稍大，别让球满台乱窜）
+  const GRAB = CAPTURE_R + 7;            // 袋口吃球半径（略放宽，贴库滑进袋也能吃到）
   const JUMP_KEY = 'eightball.jump.v1';
 
+  // 三关都排成一条直线：母球 → 挡球 → 目标球 → 指定袋口。
+  // 目标球离袋口只有 130–160，正对着袋，打准厚度就能进；挡球挡在这条线的中段。
   const LEVELS = [
     {
-      cue: { x: 250, y: 430 }, target: { x: 640, y: 250, num: 6 },
-      blocks: [{ t: 0.46, num: 8 }],
-      hint: '第 1 关 · 一颗挡球正对着目标球，跳过它再碰到 6 号'
+      cue: { x: 250, y: 430 }, target: { x: 515, y: 110, num: 6 },
+      pocket: { x: 560, y: 56, name: '中上袋' },
+      blocks: [{ t: 0.45, num: 8 }],
+      hint: '第 1 关 · 跳过 8 号，把 6 号送进中上袋'
     },
     {
-      cue: { x: 230, y: 480 }, target: { x: 760, y: 180, num: 3 },
-      blocks: [{ t: 0.40, num: 8 }, { t: 0.58, num: 5 }],
-      hint: '第 2 关 · 两颗挡球，弧线得抬得更高'
+      cue: { x: 210, y: 460 }, target: { x: 981, y: 100, num: 3 },
+      pocket: { x: 1054, y: 66, name: '右上袋' },
+      blocks: [{ t: 0.44, num: 8 }, { t: 0.60, num: 5 }],
+      hint: '第 2 关 · 两颗挡球，把 3 号送进右上袋'
     },
     {
-      cue: { x: 200, y: 300 }, target: { x: 880, y: 300, num: 5 },
-      blocks: [{ t: 0.30, num: 8 }, { t: 0.44, num: 4 }, { t: 0.58, num: 7 }],
-      hint: '第 3 关 · 三颗挡球排成一线，落点要压在目标球前面'
+      cue: { x: 180, y: 280 }, target: { x: 968, y: 527, num: 5 },
+      pocket: { x: 1054, y: 554, name: '右下袋' },
+      blocks: [{ t: 0.40, num: 8 }, { t: 0.52, num: 4 }, { t: 0.64, num: 7 }],
+      hint: '第 3 关 · 三颗挡球，把 5 号送进右下袋'
     }
   ];
 
@@ -93,7 +100,7 @@
       x: L.target.x, y: L.target.y, z: 0, vx: 0, vy: 0, vz: 0, active: true
     });
     return {
-      balls, phase: 'aim', aim: null, result: null, msg: '', acc: 0,
+      balls, pocket: L.pocket, phase: 'aim', aim: null, result: null, msg: '', acc: 0,
       attempts: 0, settle: 0, level: i
     };
   }
@@ -207,7 +214,7 @@
       let k = 1;
       const grounded = !(b === cue && !low);
       if (grounded) {
-        const ns = sp - ROLL_DECEL * dt;
+        const ns = sp - JUMP_DECEL * dt;
         if (ns <= STOP_SPEED) { b.vx = 0; b.vy = 0; continue; }
         k = ns / sp;
       }
@@ -231,14 +238,14 @@
     for (let i = 0; i < s.balls.length; i++) {
       if (s.balls[i].active) collideRails(s.balls[i]);
     }
-    // 兜底：不管飞多高，都不许出桌
-    for (let i = 0; i < s.balls.length; i++) {
-      if (s.balls[i].active) containBall(s.balls[i]);
-    }
+    // 先判袋口，再做「别出桌」的兜底：贴台且已经进了袋口那一圈就不再被兜回来
     for (let i = 0; i < s.balls.length; i++) {
       const b = s.balls[i];
       if (!b.active) continue;
       if ((b.z || 0) < 8) pocketCheck(b);
+    }
+    for (let i = 0; i < s.balls.length; i++) {
+      if (s.balls[i].active) containBall(s.balls[i]);
     }
   }
 
@@ -319,14 +326,16 @@
 
   function pocketCheck(b) {
     for (let i = 0; i < POCKETS.length; i++) {
-      if (dist(b.x, b.y, POCKETS[i].x, POCKETS[i].y) < CAPTURE_R) {
+      if (dist(b.x, b.y, POCKETS[i].x, POCKETS[i].y) < GRAB) {
         b.active = false;
         b.vx = 0; b.vy = 0; b.vz = 0; b.z = 0;
         if (typeof Sound !== 'undefined') Sound.pocket(b.cue);
         if (b.cue) {
           if (!s.result) s.result = { kind: 'pocket' };
         } else if (b.target) {
+          // 先碰到球、后来才进袋：也要升格成「进球过关」
           if (!s.result) s.result = { kind: 'ok', potted: true };
+          else if (s.result.kind === 'ok') s.result.potted = true;
         }
         return;
       }
@@ -346,11 +355,9 @@
   function finishShot() {
     s.phase = 'done';
     const r = s.result;
-    if (r && r.kind === 'ok') {
-      const text = r.potted
-        ? '漂亮！跳过去直接把目标球打进袋'
-        : '碰到目标球，过关 · 用了 ' + s.attempts + ' 杆';
-      setMsg(text, 'ok');
+    if (r && r.kind === 'ok' && r.potted) {
+      const t = s.balls[s.balls.length - 1];
+      setMsg('漂亮！跳过挡球，' + (t && t.num ? t.num + ' 号' : '目标球') + '进袋了 · 用了 ' + s.attempts + ' 杆', 'ok');
       if (!best[level] || s.attempts < best[level]) {
         best[level] = s.attempts;
         saveBest();
@@ -359,6 +366,8 @@
       nextBtn.hidden = false;
       nextBtn.textContent = level < LEVELS.length - 1 ? '下一关' : '回到第 1 关';
       if (typeof Sound !== 'undefined') Sound.tone(880, 0.12, 0.16, 'triangle', 1200);
+    } else if (r && r.kind === 'ok') {
+      setMsg('跳过去了、也碰到球了，但没进袋：往袋口那条线再压实一点', 'bad');
     } else if (r && r.kind === 'blocked') {
       setMsg('撞在挡球上了：弧线太矮，加点力度再跳一次', 'bad');
     } else if (r && r.kind === 'pocket') {
@@ -386,7 +395,7 @@
     }
     const land = pts[pts.length - 1];
     const fly = Math.hypot(land.x - cue.x, land.y - cue.y);   // 空中飞过的距离
-    const roll = (vh * vh) / (2 * ROLL_DECEL);                // 落地后大概还能滚多远
+    const roll = (vh * vh) / (2 * JUMP_DECEL);                // 落地后大概还能滚多远
     const target = s.balls[s.balls.length - 1];
     const gap = target && target.active ? dist(cue.x, cue.y, target.x, target.y) : 0;
     const tooShort = gap > 0 && fly + roll < gap - BALL_R * 2;
@@ -585,9 +594,34 @@
 
   function drawTargetHint() {
     const t = s.balls[s.balls.length - 1];
-    if (!t || !t.active) return;
+    const p = s.pocket;
     const now = performance.now();
     const pulse = 0.5 + 0.5 * Math.sin(now / 600);
+
+    // 指定袋口：金色脉冲环，告诉玩家该往哪个袋打
+    if (p) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POCKET_R + 9 + pulse * 4, 0, TAU);
+      ctx.strokeStyle = 'rgba(255,208,90,' + (0.32 + pulse * 0.36).toFixed(3) + ')';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+
+    if (!t || !t.active) return;
+
+    // 目标球到袋口那条线：只有瞄准时才画，别干扰看落点
+    if (p && s.phase === 'aim') {
+      ctx.save();
+      ctx.setLineDash([6, 7]);
+      ctx.strokeStyle = 'rgba(255,208,90,.42)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(t.x, t.y);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     ctx.beginPath();
     ctx.arc(t.x, t.y, BALL_R + 6 + pulse * 3, 0, TAU);
     ctx.strokeStyle = 'rgba(255,208,90,' + (0.3 + pulse * 0.35).toFixed(3) + ')';
@@ -629,7 +663,9 @@
     const info = aimInfo(power, ux, uy);
     s.aim = { ux, uy, power, info };
     const pct = Math.round(power * 100);
-    let tip = '能跳过挡球并碰到目标球';
+    const tn = s.balls[s.balls.length - 1];
+    const tnName = tn && tn.num ? tn.num + ' 号' : '目标球';
+    let tip = '这杆能跳过挡球、把 ' + tnName + '送进袋';
     let kind = 'ok';
     if (info.blocked) {
       tip = '这杆跳不过去：挡球那儿太矮，再加点力度';
