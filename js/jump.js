@@ -841,7 +841,29 @@
   // 关键提示（瞄准圈）按这个系数加粗，保持差不多 1.5 个屏幕像素
   let cssScale = 1;
 
+  // 浮层宽度按「真实剩余高度」反推：页头 + 页脚 + 内边距吃掉多少，剩下的才留给台面。
+  // 只靠 CSS 的 calc() 猜不准（页头在窄屏会换行），手机横屏就会把台面挤扁。
+  function fitBox() {
+    const box = overlay.querySelector('.jump-box');
+    const head = overlay.querySelector('.jump-head');
+    const foot = overlay.querySelector('.jump-foot');
+    if (!box || !head || !foot) return;
+    const cs = getComputedStyle(box);
+    const os = getComputedStyle(overlay);
+    const gap = parseFloat(cs.rowGap || cs.gap || '0') || 0;
+    const chrome = head.offsetHeight + foot.offsetHeight
+      + parseFloat(cs.paddingTop || 0) + parseFloat(cs.paddingBottom || 0)
+      + gap * 2
+      + parseFloat(os.paddingTop || 0) + parseFloat(os.paddingBottom || 0)
+      + 8;                                  // 边框 + 取整的余量
+    const maxW = (window.innerHeight - chrome) * (VIEW_W / VIEW_H);
+    box.style.maxWidth = Math.max(280, Math.round(maxW)) + 'px';
+  }
+
   function resize() {
+    // 宽度会反过来影响页头是否换行，量两遍更稳
+    fitBox();
+    fitBox();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = Math.round(VIEW_W * dpr);
     cv.height = Math.round(VIEW_H * dpr);

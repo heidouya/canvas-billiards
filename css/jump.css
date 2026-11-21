@@ -61,13 +61,17 @@
 .jump-hint.off .hint-dot{background:#4a5b6e;box-shadow:none}
 
 .jump-stage{
-  position:relative;display:flex;justify-content:center;
+  position:relative;display:flex;align-items:center;justify-content:center;
+  flex:0 0 auto;
   border-radius:14px;overflow:hidden;
   background:#0a0f14;border:1px solid #1b2837;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
 }
+/* 画布始终按位图比例缩放：宽度定死、高度跟着算，舞台高度也由它撑开，
+   所以只要浮层宽度是对的，就不可能被拉扁 */
 .jump-stage canvas{
-  display:block;width:100%;height:auto;
+  display:block;align-self:center;
+  width:100%;height:auto;
   touch-action:none;cursor:crosshair;
 }
 
@@ -92,3 +96,26 @@
   .jump-msg{flex:1 1 100%;font-size:12px}
   .jump-actions{flex:1 1 100%;justify-content:flex-end}
 }
+
+/* 手机横屏：高度只有 300～400px，页头必须压成一行，台面才留得下高度 */
+@media (max-height:560px) and (orientation:landscape){
+  .jump{padding:6px}
+  .jump-box{
+    width:100%;max-height:calc(100dvh - 12px);
+    padding:8px;border-radius:12px;gap:6px;
+  }
+  .jump-head{gap:8px;flex-wrap:nowrap}
+  .jump-title{min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .jump-title .jump-sub{display:inline;margin:0 0 0 8px;font-size:11.5px}
+  .jump-levels{padding:2px}
+  .jump-levels button{width:26px;height:22px;font-size:11.5px}
+  .jump-hint,.jump-close{height:22px;padding:0 9px;font-size:11.5px}
+  .jump-hint .hint-dot{width:5px;height:5px}
+  .jump-foot{gap:8px;flex-wrap:nowrap}
+  .jump-msg{flex:1 1 auto;font-size:11.5px;line-height:1.4;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .jump-actions{flex:0 0 auto}
+  .jump-count{font-size:11.5px}
+  .jump-foot .btn{min-width:78px;height:30px;font-size:12px}
+}
+
