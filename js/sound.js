@@ -106,15 +106,23 @@ const Sound = {
   // 球与球 / 球与库边：清脆撞击，强度越大越响越尖
   hit(strength) {
     const v = clamp(strength, 0, 1);
-    if (v < 0.07) return;                 // 轻到根本听不见的接触，不值得开一条音频通道
+    if (v < 0.10) return;                 // 滚动中的微接触：听不见，也不该发声
     const c = this.ctx;
     if (!c) return;
     const t = c.currentTime;
-    // 同一瞬间的一簇撞击（开球、球堆里连环撞）合成一声，只留最响的那下
-    if (t - this._hitAt < 0.006 && v <= this._hitVol) return;
+    const soft = v < 0.3;
+    // 同一瞬间的一簇撞击合成一声，只留最响的那下。
+    // 轻碰会散落在球滚动的整段时间里，合流窗口要放宽，否则连成一串“咔咔”
+    const gap = soft ? 0.025 : 0.006;
+    if (t - this._hitAt < gap && v <= this._hitVol) return;
     this._hitAt = t;
     this._hitVol = v;
-    this.tone(760 + v * 620, 0.045 + v * 0.03, 0.05 + v * 0.20, 'triangle', 420);
+    if (soft) {
+      // 轻碰就是一记闷响：短、低、不带下滑
+      this.tone(480 + v * 420, 0.028 + v * 0.02, 0.03 + v * 0.14);
+    } else {
+      this.tone(760 + v * 620, 0.045 + v * 0.03, 0.05 + v * 0.20, 'triangle', 420);
+    }
   },
 
   // 落袋：低频下坠 + 短促杂音
