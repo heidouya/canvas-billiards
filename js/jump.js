@@ -37,7 +37,7 @@
   const JUMP_DECEL = 300;                // 落地滚动的摩擦（比主台面稍大，别让球满台乱窜）
   const GRAB = CAPTURE_R + 7;            // 袋口吃球半径（略放宽，贴库滑进袋也能吃到）
   const JUMP_KEY = 'eightball.jump.v1';
-  const HINT_KEY = 'eightball.jump.hint.v1';   // 瞄准圈开关（默认开）
+  const HINT_KEY = 'eightball.jump.hint.v2';   // 瞄准圈开关（默认关：先自己算，想看得见再开）
 
   // 难度递进两条腿一起走：
   //   ①「算不准」—— 偏角关（15°/25°）得打到假想球那个点上，白圈就是那个点；
@@ -80,9 +80,9 @@
   function loadHint() {
     try {
       const v = localStorage.getItem(HINT_KEY);
-      return v === null ? true : v === '1';
+      return v === null ? false : v === '1';
     } catch (e) {
-      return true;
+      return false;
     }
   }
 
