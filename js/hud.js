@@ -89,18 +89,12 @@ function hideModal() {
 const startModalEl = el('startModal');
 const startKickerEl = el('startKicker');
 const startSubEl = el('startSub');
-const GUIDE_KEY = 'eightball.guide.v1';   // 存 'done' 表示引导已完成过
 const LEVEL_NAMES = { easy: '简单', normal: '普通', hard: '困难' };
 const levelName = lv => LEVEL_NAMES[lv] || '普通';
 
-// 引导标记读写（localStorage 不可用时静默跳过）
-function guideDoneBefore() {
-  try { return localStorage.getItem(GUIDE_KEY) === 'done'; } catch (e) { return false; }
-}
+// 新手引导只管"本局第一杆之前"，所以不落盘：每开一局都重新露一次
 function markGuideDone() {
-  if (state.guideDone) return;
   state.guideDone = true;
-  try { localStorage.setItem(GUIDE_KEY, 'done'); } catch (e) { /* 忽略 */ }
 }
 
 // 卡片上那句小标签和副标题跟着模式 / 难度 / 规则走
@@ -149,9 +143,14 @@ function closeIntro() {
   updateStatus();
 }
 
-// 进页面只闪一条提示，不弹任何卡片
-function announceStart() {
-  toast(`比赛开始 · ${nameOf(state.turn)} 开球 · 按住台面往回拉即可出杆`, 2600);
+// 每开一局都提示一次：球摆好了，下一步就是往回拉杆。
+// （以前只在进页面时闪一条，所以"重新开局"后就没有提示了，看着像时有时无）
+function announceBreak() {
+  if (state.mode === 'auto') return;      // 电脑互打，没有"你"要拉杆
+  const aiSide = isAIPlayer(state.turn);
+  toast(aiSide
+    ? `比赛开始 · ${nameOf(state.turn)} 开球 · 电脑会自己摆球出杆`
+    : `比赛开始 · ${nameOf(state.turn)} 开球 · 摆好球后按住台面往回拉，松手出杆`, 3000);
 }
 
 function updatePowerUI() {
@@ -274,6 +273,7 @@ function resetGame() {
   state.calledPocket = -1;
   state.ballInHand = true;   // 开球：母球可先在开球区内摆放
   state.breakDone = false;
+  state.guideDone = false;   // 本局第一杆之前，那条"往回拉"的箭头重新出现
   state.lastFoul = null;
   state.aimDir = { x: 1, y: 0 };
   state.autoPaused = false;   // 重新开局默认继续自动进行
@@ -300,6 +300,7 @@ function resetGame() {
   updateStatus();
   updatePowerUI();
   updateClockUI();
+  announceBreak();           // 摆好球就提示"往回拉"，每局都发一次
   maybeStartAI();            // 电脑互打时由电脑直接开球
 }
 
@@ -427,8 +428,7 @@ el('btnAutoPause').addEventListener('click', () => {
 });
 
 el('btnRestart').addEventListener('click', () => {
-  resetGame();
-  toast('重新开局');
+  resetGame();               // 开局提示由 announceBreak 统一发，这里不再另闪一条把它顶掉
 });
 
 /* ---------- 手机横屏：设置面板做成右侧抽屉 ---------- */
