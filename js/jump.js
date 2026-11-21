@@ -496,9 +496,9 @@
     const info = s.aim.info;
 
     ctx.save();
-    // 弧线：抬起来的那条轨迹
+    // 弧线：抬起来的那条轨迹。关掉「瞄准圈」后不再变红——只给手感，不给结论
     ctx.lineWidth = 2;
-    ctx.strokeStyle = info.blocked ? 'rgba(255,140,140,.55)' : 'rgba(190,235,255,.5)';
+    ctx.strokeStyle = info.blocked && hintOn ? 'rgba(255,140,140,.55)' : 'rgba(190,235,255,.5)';
     ctx.setLineDash([9, 8]);
     ctx.beginPath();
     for (let i = 0; i < info.pts.length; i++) {
@@ -509,6 +509,9 @@
     }
     ctx.stroke();
     ctx.setLineDash([]);
+
+    // 落点圈和挡球上的红叉都是「这一杆行不行」的结论，跟假想圈一起归开关管
+    if (!hintOn) { ctx.restore(); return; }
 
     // 落点圈：这杆整体可行就泛绿，不行就泛红
     const good = !info.blocked && !info.tooShort && !info.tooFly;
@@ -760,6 +763,11 @@
     const info = aimInfo(power, ux, uy);
     s.aim = { ux, uy, power, info };
     const pct = Math.round(power * 100);
+    if (!hintOn) {
+      // 关掉瞄准圈 = 硬核：只报力度，这杆行不行自己看弧线判断
+      setMsg('力度 ' + pct + '% · 松手起跳', '');
+      return;
+    }
     const tn = s.balls[s.balls.length - 1];
     const tnName = tn && tn.num ? tn.num + ' 号' : '目标球';
     let tip = '这杆能跳过挡球、把 ' + tnName + '送进袋';
