@@ -116,6 +116,6 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .jump-actions{flex:0 0 auto}
   .jump-count{font-size:11.5px}
-  .jump-foot .btn{min-width:78px;height:30px;font-size:12px}
+  .jump-foot .btn{min-width:72px;padding:4px 12px;font-size:12px;line-height:1.25}
 }
 

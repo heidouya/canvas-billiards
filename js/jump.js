@@ -857,7 +857,16 @@
       + parseFloat(os.paddingTop || 0) + parseFloat(os.paddingBottom || 0)
       + 8;                                  // 边框 + 取整的余量
     const maxW = (window.innerHeight - chrome) * (VIEW_W / VIEW_H);
-    box.style.maxWidth = Math.max(280, Math.round(maxW)) + 'px';
+    let w = Math.max(280, Math.round(maxW));
+    box.style.maxWidth = w + 'px';
+    // 估算难免差几像素（页头可能刚换了行）：内容还溢出就按溢出量再收，最多两轮
+    for (let i = 0; i < 2; i++) {
+      const over = box.scrollHeight - box.clientHeight;
+      if (over <= 1) break;
+      w -= Math.ceil(over * (VIEW_W / VIEW_H)) + 4;
+      w = Math.max(280, w);
+      box.style.maxWidth = w + 'px';
+    }
   }
 
   function resize() {
@@ -881,8 +890,9 @@
       pausedClock = true;
     }
     if (typeof Sound !== 'undefined') { Sound.init(); Sound.resume(); }
-    resize();
+    // 先摆好这一关（文案、杆数、按钮显隐都会变高矮），再量浮层尺寸，否则底部会被切掉
     resetLevel(typeof i === 'number' ? i : level);
+    resize();
     if (!running) {
       running = true;
       lastTime = performance.now();
