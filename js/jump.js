@@ -49,21 +49,21 @@
       pocket: { x: 560, y: 56, name: '中上袋' },
       blocks: [{ t: 0.45, num: 8 }],
       maxShots: 0,
-      hint: '第 1 关 · 跳过 8 号，把 6 号送进中上袋 · 正对袋口，不限杆，先找手感'
+      hint: '第 1 关 · 跳过 8 号，把 6 号送进中上袋 · 正对袋口，先找手感'
     },
     {
       cue: { x: 267, y: 400 }, target: { x: 923, y: 159, num: 3 },
       pocket: { x: 1054, y: 66, name: '右上袋' },
       blocks: [{ t: 0.32, num: 9 }, { t: 0.50, num: 8 }, { t: 0.70, num: 5 }],
       maxShots: 2,
-      hint: '第 2 关 · 跳过三颗挡球，把 3 号送进右上袋 · 偏 15°，2 杆内过'
+      hint: '第 2 关 · 跳过三颗挡球，把 3 号送进右上袋 · 偏 15°'
     },
     {
       cue: { x: 182, y: 331 }, target: { x: 893, y: 445, num: 5 },
       pocket: { x: 1054, y: 554, name: '右下袋' },
       blocks: [{ t: 0.30, num: 11 }, { t: 0.42, num: 8 }, { t: 0.55, num: 4 }, { t: 0.68, num: 7 }],
       maxShots: 3,
-      hint: '第 3 关 · 跳过四颗挡球，把 5 号送进右下袋 · 偏 25°，3 杆内过'
+      hint: '第 3 关 · 跳过四颗挡球，把 5 号送进右下袋 · 偏 25°'
     }
   ];
 
@@ -150,7 +150,7 @@
       x: L.target.x, y: L.target.y, z: 0, vx: 0, vy: 0, vz: 0, active: true
     });
     return {
-      balls, pocket: L.pocket, ghost, cutDeg, maxShots: L.maxShots || 0,
+      balls, pocket: L.pocket, ghost, cutDeg, maxShots: shotBudget(L),
       phase: 'aim', aim: null, result: null, msg: '', acc: 0,
       attempts: 0, settle: 0, level: i
     };
@@ -167,10 +167,21 @@
   }
 
   function syncLevels() {
-    subEl.textContent = LEVELS[level].hint;
-    Array.prototype.forEach.call(levelBox.querySelectorAll('button'), b => {
-      b.classList.toggle('active', Number(b.dataset.lv) === level);
+    const b = shotBudget(LEVELS[level]);
+    subEl.textContent = LEVELS[level].hint + (b ? '，' + b + ' 杆内过' : '，不限杆');
+    Array.prototype.forEach.call(levelBox.querySelectorAll('button'), b2 => {
+      b2.classList.toggle('active', Number(b2.dataset.lv) === level);
     });
+  }
+
+  // 窄屏（手机横屏）手指比鼠标粗：杆数各加一杆，力度距离也按屏幕缩放放大（见 updateAim）
+  function narrowScreen() {
+    return cssScale > 1.5;
+  }
+
+  function shotBudget(L) {
+    if (!L.maxShots) return 0;
+    return L.maxShots + (narrowScreen() ? 1 : 0);
   }
 
   function paintMsg(kind, reset) {
@@ -759,7 +770,10 @@
     const ux = dx / d;
     const uy = dy / d;
     const pull = Math.max(0, d - BALL_R * 1.6);
-    const power = clamp(pull / MAX_DRAG, 0, 1);
+    // 满力距离按「屏幕手感」算：画布被缩小显示时按比例放大逻辑距离，
+    // 手机上同样是要拉 84 个 CSS 像素才满力，否则 20% 的力度窗口只剩几个像素，根本停不住
+    const maxDrag = MAX_DRAG * Math.max(1, cssScale);
+    const power = clamp(pull / maxDrag, 0, 1);
     const info = aimInfo(power, ux, uy);
     s.aim = { ux, uy, power, info };
     const pct = Math.round(power * 100);
