@@ -632,12 +632,19 @@
   }
 
   // 手绘模式的球：平涂 + 墨线圈 + 手写号码；飞在空中靠“影子 + 高度虚线”表达，不用渐变
+  // 手绘笔触要绑在跳球自己的画布上（roughCanvas() 绑的是主台面，画上去会被浮层盖住）
+  let roughJump = null;
+  function jumpRough() {
+    if (!roughJump) roughJump = rough.canvas(cv);
+    return roughJump;
+  }
+
   function drawSketchJumpBall(b) {
     const z = b.z || 0;
     const lift = z * LIFT;
     const sy = b.y - lift;
     const r = BALL_R * (1 + z / AIR_SCALE);
-    const rc = roughCanvas();
+    const rc = jumpRough();
 
     // 影子：越高越淡越小
     const sr = Math.max(BALL_R * 0.35, r * (0.98 - Math.min(0.5, z / 380)));
