@@ -1,0 +1,210 @@
+/* ============================================================
+ * 手绘纸面主题（body.theme-sketch）
+ * ------------------------------------------------------------
+ * 只覆盖颜色、边框、字号细节，不动任何布局尺寸：
+ * 台面画法由 js/sketch.js 负责，这里负责把整页（页头、面板、球号条、
+ * 按钮、力度条、toast、弹窗、跳球浮层）统一到同一张纸上。
+ * ============================================================ */
+
+body.theme-sketch{
+  color:#2b2b28;
+  background:
+    repeating-linear-gradient(0deg, rgba(43,43,40,.05) 0 1px, transparent 1px 30px),
+    radial-gradient(1200px 800px at 50% -12%, #fdfaf2 0%, #f4eddd 58%, #e9dfcb 100%);
+}
+
+/* ---- 页头 ---- */
+body.theme-sketch .brand h1{color:#2b2b28;letter-spacing:2px}
+body.theme-sketch .brand .tag{color:#8a8273;letter-spacing:1.6px}
+body.theme-sketch .panel-mini,
+body.theme-sketch .panel-toggle,
+body.theme-sketch .jump-close,
+body.theme-sketch .jump-hint{
+  background:#fffdf5;border:1px solid #2b2b28;color:#2b2b28;
+  border-radius:4px;box-shadow:2px 2px 0 rgba(43,43,40,.16);
+}
+body.theme-sketch .panel-mini:hover,
+body.theme-sketch .panel-toggle:hover,
+body.theme-sketch .jump-close:hover,
+body.theme-sketch .jump-hint:hover{
+  background:#f3ecda;border-color:#2b2b28;color:#14140f;
+}
+body.theme-sketch .panel-mini:active,
+body.theme-sketch .panel-toggle:active{transform:translate(1px,1px);box-shadow:none}
+
+/* ---- 分段按钮（规则 / 模式 / 难度 / 辅助线 / 风格） ---- */
+body.theme-sketch .seg{
+  background:#fffdf5;border:1px solid rgba(43,43,40,.55);border-radius:4px;
+  box-shadow:2px 2px 0 rgba(43,43,40,.12);
+}
+body.theme-sketch .seg button{color:#6f685c;border-radius:2px}
+body.theme-sketch .seg button:hover{color:#2b2b28;background:#f6efdd}
+body.theme-sketch .seg button.active{
+  background:#2b2b28;color:#fffdf5;font-weight:600;
+  box-shadow:none;border-radius:2px;
+}
+body.theme-sketch .seg-label{color:#7a7365}
+
+/* ---- 卡片 ---- */
+body.theme-sketch .card{
+  background:#fffdf5;
+  border:1px solid rgba(43,43,40,.5);
+  border-radius:5px;
+  box-shadow:3px 3px 0 rgba(43,43,40,.10);
+}
+body.theme-sketch .setup-card{padding:11px 12px}
+
+/* ---- 状态卡 ---- */
+body.theme-sketch .status-line{color:#22221e}
+body.theme-sketch .dot{box-shadow:none;border:1px solid rgba(43,43,40,.55)}
+body.theme-sketch .sub{color:#6f685c}
+body.theme-sketch .sub.warn{color:#8a4a12}
+body.theme-sketch .power-block{border-top:1px dashed rgba(43,43,40,.28)}
+body.theme-sketch .power-head{color:#7a7365}
+body.theme-sketch .power-track{
+  background:#fffdf5;border:1px solid rgba(43,43,40,.5);border-radius:4px;height:13px;
+}
+/* 力度条：保留色阶（绿→黄→红），但叠一层斜排线，像用彩铅涂的 */
+body.theme-sketch .power-fill{
+  border-radius:2px;
+  background-image:repeating-linear-gradient(48deg, rgba(43,43,40,.16) 0 1px, transparent 1px 5px),
+    linear-gradient(90deg,#3f8f63,#c9a336 55%,#b8563f);
+}
+
+/* ---- 按钮 ---- */
+body.theme-sketch .btn{
+  background:#fffdf5;border:1px solid rgba(43,43,40,.55);color:#2b2b28;
+  border-radius:4px;box-shadow:2px 2px 0 rgba(43,43,40,.12);
+}
+body.theme-sketch .btn:hover{background:#f6efdd;border-color:#2b2b28}
+body.theme-sketch .btn:active{transform:translate(1px,1px);box-shadow:none}
+body.theme-sketch .btn:disabled{opacity:.45;box-shadow:none}
+body.theme-sketch .btn.primary{
+  background:#2b2b28;border-color:#2b2b28;color:#fffdf5;
+}
+body.theme-sketch .btn.primary:hover{background:#14140f;border-color:#14140f}
+body.theme-sketch .btn.danger{
+  background:#fff8f6;border-color:#b04a3a;color:#a53b2b;
+}
+body.theme-sketch .btn.danger:hover{background:#fbeae5;border-color:#8d2f22}
+
+/* ---- 球号条 ---- */
+body.theme-sketch .rack-clock{color:#3a352c}
+body.theme-sketch .bar-clock{color:#7a7365}
+body.theme-sketch .rack-clock::before,
+body.theme-sketch .rack-clock::after{background:rgba(43,43,40,.25)}
+body.theme-sketch .rack-clock[data-paused="1"]{color:#9a6c0a}
+body.theme-sketch .bar-clock[data-paused="1"]{color:#9a6c0a}
+body.theme-sketch .group-panel{
+  background:#fffdf5;border:1px solid rgba(43,43,40,.45);
+  border-radius:5px;box-shadow:2px 2px 0 rgba(43,43,40,.10);
+}
+body.theme-sketch .gp-owner{color:#6f685c}
+body.theme-sketch .gp-tag{color:#9a9280}
+body.theme-sketch .group-panel.owner-0{border-color:rgba(47,118,73,.55)}
+body.theme-sketch .group-panel.owner-0 .gp-owner{color:#2f7649}
+body.theme-sketch .group-panel.owner-1{border-color:rgba(42,92,138,.55)}
+body.theme-sketch .group-panel.owner-1 .gp-owner{color:#2a5c8a}
+body.theme-sketch .group-panel.current{
+  background:#fffdf5;border-color:#2b2b28;
+  box-shadow:0 0 0 2px rgba(43,43,40,.30);
+}
+body.theme-sketch .group-panel.current .gp-owner{color:#22221e}
+body.theme-sketch .group-panel.current.owner-0{
+  border-color:#2f7649;box-shadow:0 0 0 2px rgba(47,118,73,.35);
+}
+body.theme-sketch .group-panel.current.owner-1{
+  border-color:#2a5c8a;box-shadow:0 0 0 2px rgba(42,92,138,.35);
+}
+/* 球号圆点：手绘模式下加一圈墨边，跟台面上的球同一个语言 */
+body.theme-sketch .chip{box-shadow:inset 0 0 0 1.2px rgba(43,43,40,.55),inset 0 -3px 7px rgba(43,43,40,.18)}
+body.theme-sketch .chip.stripe::before{box-shadow:0 0 0 .5px rgba(43,43,40,.25) inset}
+
+/* ---- 台面容器 ---- */
+body.theme-sketch .canvas-wrap{
+  background:#f2ebdb;
+  border:1px solid rgba(43,43,40,.5);
+  border-radius:6px;
+  box-shadow:4px 4px 0 rgba(43,43,40,.12);
+}
+body.theme-sketch canvas{background:#faf7ef}
+
+/* ---- 台面上的 toast：变成一张纸条 ---- */
+body.theme-sketch #toast{
+  background:#fffdf5;border:1px solid rgba(43,43,40,.55);color:#2b2b28;
+  border-radius:3px;box-shadow:2px 3px 0 rgba(43,43,40,.16);
+  transform:translate(-50%,-8px) rotate(-.4deg);
+}
+body.theme-sketch #toast.show{transform:translate(-50%,0) rotate(-.4deg)}
+
+/* ---- 战绩 ---- */
+body.theme-sketch .rec-head{color:#7a7365}
+body.theme-sketch .rec-row{background:#fffdf5;border:1px dashed rgba(43,43,40,.35);border-radius:4px}
+body.theme-sketch .rec-row .k{color:#6f685c}
+body.theme-sketch .rec-row .v{color:#22221e}
+body.theme-sketch .rec-row .v em{color:#2f7649}
+
+/* ---- 弹窗 ---- */
+body.theme-sketch .modal{background:rgba(244,237,221,.78);backdrop-filter:blur(3px)}
+body.theme-sketch .modal-box{
+  background:#fffdf5;border:1px solid rgba(43,43,40,.55);
+  border-radius:5px;box-shadow:5px 6px 0 rgba(43,43,40,.14);
+}
+body.theme-sketch .modal-box h2{color:#22221e}
+body.theme-sketch .modal-box p{color:#6f685c}
+body.theme-sketch .start-kicker{
+  color:#6b3c14;background:#f6ecd8;border:1px solid rgba(146,84,30,.4);border-radius:3px;
+}
+body.theme-sketch .start-sub{color:#7a7365}
+body.theme-sketch .start-list{
+  background:#faf5e7;border:1px dashed rgba(43,43,40,.35);border-radius:4px;
+}
+body.theme-sketch .start-list li{color:#4a4538}
+body.theme-sketch .start-list li::before{background:#2b2b28}
+body.theme-sketch .start-list b{
+  color:#2b2b28;background:#f1e7d0;border:1px solid rgba(43,43,40,.3);border-radius:3px;
+}
+
+/* ---- 竖屏提示条 ---- */
+body.theme-sketch .rotate-tip{
+  background:#fffdf5;border:1px solid rgba(43,43,40,.55);
+  border-radius:4px;box-shadow:3px 3px 0 rgba(43,43,40,.13);color:#2b2b28;
+}
+body.theme-sketch .rotate-tip .rt-title{color:#22221e}
+body.theme-sketch .rotate-tip .rt-desc{color:#7a7365}
+body.theme-sketch .rotate-tip .rt-btn{
+  background:#2b2b28;color:#fffdf5;border:0;border-radius:3px;
+}
+
+/* ---- 抽屉遮罩 ---- */
+body.theme-sketch .panel-scrim{background:rgba(240,232,214,.72)}
+
+/* ---- 跳球挑战浮层 ---- */
+body.theme-sketch .jump{background:rgba(244,237,221,.86);backdrop-filter:blur(5px)}
+body.theme-sketch .jump-box{
+  background:#fffdf5;
+  border:1px solid rgba(43,43,40,.55);
+  border-radius:6px;
+  box-shadow:6px 6px 0 rgba(43,43,40,.14);
+}
+body.theme-sketch .jump-title{color:#22221e}
+body.theme-sketch .jump-title .jump-sub{color:#7a7365}
+body.theme-sketch .jump-levels{
+  background:#f2ebdb;border:1px solid rgba(43,43,40,.45);border-radius:4px;
+}
+body.theme-sketch .jump-levels button{color:#6f685c}
+body.theme-sketch .jump-levels button:hover{color:#2b2b28}
+body.theme-sketch .jump-levels button.active{
+  background:#2b2b28;color:#fffdf5;box-shadow:none;border-radius:2px;
+}
+body.theme-sketch .jump-stage{
+  background:#faf7ef;border:1px solid rgba(43,43,40,.4);
+  border-radius:5px;box-shadow:none;
+}
+body.theme-sketch .jump-msg{color:#6f685c}
+body.theme-sketch .jump-msg.ok{color:#2f7649}
+body.theme-sketch .jump-msg.bad{color:#a53b2b}
+body.theme-sketch .jump-count{color:#7a7365}
+body.theme-sketch .jump-hint .hint-dot{background:#2a5c8a;box-shadow:none}
+body.theme-sketch .jump-hint.off{color:#9a9280}
+body.theme-sketch .jump-hint.off .hint-dot{background:#c3bbaa}

@@ -158,16 +158,16 @@ function drawBallInHandArea() {
 
   ctx.save();
   if (limited) {
-    ctx.fillStyle = 'rgba(120,220,180,.08)';
+    ctx.fillStyle = THEME.zoneFill;
     ctx.fillRect(TABLE.x, TABLE.y, zoneRight - TABLE.x, TABLE.h);
     ctx.setLineDash([7, 7]);
     ctx.lineWidth = 1.5;
-    ctx.strokeStyle = 'rgba(140,235,195,.42)';
+    ctx.strokeStyle = THEME.zoneLine;
     ctx.strokeRect(TABLE.x + 1, TABLE.y + 1, zoneRight - TABLE.x - 2, TABLE.h - 2);
   } else {
     ctx.setLineDash([10, 10]);
     ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(140,235,195,.26)';
+    ctx.strokeStyle = THEME.zoneLineSoft;
     ctx.strokeRect(TABLE.x + 3, TABLE.y + 3, TABLE.w - 6, TABLE.h - 6);
   }
   ctx.restore();
@@ -180,7 +180,7 @@ function drawBallInHandArea() {
     const a = 0.26 * Math.sin(Math.PI * t);
     ctx.beginPath();
     ctx.arc(cue.x, cue.y, BALL_R + 4 + t * 8, 0, TAU);
-    ctx.strokeStyle = `rgba(140,235,195,${a.toFixed(3)})`;
+    ctx.strokeStyle = `rgba(${THEME.cueRingRGB},${a.toFixed(3)})`;
     ctx.lineWidth = 1.6;
     ctx.stroke();
   }
@@ -198,7 +198,7 @@ function drawPocketHint() {
     ctx.arc(p.x, p.y, POCKET_R - 4, 0, TAU);
     ctx.setLineDash(called ? [] : [6, 6]);
     ctx.lineWidth = called ? 3 : 1.5;
-    ctx.strokeStyle = called ? 'rgba(255,208,90,.95)' : 'rgba(255,255,255,.30)';
+    ctx.strokeStyle = called ? THEME.pocketGold : THEME.pocketHintLine;
     ctx.stroke();
   });
   ctx.restore();
@@ -206,6 +206,7 @@ function drawPocketHint() {
 
 // 单颗球
 function drawBall(b, x, y) {
+  if (state.sketch) { sketchBall(b, x, y); return; }
   const r = BALL_R;
 
   // 投影
@@ -320,16 +321,16 @@ function drawCueHalo() {
 
   ctx.save();
   const g = ctx.createRadialGradient(cue.x, cue.y, BALL_R * 0.9, cue.x, cue.y, outer);
-  g.addColorStop(0, `rgba(255,255,255,${alpha.toFixed(3)})`);
-  g.addColorStop(0.55, `rgba(255,255,255,${(alpha * 0.35).toFixed(3)})`);
-  g.addColorStop(1, 'rgba(255,255,255,0)');
+  g.addColorStop(0, `rgba(${THEME.haloRGB},${alpha.toFixed(3)})`);
+  g.addColorStop(0.55, `rgba(${THEME.haloRGB},${(alpha * 0.35).toFixed(3)})`);
+  g.addColorStop(1, `rgba(${THEME.haloRGB},0)`);
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(cue.x, cue.y, outer, 0, TAU);
   ctx.fill();
 
   // 一圈细描边：亮绿台布上单靠柔光有时看不清轮廓，加条淡环就有了边界
-  ctx.strokeStyle = `rgba(255,255,255,${(0.06 + pulse * 0.08).toFixed(3)})`;
+  ctx.strokeStyle = `rgba(${THEME.haloRGB},${(0.06 + pulse * 0.08).toFixed(3)})`;
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.arc(cue.x, cue.y, r, 0, TAU);
@@ -338,8 +339,22 @@ function drawCueHalo() {
 }
 
 // 主渲染入口：snapshot 不为空时用回放帧数据（阶段 5 使用）
+// 手绘模式只换“底色与画法”：静态层贴缓存的纸面台桌，其余元素走同一段代码
 function render() {
   ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+  if (state.sketch) {
+    drawSketchStatic();
+    drawBallInHandArea();
+    drawPocketHint();
+    drawBalls();
+    drawCueHalo();
+    drawPlaceLabel();
+    drawAim();
+    drawGuide();
+    drawCueStick();
+    drawPowerBadge();
+    return;
+  }
   drawFrame();
   drawCloth();
   drawCushions();

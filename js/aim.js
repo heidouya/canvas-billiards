@@ -80,11 +80,11 @@ function drawAim() {
   if (state.aimMode === 'short') {
     // 短线末端渐隐，看起来像"方向提示"而不是"结果提示"
     const g = ctx.createLinearGradient(sx, sy, ex, ey);
-    g.addColorStop(0, 'rgba(255,255,255,.8)');
-    g.addColorStop(1, 'rgba(255,255,255,.22)');
+    g.addColorStop(0, THEME.aimFade0);
+    g.addColorStop(1, THEME.aimFade1);
     ctx.strokeStyle = g;
   } else {
-    ctx.strokeStyle = 'rgba(255,255,255,.62)';
+    ctx.strokeStyle = THEME.aimLine;
   }
   ctx.beginPath();
   ctx.moveTo(sx, sy);
@@ -95,8 +95,8 @@ function drawAim() {
   // 起点光点、终点箭头只在「完整」档出现（这些是"结果信息"）
   if (state.aimMode === 'full') {
     const rg = ctx.createRadialGradient(cue.x, cue.y, 2, cue.x, cue.y, BALL_R * 2.4);
-    rg.addColorStop(0, 'rgba(255,255,255,.42)');
-    rg.addColorStop(1, 'rgba(255,255,255,0)');
+    rg.addColorStop(0, THEME.aimGlow);
+    rg.addColorStop(1, `rgba(${THEME.haloRGB},0)`);
     ctx.fillStyle = rg;
     ctx.beginPath();
     ctx.arc(cue.x, cue.y, BALL_R * 2.4, 0, TAU);
@@ -105,7 +105,7 @@ function drawAim() {
     ctx.save();
     ctx.translate(ex, ey);
     ctx.rotate(Math.atan2(dir.y, dir.x));
-    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.fillStyle = THEME.aimArrow;
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(-8, -4);
@@ -136,7 +136,7 @@ function drawGuide() {
   ctx.globalAlpha = 0.82;
 
   // 箭头杆
-  ctx.strokeStyle = 'rgba(116,228,186,.9)';
+  ctx.strokeStyle = THEME.guideLine;
   ctx.lineWidth = 2.4;
   ctx.beginPath();
   ctx.moveTo(cue.x + bx * a1, cue.y + by * a1);
@@ -147,7 +147,7 @@ function drawGuide() {
   ctx.save();
   ctx.translate(cue.x + bx * a2, cue.y + by * a2);
   ctx.rotate(Math.atan2(by, bx));
-  ctx.fillStyle = 'rgba(116,228,186,.95)';
+  ctx.fillStyle = THEME.guideHead;
   ctx.beginPath();
   ctx.moveTo(0, 0);
   ctx.lineTo(-9, -5);
@@ -169,8 +169,8 @@ function drawGuide() {
   lx = Math.min(Math.max(lx, TABLE.x + tw / 2 + padX + 6), TABLE.x + TABLE.w - tw / 2 - padX - 6);
   ly = Math.min(Math.max(ly, TABLE.y + boxH), TABLE.y + TABLE.h - boxH);
 
-  ctx.fillStyle = 'rgba(9,30,24,.82)';
-  ctx.strokeStyle = 'rgba(116,228,186,.45)';
+  ctx.fillStyle = THEME.guideBoxFill;
+  ctx.strokeStyle = THEME.guideBoxLine;
   ctx.lineWidth = 1;
   const bx0 = lx - tw / 2 - padX, by0 = ly - boxH / 2;
   const bw = tw + padX * 2, bh = boxH;
@@ -180,7 +180,7 @@ function drawGuide() {
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = '#bfeede';
+  ctx.fillStyle = THEME.guideText;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, lx, ly + 1);
@@ -210,7 +210,7 @@ function drawCueStick() {
 
   // 前节
   ctx.lineWidth = 5;
-  ctx.strokeStyle = '#e9d6ae';
+  ctx.strokeStyle = THEME.cueShaft;
   ctx.beginPath();
   ctx.moveTo(tipX, tipY);
   ctx.lineTo(midX, midY);
@@ -218,9 +218,9 @@ function drawCueStick() {
 
   // 后把
   const g = ctx.createLinearGradient(midX, midY, buttX, buttY);
-  g.addColorStop(0, '#8b5a32');
-  g.addColorStop(0.4, '#5a361d');
-  g.addColorStop(1, '#2e1a0c');
+  g.addColorStop(0, THEME.cueButt[0]);
+  g.addColorStop(0.4, THEME.cueButt[1]);
+  g.addColorStop(1, THEME.cueButt[2]);
   ctx.lineWidth = 11;
   ctx.strokeStyle = g;
   ctx.beginPath();
@@ -231,7 +231,7 @@ function drawCueStick() {
   // 皮头
   ctx.beginPath();
   ctx.arc(tipX, tipY, 3.6, 0, TAU);
-  ctx.fillStyle = '#2b7ea8';
+  ctx.fillStyle = THEME.cueTip;
   ctx.fill();
 
   // 力度光晕
@@ -239,7 +239,7 @@ function drawCueStick() {
     const pr = 4 + state.power * 10;
     ctx.beginPath();
     ctx.arc(cue.x, cue.y, BALL_R + pr, 0, TAU);
-    ctx.strokeStyle = `rgba(255,210,90,${0.18 + state.power * 0.5})`;
+    ctx.strokeStyle = `rgba(${THEME.powerRingRGB},${0.18 + state.power * 0.5})`;
     ctx.lineWidth = 2;
     ctx.stroke();
   }
@@ -292,13 +292,13 @@ function drawPlaceLabel() {
   ctx.beginPath();
   if (ctx.roundRect) ctx.roundRect(best.x0, best.y0, bw, boxH, Math.round(fs * 0.6));
   else ctx.rect(best.x0, best.y0, bw, boxH);
-  ctx.fillStyle = 'rgba(9,30,24,.86)';
+  ctx.fillStyle = THEME.placeFill;
   ctx.fill();
-  ctx.strokeStyle = 'rgba(140,235,195,.5)';
+  ctx.strokeStyle = THEME.placeLine;
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  ctx.fillStyle = '#bfeede';
+  ctx.fillStyle = THEME.placeText;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, best.x0 + bw / 2, best.y0 + boxH / 2 + 1);
@@ -320,7 +320,7 @@ function drawPowerBadge() {
   const cssScale = canvas.getBoundingClientRect().width / VIEW_W;
   const fs = clamp(Math.round(12 / cssScale), 13, 30);
   const text = Math.round(state.power * 100) + '%';
-  const color = state.power < 0.35 ? '#63e2a4' : state.power < 0.7 ? '#ffd85c' : '#ff8a8a';
+  const color = state.power < 0.35 ? THEME.powerGood : state.power < 0.7 ? THEME.powerMid : THEME.powerBad;
 
   ctx.save();
   ctx.font = `700 ${fs}px system-ui,-apple-system,"Segoe UI",sans-serif`;
@@ -349,7 +349,7 @@ function drawPowerBadge() {
   ctx.beginPath();
   if (ctx.roundRect) ctx.roundRect(bx0, by0, tw + padX * 2, boxH, Math.round(boxH / 2));
   else ctx.rect(bx0, by0, tw + padX * 2, boxH);
-  ctx.fillStyle = 'rgba(8,14,20,.82)';
+  ctx.fillStyle = THEME.badgeFill;
   ctx.fill();
   ctx.lineWidth = 1;
   ctx.strokeStyle = color;

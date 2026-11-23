@@ -509,7 +509,9 @@
     ctx.save();
     // 弧线：抬起来的那条轨迹。关掉「瞄准圈」后不再变红——只给手感，不给结论
     ctx.lineWidth = 2;
-    ctx.strokeStyle = info.blocked && hintOn ? 'rgba(255,140,140,.55)' : 'rgba(190,235,255,.5)';
+    ctx.strokeStyle = info.blocked && hintOn
+      ? pc('rgba(255,140,140,.55)', 'rgba(176,58,58,.5)')
+      : pc('rgba(190,235,255,.5)', 'rgba(43,43,40,.5)');
     ctx.setLineDash([9, 8]);
     ctx.beginPath();
     for (let i = 0; i < info.pts.length; i++) {
@@ -528,8 +530,8 @@
     const good = !info.blocked && !info.tooShort && !info.tooFly;
     ctx.beginPath();
     ctx.arc(info.land.x, info.land.y, BALL_R + 3, 0, TAU);
-    ctx.strokeStyle = good ? 'rgba(150,240,200,.8)' : 'rgba(255,150,150,.6)';
-    ctx.fillStyle = good ? 'rgba(150,240,200,.10)' : 'rgba(255,120,120,.10)';
+    ctx.strokeStyle = good ? pc('rgba(150,240,200,.8)', 'rgba(47,118,73,.75)') : pc('rgba(255,150,150,.6)', 'rgba(176,58,58,.6)');
+    ctx.fillStyle = good ? pc('rgba(150,240,200,.10)', 'rgba(47,118,73,.08)') : pc('rgba(255,120,120,.10)', 'rgba(176,58,58,.08)');
     ctx.fill();
     ctx.lineWidth = 1.5;
     ctx.stroke();
@@ -539,13 +541,13 @@
       if (!m.low) return;
       ctx.beginPath();
       ctx.arc(m.x, m.y, BALL_R + 5, 0, TAU);
-      ctx.strokeStyle = 'rgba(255,120,120,.85)';
+      ctx.strokeStyle = pc('rgba(255,120,120,.85)', 'rgba(176,58,58,.85)');
       ctx.lineWidth = 2;
       ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(m.x - 5, m.y - 5); ctx.lineTo(m.x + 5, m.y + 5);
       ctx.moveTo(m.x + 5, m.y - 5); ctx.lineTo(m.x - 5, m.y + 5);
-      ctx.strokeStyle = 'rgba(255,120,120,.9)';
+      ctx.strokeStyle = pc('rgba(255,120,120,.9)', 'rgba(176,58,58,.9)');
       ctx.lineWidth = 2;
       ctx.stroke();
     });
@@ -553,7 +555,15 @@
   }
 
   /* ---------------- 绘制 ---------------- */
+  // 主题切换用：深色原值 / 手绘纸面值（两套共用同一段画法）
+  function pc(dark, sketch) { return state.sketch ? sketch : dark; }
+
   function drawTable() {
+    if (state.sketch) {
+      // 手绘模式：直接贴主玩法缓存的纸面台桌（几何完全相同），不再单独画一遍
+      ctx.drawImage(sketchLayer(), 0, 0, VIEW_W, VIEW_H);
+      return;
+    }
     ctx.save();
     // 木框
     roundRect(ctx, 2, 2, VIEW_W - 4, VIEW_H - 4, 26);
@@ -621,7 +631,70 @@
     ctx.restore();
   }
 
+  // 手绘模式的球：平涂 + 墨线圈 + 手写号码；飞在空中靠“影子 + 高度虚线”表达，不用渐变
+  function drawSketchJumpBall(b) {
+    const z = b.z || 0;
+    const lift = z * LIFT;
+    const sy = b.y - lift;
+    const r = BALL_R * (1 + z / AIR_SCALE);
+    const rc = roughCanvas();
+
+    // 影子：越高越淡越小
+    const sr = Math.max(BALL_R * 0.35, r * (0.98 - Math.min(0.5, z / 380)));
+    ctx.beginPath();
+    ctx.ellipse(b.x + 2.6, b.y + 3.8, sr, sr * 0.86, 0, 0, TAU);
+    ctx.fillStyle = 'rgba(43,43,40,' + Math.max(0.05, 0.18 - z / 900).toFixed(3) + ')';
+    ctx.fill();
+
+    // 高度线：墨色细虚线，一眼看出离台面多高
+    if (z > 14) {
+      ctx.save();
+      ctx.setLineDash([3, 4]);
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(b.x, sy);
+      ctx.strokeStyle = 'rgba(43,43,40,.35)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 球体：精确圆填充 + rough 墨圈（小半径下 rough 画圆会变形，只让它描边）
+    ctx.beginPath();
+    ctx.arc(b.x, sy, r, 0, TAU);
+    ctx.fillStyle = b.cue ? '#fffdf5' : b.color;
+    ctx.fill();
+    rc.circle(b.x, sy, r * 2 + 1, {
+      seed: 3000 + (b.num || 0) * 19, stroke: '#2b2b28', strokeWidth: 1.2,
+      roughness: 1.1, bowing: 1, disableMultiStroke: true
+    });
+
+    // 底部弧线阴影：纸面上唯一的体积感
+    ctx.beginPath();
+    ctx.arc(b.x, sy, r - 1.6, 0.2 * Math.PI, 0.7 * Math.PI);
+    ctx.strokeStyle = 'rgba(43,43,40,.32)';
+    ctx.lineWidth = 1.3;
+    ctx.stroke();
+
+    // 号码圈 + 手写数字：两位数收小一号，别糊成一团
+    if (!b.cue && b.num) {
+      ctx.beginPath();
+      ctx.arc(b.x, sy, r * 0.44, 0, TAU);
+      ctx.fillStyle = '#fffdf5';
+      ctx.fill();
+      ctx.lineWidth = 0.7;
+      ctx.strokeStyle = 'rgba(43,43,40,.45)';
+      ctx.stroke();
+      ctx.fillStyle = '#23231f';
+      ctx.font = '700 ' + Math.round(r * (b.num > 9 ? 0.50 : 0.60)) + 'px ' + HAND_FONT;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(b.num), b.x, sy + r * 0.02);
+    }
+  }
+
   function drawBall(b) {
+    if (state.sketch) { drawSketchJumpBall(b); return; }
     const z = b.z || 0;
     const lift = z * LIFT;
     const sy = b.y - lift;
@@ -681,12 +754,13 @@
     const p = s.pocket;
     const now = performance.now();
     const pulse = 0.5 + 0.5 * Math.sin(now / 600);
+    const GOLD = state.sketch ? '170,116,20' : '255,208,90';
 
     // 指定袋口：金色脉冲环，告诉玩家该往哪个袋打
     if (p) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, POCKET_R + 9 + pulse * 4, 0, TAU);
-      ctx.strokeStyle = 'rgba(255,208,90,' + (0.32 + pulse * 0.36).toFixed(3) + ')';
+      ctx.strokeStyle = 'rgba(' + GOLD + ',' + (0.32 + pulse * 0.36).toFixed(3) + ')';
       ctx.lineWidth = 2.5;
       ctx.stroke();
     }
@@ -698,7 +772,7 @@
     if (p && s.phase === 'aim') {
       ctx.save();
       ctx.setLineDash([6, 7]);
-      ctx.strokeStyle = 'rgba(255,208,90,.42)';
+      ctx.strokeStyle = 'rgba(' + GOLD + ',.42)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(t.x, t.y);
@@ -709,7 +783,7 @@
 
     ctx.beginPath();
     ctx.arc(t.x, t.y, BALL_R + 6 + pulse * 3, 0, TAU);
-    ctx.strokeStyle = 'rgba(255,208,90,' + (0.3 + pulse * 0.35).toFixed(3) + ')';
+    ctx.strokeStyle = 'rgba(' + GOLD + ',' + (0.3 + pulse * 0.35).toFixed(3) + ')';
     ctx.lineWidth = 2;
     ctx.stroke();
   }
@@ -725,16 +799,16 @@
     ctx.beginPath();
     ctx.arc(s.ghost.x, s.ghost.y, BALL_R, 0, TAU);
     ctx.setLineDash([5 * Math.min(cssScale, 2), 4 * Math.min(cssScale, 2)]);
-    ctx.strokeStyle = 'rgba(170,235,255,.88)';
+    ctx.strokeStyle = pc('rgba(170,235,255,.88)', 'rgba(43,43,40,.75)');
     ctx.lineWidth = 1.8 * cssScale;
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(170,235,255,.10)';
+    ctx.fillStyle = pc('rgba(170,235,255,.10)', 'rgba(43,43,40,.06)');
     ctx.fill();
     // 圈心一个实心点：这就是母球该停的位置
     ctx.beginPath();
     ctx.arc(s.ghost.x, s.ghost.y, 2.4 * cssScale, 0, TAU);
-    ctx.fillStyle = 'rgba(215,247,255,.95)';
+    ctx.fillStyle = pc('rgba(215,247,255,.95)', 'rgba(43,43,40,.9)');
     ctx.fill();
     ctx.restore();
   }

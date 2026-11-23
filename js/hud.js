@@ -391,6 +391,16 @@ el('aimSeg').addEventListener('click', e => {
       : '辅助线已关闭，靠球杆判断角度');
 });
 
+// 风格：台面（原版深色）/ 手绘纸面。只换画法与配色，切换不重开局、不清战绩
+el('styleSeg').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const want = btn.dataset.style === 'sketch';
+  if (want === state.sketch) return;
+  setSketch(want);
+  toast(want ? '手绘纸面：球位和判定都在，只是换了画法' : '已切回台面风格');
+});
+
 // 电脑互打：暂停 / 继续
 function updatePauseBtn() {
   const btn = el('btnAutoPause');

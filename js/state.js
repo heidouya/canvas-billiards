@@ -30,6 +30,7 @@ const state = {
   introOpen: false,        // 玩法卡片是否打开（打开时同样锁住操作）
   guideDone: false,        // 新手"往回拉"引导是否已完成（打出一杆后永久隐藏）
   aimMode: 'full',         // 辅助线档位：full 完整 / short 短线 / off 关闭
+  sketch: false,           // 手绘纸面主题（只换画法，不动玩法；默认关）
   gameOver: false,
   winner: null,
   replayFrames: null,   // 当前一杆的回放帧

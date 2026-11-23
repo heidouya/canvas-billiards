@@ -7,6 +7,10 @@ function boot() {
   resizeCanvas();
   buildRackStrip();
   state.guideDone = guideDoneBefore();   // 打过一杆就记在 localStorage 里，引导不再出现
+  state.sketch = loadSketchPref();       // 手绘纸面主题（默认关，上次选的会记住）
+  if (state.sketch) document.body.classList.add('theme-sketch');
+  applyTheme();
+  drawSketchButtons();
   applyRuleSet(loadRuleSet());           // 规则集（默认中式八球，上次选的会记住）
   syncRuleButtons();
   applyAimMode(loadAimMode());           // 辅助线档位（上次选的会记住）
