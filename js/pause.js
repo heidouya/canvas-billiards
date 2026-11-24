@@ -14,9 +14,15 @@
  *
  * 一个入口管全部：页头那枚（桌面）和状态条上那枚（窄屏）是同一个开关，
  * 空格 / Esc 也是它。电脑互打里它就是原来的「暂停观战」。
+ *
+ * 清台 / 关卡里这块位置本来空着（这两种玩法不给暂停），所以改行「结束」：
+ * 变成红色按钮，点一下变「确定结束」、2.5 秒内再点才真的退出，超时自己还原。
+ * 结算卡开着时它是灰的（那屏已经有卡片右上角的 ×）。空格绝不绑到结束。
  * ============================================================ */
 let pauseByLeave = false;   // 这次暂停是因为切走了页面：遮罩换一句文案
 let pauseHeldByLeave = false; // 挂起的那次暂停是不是「离开页面」造成的
+let pauseEndArmed = false;    // 「结束清台 / 结束关卡」按了第一下，等着第二下
+let pauseEndTimer = 0;
 
 function overlayShown(id) {
   const e = document.getElementById(id);
@@ -99,10 +105,54 @@ function pauseToggle() {
 
 function pauseBlockedReason() {
   const sp = window.SpeedPool;
-  if (sp && sp.active) return '清台挑战里不能暂停（成绩按实际用时算）· 想停下就点「结束清台」';
+  if (sp && sp.active) return '清台挑战里不能暂停（成绩按实际用时算）· 想停下就点上面那枚「结束清台」';
   const lp = window.LevelPlay;
-  if (lp && lp.active) return '关卡挑战里不能暂停 · 想停下就点「重打本关」旁边那枚 ×';
+  if (lp && lp.active) return '关卡挑战里不能暂停 · 想停下就点上面那枚「结束关卡」';
   return '现在不能暂停';
+}
+
+/* ---------------- 清台 / 关卡里这枚按钮改行「结束」 ---------------- */
+
+// 有这两档在跑就把按钮交出去；没有就返回 null，还是暂停按钮
+function pauseEndTarget() {
+  const sp = window.SpeedPool;
+  if (sp && sp.active) {
+    return {
+      name: '清台', wide: '结束清台', short: '结束',
+      run: !sp.over,                     // 结算卡开着就不给按（卡片右上角已经有 ×）
+      quit: () => sp.exit()
+    };
+  }
+  const lp = window.LevelPlay;
+  if (lp && lp.active) {
+    return {
+      name: '关卡', wide: '结束关卡', short: '结束',
+      run: !lp.over,
+      quit: () => lp.exit()
+    };
+  }
+  return null;
+}
+
+function pauseEndDisarm() {
+  clearTimeout(pauseEndTimer);
+  if (!pauseEndArmed) return;
+  pauseEndArmed = false;
+  syncPauseUI();
+}
+
+// 按下「结束」：第一下只是上膛，2.5 秒内再点一下才真的退出
+function pauseEndPress(end) {
+  if (!end.run) return;
+  if (pauseEndArmed) {
+    pauseEndDisarm();
+    end.quit();
+    return;
+  }
+  pauseEndArmed = true;
+  clearTimeout(pauseEndTimer);
+  pauseEndTimer = setTimeout(() => { pauseEndArmed = false; syncPauseUI(); }, 2500);
+  syncPauseUI();
 }
 
 /* ---------------- 按钮与遮罩的显示 ---------------- */
@@ -112,20 +162,31 @@ let pauseSig = '';
 function syncPauseUI() {
   const allow = pauseAllows();
   const label = pauseLabelOf();
-  const busy = allow && (state.pauseHeld || ballStillRolling());
-  const sig = [state.paused, allow, label, busy, pauseByLeave].join('|');
+  const end = pauseEndTarget();
+  const armed = !!(end && end.run && pauseEndArmed);
+  const busy = !end && allow && (state.pauseHeld || ballStillRolling());
+  const sig = [state.paused, allow, label, busy, pauseByLeave,
+    end ? end.name + (end.run ? '+run' : '+done') : '-', armed].join('|');
   if (sig === pauseSig) return;
   pauseSig = sig;
 
   [el('btnPause'), el('btnPauseM')].forEach(btn => {
     if (!btn) return;
-    btn.textContent = label;
-    btn.disabled = !state.paused && !allow;
-    btn.classList.toggle('on', state.paused);
+    // 页头那枚写得全（「结束清台」），窄屏那枚位置紧，只写「结束」
+    btn.textContent = armed ? '确定结束' : end ? (btn.id === 'btnPause' ? end.wide : end.short) : label;
+    btn.disabled = end ? !end.run : (!state.paused && !allow);
+    btn.classList.toggle('on', !end && state.paused);
+    btn.classList.toggle('end', !!end);
+    btn.classList.toggle('armed', armed);
     btn.classList.toggle('busy', busy && !state.paused);
-    btn.title = !state.paused && !allow ? pauseBlockedReason()
-      : state.paused ? '继续这一局' : '暂停：计时停住，电脑也不会偷着出杆';
-    btn.setAttribute('aria-pressed', state.paused ? 'true' : 'false');
+    btn.title = end
+      ? (end.run ? '结束' + end.name + '挑战，回到普通对局（点一下再点一下确认）'
+        : '结算卡还开着，先关掉卡片再说')
+      : !state.paused && !allow ? pauseBlockedReason()
+        : state.paused ? '继续这一局' : '暂停：计时停住，电脑也不会偷着出杆';
+    btn.setAttribute('aria-pressed', !end && state.paused ? 'true' : 'false');
+    btn.setAttribute('aria-label', end ? (armed ? '确定结束' + end.name + '挑战' : '结束' + end.name + '挑战')
+      : state.paused ? '继续这一局' : '暂停这一局');
   });
 
   const cover = el('pauseCover');
@@ -149,11 +210,21 @@ const PauseGuard = {
         pauseNow(pauseHeldByLeave);
       }
     }
+    // 清台 / 关卡已经退了（或者换了别的），那颗「确定结束」就别再上着膛
+    if (pauseEndArmed && !pauseEndTarget()) pauseEndDisarm();
     syncPauseUI();
   }
 };
 
 /* ---------------- 入口 ---------------- */
+
+// 三枚按钮共用一个按下动作：暂停中就继续，清台 / 关卡里当结束用，其余是暂停
+function pauseButtonPress() {
+  if (state.paused) { pauseResume(); return; }
+  const end = pauseEndTarget();
+  if (end) { pauseEndPress(end); return; }
+  pauseToggle();
+}
 
 [['btnPause'], ['btnPauseM'], ['pauseCoverGo']].forEach(([id]) => {
   const node = el(id);
@@ -161,8 +232,12 @@ const PauseGuard = {
   node.addEventListener('click', e => {
     e.preventDefault();
     e.stopPropagation();
-    if (state.paused) pauseResume();
-    else pauseToggle();
+    pauseButtonPress();
+  });
+  // 按钮点过之后会留着焦点，这时按空格会「再点一下」这颗按钮：
+  // 暂停态下正合意（等于继续），但清台 / 关卡里连按两下就把一局收了，所以这里挡掉
+  node.addEventListener('keydown', e => {
+    if ((e.key === ' ' || e.code === 'Space') && pauseEndTarget()) e.preventDefault();
   });
 });
 
@@ -185,6 +260,8 @@ window.addEventListener('keydown', e => {
   const t = e.target;
   if (t && t.closest && t.closest('button,input,textarea,select,[contenteditable]')) return;
   if (state.modalOpen) return;                 // 弹窗开着：Esc 交给弹窗自己
+  // 上膛了半截的「确定结束」：Esc 先把它收回去，别再往下走
+  if (isEsc && pauseEndArmed) { pauseEndDisarm(); return; }
   if (isEsc && !state.paused) return;
   e.preventDefault();
   if (state.paused) pauseResume();

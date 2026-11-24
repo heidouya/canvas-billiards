@@ -42,8 +42,9 @@
           <button type="button" role="menuitem" class="chal-item level-item" id="btnLevel"><span id="levelLabel">关卡挑战</span><i id="levelSub2">8 关摆球题 · 已过 0 关</i></button>
         </div>
       </div>
-      <!-- 暂停：计时停住、电脑也不出杆（清台 / 关卡 / 跳球 / 躲球里不给停，按钮会灰掉） -->
-      <button type="button" class="panel-mini" id="btnPause" aria-pressed="false">暂停</button>
+      <!-- 暂停：计时停住、电脑也不出杆。清台 / 关卡里这块位置改行「结束」（红色，两段确认），
+           跳球 / 躲球里不给停，按钮会灰掉 -->
+      <button type="button" class="panel-mini" id="btnPause" aria-pressed="false" aria-label="暂停这一局">暂停</button>
       <!-- 桌面端：浏览器全屏，可用高度变大后台面也跟着变大（手机横屏另有细带上的全屏按钮） -->
       <button type="button" class="panel-mini" id="btnFullTop">全屏</button>
       <!-- 桌面端：收起/展开右侧面板，把宽度让给台面（手机端不显示） -->
@@ -226,8 +227,8 @@
           <span id="statusText">玩家 1 击球</span>
           <!-- 只在手机横屏出现（球组条那行宽度太紧，计时改挂在状态条右端）；桌面端这行隐藏，计时在球组条中间 -->
           <span class="bar-clock" id="barClock">00:00</span>
-          <!-- 窄屏的暂停：桌面端页头已经有那枚，这里只在 ≤940px 露出来 -->
-          <button type="button" class="pause-mini" id="btnPauseM" aria-pressed="false">暂停</button>
+          <!-- 窄屏的暂停：桌面端页头已经有那枚，这里只在 ≤940px 露出来；清台 / 关卡里同样变「结束」 -->
+          <button type="button" class="pause-mini" id="btnPauseM" aria-pressed="false" aria-label="暂停这一局">暂停</button>
         </div>
         <div class="sub" id="statusSub">向母球反方向拖动瞄准，松手击球</div>
         <div class="power-block">

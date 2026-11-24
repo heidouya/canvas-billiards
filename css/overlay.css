@@ -60,8 +60,15 @@
 /* ---------- 暂停 ---------- */
 /* 页头那枚（桌面）用的是 .panel-mini，这里补「按下去了」和「不能按」两种样子 */
 .panel-mini.on{background:#22405a;border-color:#3f6b90;color:#eaf4ff}
+/* 清台 / 关卡进行中：这枚按钮改行「结束」，红底；点一下上膛变深红，再点才真退 */
+.panel-mini.end{background:#3a1b1e;border-color:#7d3a3e;color:#ffd6d4}
+.panel-mini.end:hover{background:#472226;border-color:#96474b;color:#fff0ef}
+.panel-mini.end.armed{background:#a8322f;border-color:#c4554f;color:#fff;
+  box-shadow:0 0 0 2px rgba(190,64,58,.22)}
+.panel-mini.end.armed:hover{background:#b93a36;border-color:#d2605a}
 .panel-mini:disabled{opacity:.4;cursor:default}
 .panel-mini:disabled:hover{background:#16222f;border-color:#26405a}
+.panel-mini.end:disabled:hover{background:#3a1b1e;border-color:#7d3a3e}
 
 /* 状态条右端那枚：桌面端页头已经有，这个只在窄屏（页头按钮被藏起来）露出来 */
 .pause-mini{
@@ -73,8 +80,13 @@
 }
 .pause-mini:hover{background:#1d2c3c;border-color:#31506b}
 .pause-mini.on{background:#22405a;border-color:#3f6b90;color:#eaf4ff}
+.pause-mini.end{background:#3a1b1e;border-color:#7d3a3e;color:#ffd6d4}
+.pause-mini.end:hover{background:#472226;border-color:#96474b;color:#fff0ef}
+.pause-mini.end.armed{background:#a8322f;border-color:#c4554f;color:#fff;
+  box-shadow:0 0 0 2px rgba(190,64,58,.22)}
 .pause-mini:disabled{opacity:.4;cursor:default}
 .pause-mini:disabled:hover{background:#16222f;border-color:#26405a}
+.pause-mini.end:disabled:hover{background:#3a1b1e;border-color:#7d3a3e}
 @media (max-width:940px){ .pause-mini{display:inline-flex} }
 
 .pause-cover{
