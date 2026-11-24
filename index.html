@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="css/jump.css">
 <link rel="stylesheet" href="css/dodge.css">
 <link rel="stylesheet" href="css/speed.css">
+<link rel="stylesheet" href="css/level.css">
 <link rel="stylesheet" href="css/sketch.css">
 </head>
 <body>
@@ -37,6 +38,8 @@
           <button type="button" role="menuitem" class="chal-item" id="btnDodge">躲球挑战<i>40 秒一局 · 记最佳</i></button>
           <!-- 限时清台走主局同一张台面，入口跟跳球 / 躲球收在同一张单子里 -->
           <button type="button" role="menuitem" class="chal-item speed-item" id="btnSpeed"><span id="speedLabel">限时清台</span><i id="speedBest">4 分钟清 15 颗 · 犯规罚 10 秒</i></button>
+          <!-- 关卡挑战：八道摆球题，同样走主局台面，先弹一张选关单子 -->
+          <button type="button" role="menuitem" class="chal-item level-item" id="btnLevel"><span id="levelLabel">关卡挑战</span><i id="levelSub2">8 关摆球题 · 已过 0 关</i></button>
         </div>
       </div>
       <!-- 桌面端：浏览器全屏，可用高度变大后台面也跟着变大（手机横屏另有细带上的全屏按钮） -->
@@ -96,6 +99,38 @@
               </div>
             </div>
           </div>
+
+          <!-- 关卡挑战：选关单子（八个小方块，过了的写最少杆数） -->
+          <div class="level-pick" id="levelPick" hidden>
+            <div class="level-pick-card">
+              <div class="level-kicker">关卡挑战</div>
+              <h3>挑一关打</h3>
+              <p class="level-pick-sub" id="levelPickSub">8 关摆球题 · 已过 0 关</p>
+              <div class="level-grid" id="levelGrid"></div>
+              <div class="level-pick-foot">
+                <button type="button" class="level-quit" id="levelClose">先不打</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 关卡挑战：过关 / 没过的结算卡 -->
+          <div class="level-result" id="levelResult" hidden>
+            <div class="level-result-card">
+              <button type="button" class="level-x" id="levelQuit" aria-label="退出关卡" title="退出关卡">×</button>
+              <div class="level-kicker" id="levelKicker">第 1 关 · 直线</div>
+              <span class="level-badge" id="levelBadge" hidden>新纪录</span>
+              <div class="level-title" id="levelTitle">过关</div>
+              <div class="level-score" id="levelScore">1 杆</div>
+              <p class="level-sub" id="levelSub">最佳 1 杆 · 已过 1 / 8 关</p>
+              <p class="level-end-note" id="levelEndNote" hidden></p>
+              <!-- 左「再打一次」＝留在这关，右「下一关 / 换一关」＝往前走；过关时「换一关」降成第二行的小字，退出收进右上角的 × -->
+              <div class="level-acts">
+                <button type="button" class="btn primary" id="levelAgain">再打一次</button>
+                <button type="button" class="btn primary" id="levelNext">下一关</button>
+                <button type="button" class="btn" id="levelRePick">换一关</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -104,14 +139,14 @@
       <!-- 对局设置：规则 / 模式 / 难度，放在最上面；切换后即时开局 -->
       <div class="card setup-card">
         <!-- 规则：中式八球（默认）/ 美式八球 -->
-        <div class="seg-row speed-lock">
+        <div class="seg-row speed-lock level-lock">
           <span class="seg-label">规则</span>
           <div class="seg" id="ruleSeg">
             <button type="button" class="active" data-rule="cn">中式八球</button>
             <button type="button" data-rule="us">美式八球</button>
           </div>
         </div>
-        <div class="seg-row speed-lock">
+        <div class="seg-row speed-lock level-lock">
           <span class="seg-label">模式</span>
           <div class="seg" id="modeSeg">
             <button type="button" class="active" data-mode="ai">人机对战</button>
@@ -120,7 +155,7 @@
           </div>
         </div>
         <!-- 电脑 1（只在电脑互打时出现） -->
-        <div class="seg-row speed-lock" id="level0Row" hidden>
+        <div class="seg-row speed-lock level-lock" id="level0Row" hidden>
           <span class="seg-label">电脑 1</span>
           <div class="seg" id="levelSeg0">
             <button type="button" data-level0="easy">简单</button>
@@ -129,7 +164,7 @@
           </div>
         </div>
         <!-- 难度：人机对战里指电脑；电脑互打里指电脑 2 -->
-        <div class="seg-row speed-lock" id="levelRow">
+        <div class="seg-row speed-lock level-lock" id="levelRow">
           <span class="seg-label" id="levelLabel">难度</span>
           <div class="seg" id="levelSeg">
             <button type="button" class="active" data-level="easy">简单</button>
@@ -155,7 +190,7 @@
           </div>
         </div>
         <!-- 电脑互打：暂停 / 继续观战 -->
-        <button type="button" class="btn auto-btn speed-lock" id="btnAutoPause" hidden>暂停观战</button>
+        <button type="button" class="btn auto-btn speed-lock level-lock" id="btnAutoPause" hidden>暂停观战</button>
       </div>
 
       <!-- 状态 + 力度：合成一张卡，信息从上到下一条线读完 -->
@@ -183,6 +218,7 @@
         <button type="button" class="btn" id="btnDodge2">躲球挑战</button>
         <!-- 手机 / 窄屏页头收起了「趣味挑战」，清台的入口改在这里出现（桌面端这行隐藏） -->
         <button type="button" class="btn only-narrow" id="btnSpeed2">限时清台</button>
+        <button type="button" class="btn only-narrow" id="btnLevel2">关卡挑战</button>
         <button type="button" class="btn danger wide" id="btnClear">清空战绩</button>
       </div>
 
@@ -306,6 +342,7 @@
 <script src="js/replay.js"></script>
 <script src="js/hud.js"></script>
 <script src="js/speed.js"></script>
+<script src="js/level.js"></script>
 <script src="js/loop.js"></script>
 <script src="js/main.js"></script>
 <script src="js/tablebg.js"></script>

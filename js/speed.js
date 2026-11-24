@@ -255,8 +255,8 @@
         mob.textContent = running ? '结束清台' : (this.active && this.over ? '再来一次' : '限时清台');
       }
 
-      // 挑战中把跳球 / 躲球两个入口一并锁住：点开浮层会把台面盖住，倒计时却还在走
-      for (const id of ['btnJump', 'btnDodge', 'btnJump2', 'btnDodge2']) {
+      // 挑战中把跳球 / 躲球 / 关卡三个入口一并锁住：点开浮层会把台面盖住，倒计时却还在走
+      for (const id of ['btnJump', 'btnDodge', 'btnLevel', 'btnJump2', 'btnDodge2', 'btnLevel2']) {
         const b = el(id);
         if (b) b.disabled = running;
       }

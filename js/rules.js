@@ -113,6 +113,11 @@ function endShot() {
     window.SpeedPool.onEndShot(state.shot);
     return;
   }
+  // 关卡挑战：一杆交给 level.js（只数杆数、看目标球清没清），八球规则整段跳过
+  if (window.LevelPlay && window.LevelPlay.active) {
+    window.LevelPlay.onEndShot(state.shot);
+    return;
+  }
   const me = state.turn;
   const opp = 1 - me;
   const shot = state.shot;

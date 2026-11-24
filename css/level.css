@@ -1,0 +1,226 @@
+/* ============================================================
+ * 关卡挑战（摆球题）
+ * ------------------------------------------------------------
+ * 它跟清台一样走主局台面，所以样式只有四块：
+ *   ① 入口：页头「趣味挑战」里的那一项
+ *   ② 挑战中把会打断题面的几行压暗
+ *   ③ 选关单子 / 结算卡（都是压台面的 HTML 卡）
+ *   ④ 手绘纸面 + 手机横屏
+ * ============================================================ */
+
+/* ---------- ① 入口 ---------- */
+body.level-on .chal-item.level-item{color:#79b9ff}
+body.level-on .chal-item.level-item i{color:#7d9cb8}
+
+/* 状态条前面的小圆点：关卡用青色，跟清台的金色分开 */
+.dot.level{background:#63b6ff;box-shadow:0 0 10px rgba(99,182,255,.55)}
+
+/* 球号条只留这一关的目标球：用 hidden 藏，但 .chip 自带 display:flex，得显式压回去 */
+.chip[hidden]{display:none}
+
+/* ---------- ② 挑战中锁住改不了的行 ---------- */
+body.level-on .level-lock{opacity:.4;pointer-events:none;transition:opacity .2s}
+
+/* ---------- ③ 选关单子 ---------- */
+.level-pick{
+  position:absolute;inset:0;z-index:4;
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  background:rgba(5,9,14,.62);
+  animation:level-fade .18s ease-out both;
+}
+.level-pick[hidden]{display:none}
+.level-pick-card{
+  width:min(430px,100%);padding:20px 22px 16px;border-radius:16px;
+  background:linear-gradient(180deg,#152230,#0a1119);
+  border:1px solid rgba(99,182,255,.26);
+  box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);
+  animation:level-pop .22s cubic-bezier(.2,1.1,.4,1) both;
+}
+.level-kicker{font-size:11px;letter-spacing:1.4px;color:#7d9cb8;text-transform:uppercase}
+.level-pick-card h3{margin:6px 0 4px;font-size:19px;font-weight:700;color:#eaf4ff}
+.level-pick-sub{margin:0 0 12px;font-size:12px;color:#8ba3ba}
+.level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.level-tile{
+  appearance:none;display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  padding:8px 9px 9px;border-radius:10px;cursor:pointer;
+  border:1px solid #23364a;background:#0e1822;color:#dbe9f7;
+  font-family:inherit;text-align:left;
+  transition:background .15s,border-color .15s,transform .12s;
+}
+.level-tile b{font-size:15px;font-weight:700;line-height:1.1;color:#eaf4ff}
+.level-tile span{font-size:11.5px;color:#9db1c6}
+.level-tile i{font-style:normal;font-size:10.5px;color:#6f8aa4}
+.level-tile:hover{background:#16263a;border-color:#3a6d9c}
+.level-tile:active{transform:scale(.97)}
+.level-tile.done{border-color:rgba(111,224,168,.35);background:#0f2018}
+.level-tile.done b{color:#6fe0a8}
+.level-tile.done i{color:#5fae86}
+
+/* 八格下面的「先不打」：跟格子留出 14px 呼吸，整行铺满，手指好点 */
+.level-pick-foot{margin-top:14px}
+.level-quit{
+  appearance:none;display:block;width:100%;padding:9px 12px;border-radius:9px;
+  border:1px solid #223447;background:#0d1620;color:#8199ad;
+  font-family:inherit;font-size:13px;line-height:1.2;cursor:pointer;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.level-quit:hover{background:#152430;border-color:#345a7c;color:#cfe2f2}
+.level-quit:active{transform:translateY(1px)}
+
+/* ---------- ③ 结算卡 ---------- */
+.level-result{
+  position:absolute;inset:0;z-index:4;
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  background:rgba(5,9,14,.62);
+  animation:level-fade .18s ease-out both;
+}
+.level-result[hidden]{display:none}
+.level-result-card{
+  position:relative;
+  width:min(370px,100%);padding:20px 22px 16px;border-radius:16px;text-align:center;
+  background:linear-gradient(180deg,#152230,#0a1119);
+  border:1px solid rgba(99,182,255,.3);
+  box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);
+  animation:level-pop .22s cubic-bezier(.2,1.1,.4,1) both;
+}
+.level-badge{
+  display:inline-block;margin:8px auto 6px;padding:2px 10px;border-radius:999px;
+  font-size:11.5px;font-weight:600;letter-spacing:.5px;
+  color:#0d2a1c;background:#6fe0a8;
+}
+.level-badge[hidden]{display:none}
+.level-title{font-size:24px;font-weight:700;letter-spacing:.5px;color:#eaf4ff;margin-top:2px}
+.level-score{
+  margin-top:2px;font-size:26px;font-weight:700;color:#ffd36b;
+  font-variant-numeric:tabular-nums;letter-spacing:.5px;
+}
+.level-sub{margin:6px 0 12px;font-size:12.5px;line-height:1.6;color:#93a9bf}
+.level-end-note{margin:0 0 12px;font-size:12px;color:#6fe0a8}
+.level-end-note[hidden]{display:none}
+/* 结算卡的动作区：两列网格 + 一行小字。位置含义固定——
+   左 = 「再打一次」（留在这关），右 = 「下一关」（往前走）。
+   「换一关」永远只是第二行的一行灰字（能点，但没有按钮的框、底和边），不做按钮。
+   动作区整体往下压，跟上面的说明文字留出呼吸，别贴着字堆在卡片上半截 */
+.level-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:24px}
+.level-acts .btn{min-width:0;width:100%}
+#levelAgain{grid-column:1 / 2;grid-row:1}
+#levelNext{grid-column:2 / 3;grid-row:1}
+/* 「换一关」：可点的一行灰字，横跨整行落在第二行 */
+#levelRePick{
+  grid-column:1 / -1;grid-row:2;
+  padding:11px 6px 0;
+  color:#7f97ac;background:transparent;border-color:transparent;box-shadow:none;
+  font-size:12.5px;letter-spacing:.3px;
+}
+#levelRePick:hover{color:#cfe0f0;background:transparent;border-color:transparent;text-decoration:underline}
+/* 没过：没有「下一关」，再打一次自己铺满一行 */
+.level-result-card:not(.has-next):not(.last-clear) #levelAgain{grid-column:1 / -1}
+/* 右上角的 ×：退出关卡 */
+.level-x{
+  position:absolute;top:7px;right:7px;width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0;border:1px solid transparent;border-radius:50%;
+  appearance:none;cursor:pointer;font-family:inherit;
+  font-size:17px;line-height:1;color:#7f97ac;background:transparent;
+  transition:color .15s,background .15s,border-color .15s;
+}
+.level-x:hover{color:#eaf4ff;background:#1b2836;border-color:#2c4055}
+/* 有「下一关」时，再打一次降成次要样式（一屏只有一颗绿） */
+.level-result-card.has-next #levelAgain{color:#d7e6f4;background:#16222f;border-color:#24374a}
+.level-result-card.has-next #levelAgain:hover{background:#1d2c3c;border-color:#31506b}
+/* 八关全过：这一屏的“下一步”其实是换一关刷杆数，这时「换一关」才回到按钮位当主操作 */
+.level-result-card.last-clear #levelAgain{color:#d7e6f4;background:#16222f;border-color:#24374a}
+.level-result-card.last-clear #levelAgain:hover{background:#1d2c3c;border-color:#31506b}
+.level-result-card.last-clear #levelRePick{
+  grid-column:2 / 3;grid-row:1;padding:10px 8px;font-size:13px;letter-spacing:0;
+  color:#fff;background:linear-gradient(180deg,#2f9d6c,#1b6b47);border-color:#2f9d6c;
+}
+.level-result-card.last-clear #levelRePick:hover{
+  background:linear-gradient(180deg,#37b27b,#217a52);border-color:#37b27b;text-decoration:none;
+}
+
+@keyframes level-fade{from{opacity:0}to{opacity:1}}
+@keyframes level-pop{
+  from{opacity:0;transform:translateY(8px) scale(.96)}
+  to{opacity:1;transform:none}
+}
+
+/* ---------- ④ 手绘纸面 ---------- */
+body.theme-sketch.level-on .chal-item.level-item{color:#1f5c8f}
+body.theme-sketch.level-on .chal-item.level-item i{color:#5f7891}
+body.theme-sketch .dot.level{background:#1f5c8f;box-shadow:none}
+body.theme-sketch .level-pick{background:rgba(244,237,221,.58)}
+body.theme-sketch .level-pick-card,
+body.theme-sketch .level-result-card{
+  background:#fffdf5;border:1.4px solid rgba(43,43,40,.7);border-radius:5px;
+  box-shadow:3px 3px 0 rgba(43,43,40,.16);
+}
+body.theme-sketch .level-pick-card h3,
+body.theme-sketch .level-title{color:#22221e}
+body.theme-sketch .level-kicker,
+body.theme-sketch .level-pick-sub,
+body.theme-sketch .level-sub{color:#6f685c}
+body.theme-sketch .level-score{color:#a9661f}
+body.theme-sketch .level-badge{
+  color:#fffdf5;background:#1f5c8f;border-radius:3px;
+  box-shadow:2px 2px 0 rgba(43,43,40,.16);
+}
+body.theme-sketch .level-tile{
+  background:#fdf9ee;border:1.2px solid rgba(43,43,40,.5);border-radius:4px;
+}
+body.theme-sketch .level-tile b{color:#22221e}
+body.theme-sketch .level-tile span{color:#5a5449}
+body.theme-sketch .level-tile i{color:#857c6c}
+body.theme-sketch .level-tile:hover{background:#fffdf5;border-color:#22221e}
+body.theme-sketch .level-tile.done{border-color:rgba(31,92,143,.7);background:#f2f8fd}
+body.theme-sketch .level-tile.done b{color:#1f5c8f}
+body.theme-sketch .level-tile.done i{color:#4a7fa8}
+body.theme-sketch .level-quit{
+  background:#f4efe1;border:1.2px solid rgba(43,43,40,.5);border-radius:4px;color:#5a5449;
+}
+body.theme-sketch .level-quit:hover{background:#fffdf5;border-color:#22221e;color:#22221e}
+body.theme-sketch .level-end-note{color:#1f5c8f}
+/* 纸面上“次要按钮”就是白纸描墨，别留深色底（深底是主按钮的语言） */
+body.theme-sketch .level-result-card.has-next #levelAgain,
+body.theme-sketch .level-result-card.last-clear #levelAgain{
+  color:#2b2b28;background:#fffdf5;border-color:rgba(43,43,40,.55);
+  box-shadow:2px 2px 0 rgba(43,43,40,.12);
+}
+body.theme-sketch .level-x{color:#7b7364}
+body.theme-sketch .level-x:hover{
+  color:#2b2b28;background:#f3ecda;border-color:rgba(43,43,40,.45);
+}
+/* 纸面上「换一关」的文字态 / 全过时的主按钮：前者墨色小字，后者实心墨块（跟 .btn.primary 一个语言） */
+body.theme-sketch #levelRePick{color:#7b7364;background:transparent;border-color:transparent;box-shadow:none}
+body.theme-sketch #levelRePick:hover{color:#2b2b28;background:transparent}
+body.theme-sketch .level-result-card.last-clear #levelRePick{
+  color:#fffdf5;background:#2b2b28;border-color:#2b2b28;
+}
+body.theme-sketch .level-result-card.last-clear #levelRePick:hover{background:#14140f;border-color:#14140f}
+
+/* ---------- ④ 手机横屏：卡片压小一号 ---------- */
+@media (max-height:560px) and (orientation:landscape){
+  .level-pick,.level-result{padding:8px}
+  .level-pick-card{padding:12px 14px 10px;border-radius:12px}
+  .level-result-card{padding:12px 16px 10px;border-radius:12px}
+  .level-pick-card h3{font-size:16px;margin:4px 0 2px}
+  .level-pick-sub{margin-bottom:8px;font-size:11px}
+  .level-grid{grid-template-columns:repeat(4,1fr);gap:6px}
+  .level-tile{padding:6px 7px 7px}
+  .level-tile b{font-size:13px}
+  .level-tile span,.level-tile i{font-size:10px}
+  .level-title{font-size:19px}
+  .level-score{font-size:20px}
+  .level-sub{margin:4px 0 8px;font-size:11.5px}
+  .level-acts{margin-top:16px}
+  .level-btns .btn{min-width:84px}
+}
+
+/* ---------- ⑤ 手机竖屏：台面只有一小条，卡片改成整页浮层 ---------- */
+@media (max-width:560px) and (orientation:portrait){
+  .level-pick,.level-result{position:fixed;z-index:30}
+  .level-pick-card{width:min(400px,100%)}
+  .level-result-card{width:min(340px,100%)}
+  .level-grid{grid-template-columns:repeat(4,1fr);gap:6px}
+  .level-tile{padding:8px 8px 8px}
+}

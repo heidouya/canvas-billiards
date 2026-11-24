@@ -169,6 +169,16 @@ function drawGuide() {
   lx = Math.min(Math.max(lx, TABLE.x + tw / 2 + padX + 6), TABLE.x + TABLE.w - tw / 2 - padX - 6);
   ly = Math.min(Math.max(ly, TABLE.y + boxH), TABLE.y + TABLE.h - boxH);
 
+  // 小画布上这句会比白球还宽，直接压在白球上——那就让开：挪到白球上/下方
+  const bw0 = tw + padX * 2, bh0 = boxH;
+  if (Math.abs(lx - cue.x) < bw0 / 2 + BALL_R + 6 && Math.abs(ly - cue.y) < bh0 / 2 + BALL_R + 6) {
+    const up = cue.y - (BALL_R + bh0 / 2 + 10);
+    const down = cue.y + (BALL_R + bh0 / 2 + 10);
+    const lo = TABLE.y + boxH, hi = TABLE.y + TABLE.h - boxH;
+    if (up >= lo) ly = up;
+    else if (down <= hi) ly = down;
+  }
+
   ctx.fillStyle = THEME.guideBoxFill;
   ctx.strokeStyle = THEME.guideBoxLine;
   ctx.lineWidth = 1;

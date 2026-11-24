@@ -169,6 +169,14 @@ function updateStatus() {
     updateRackStrip();
     return;
   }
+  const lp = window.LevelPlay;
+  // 关卡挑战：说的是“第几关、还几杆”
+  if (lp && lp.active) {
+    lp.paintStatus();
+    lp.paintPanel();
+    updateRackStrip();
+    return;
+  }
   const p = state.turn;
   const aiSide = isAIPlayer(p);      // 当前这一杆是不是电脑在打
   const name = nameOf(p);
@@ -289,11 +297,14 @@ function updateClockUI() {
   }
 }
 
-function resetGame() {
-  // 换模式 / 换规则 / 点重新开局…都走这里：正在清台就先把挑战摘掉（重开那一局就回到普通对局）
+function resetGame(setup) {
+  // 换模式 / 换规则 / 点重新开局…都走这里：正在清台或关卡挑战就先把那个玩法摘掉
+  // （begin() 期间 starting 为真，别把自己摘掉）
   const sp = window.SpeedPool;
   if (sp && sp.active && !sp.starting) sp.abort();
-  setupBalls();
+  const lp = window.LevelPlay;
+  if (lp && lp.active && !lp.starting) lp.abort();
+  (setup || setupBalls)();
   state.turn = 0;
   state.groups = [null, null];
   state.phase = 'aim';
@@ -473,6 +484,12 @@ el('btnRestart').addEventListener('click', () => {
   // 挑战中点「重新开局」= 清台重开，而不是把人踢回普通对局
   if (sp && sp.active) {
     sp.begin();
+    return;
+  }
+  const lp = window.LevelPlay;
+  // 关卡里点「重新开局」= 重打这一关
+  if (lp && lp.active) {
+    lp.begin(lp.idx);
     return;
   }
   resetGame();
@@ -703,6 +720,9 @@ function updateRackStrip() {
   const sp = window.SpeedPool;
   // 清台挑战：这一条变成进度条（左边“清台挑战”、右边“剩 N 颗”，球号照样按落袋淡出）
   if (sp && sp.active) { sp.paintStrip(); return; }
+  const lp = window.LevelPlay;
+  // 关卡挑战：左边“第 N 关”、右边“剩 M 杆”
+  if (lp && lp.active) { lp.paintStrip(); return; }
   el('gpTagSolid').hidden = false;
   el('gpTagStripe').hidden = false;
   const ownerOf = kind => {
@@ -727,6 +747,7 @@ function updateRackStrip() {
     panel.classList.toggle('current', owner !== null && owner === state.turn);
     for (const c of chips[kind]) {
       const ball = state.balls.find(b => b.id === c.id);
+      c.el.hidden = false;      // 关卡挑战会把用不上的球号藏起来，回到普通对局要复原
       c.el.classList.toggle('out', !(ball && ball.active));
     }
   }
