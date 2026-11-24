@@ -191,7 +191,7 @@ function nearestPocketToEight() {
 
 // 电脑回合：思考 → 瞄准展示 → 出杆
 function aiTakeTurn(p) {
-  const paused = state.mode === 'auto' && state.autoPaused;
+  const paused = state.paused || (state.mode === 'auto' && state.autoPaused);
   if (!isAIPlayer(p) || state.turn !== p || state.gameOver || state.phase !== 'aim' || paused || state.modalOpen) {
     state.locked = false;
     updateStatus();
@@ -221,7 +221,7 @@ function aiTakeTurn(p) {
   clearTimeout(aiShootTimer);
   aiShootTimer = setTimeout(() => {
     state.aiming = false;
-    const stillPaused = state.mode === 'auto' && state.autoPaused;
+    const stillPaused = state.paused || (state.mode === 'auto' && state.autoPaused);
     if (state.turn === p && state.phase === 'aim' && !state.gameOver && !stillPaused) {
       shoot(power);
     }
@@ -244,7 +244,7 @@ maybeStartAI = function () {
   }
   // 该谁出杆由 state.turn 决定，人机对战里只有玩家 2 会交给电脑
   const p = state.turn;
-  const paused = state.mode === 'auto' && state.autoPaused;
+  const paused = state.paused || (state.mode === 'auto' && state.autoPaused);
   if (state.gameOver || state.phase !== 'aim' || !isAIPlayer(p) || paused || state.modalOpen) {
     updateStatus();
     return;

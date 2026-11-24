@@ -7,6 +7,7 @@
   /* 长文案换行显示完整，不再截断省略；宽度兜在台面以内 */
   white-space:normal;text-align:center;line-height:1.5;
   box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:min(92%,620px);
+  z-index:7;              /* 暂停遮罩之上：暂停那条提示要看得见 */
 }
 #toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto;cursor:pointer}
 
@@ -55,3 +56,47 @@
   display:inline-block;margin-right:8px;padding:1px 6px;border-radius:6px;
   font-size:11.5px;font-weight:600;color:#cfe6f5;background:rgba(72,110,150,.28);
 }
+
+/* ---------- 暂停 ---------- */
+/* 页头那枚（桌面）用的是 .panel-mini，这里补「按下去了」和「不能按」两种样子 */
+.panel-mini.on{background:#22405a;border-color:#3f6b90;color:#eaf4ff}
+.panel-mini:disabled{opacity:.4;cursor:default}
+.panel-mini:disabled:hover{background:#16222f;border-color:#26405a}
+
+/* 状态条右端那枚：桌面端页头已经有，这个只在窄屏（页头按钮被藏起来）露出来 */
+.pause-mini{
+  flex:0 0 auto;display:none;align-items:center;justify-content:center;
+  height:24px;padding:0 10px;margin-left:auto;
+  border-radius:7px;border:1px solid #26405a;background:#16222f;color:#cfe0ee;
+  font-family:inherit;font-size:11.5px;letter-spacing:.2px;cursor:pointer;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.pause-mini:hover{background:#1d2c3c;border-color:#31506b}
+.pause-mini.on{background:#22405a;border-color:#3f6b90;color:#eaf4ff}
+.pause-mini:disabled{opacity:.4;cursor:default}
+.pause-mini:disabled:hover{background:#16222f;border-color:#26405a}
+@media (max-width:940px){ .pause-mini{display:inline-flex} }
+
+.pause-cover{
+  position:absolute;inset:0;z-index:6;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;background:rgba(4,8,13,.55);
+  animation:pause-in .16s ease-out both;
+}
+.pause-cover[hidden]{display:none}
+.pause-card{
+  max-width:min(300px,86%);
+  padding:18px 22px 16px;border-radius:14px;text-align:center;
+  background:rgba(17,26,37,.94);border:1px solid #27435c;
+  box-shadow:0 18px 44px rgba(0,0,0,.5);
+}
+.pause-title{font-size:19px;font-weight:700;letter-spacing:2px;color:#eaf4ff}
+.pause-sub{margin:7px 0 14px;font-size:12.5px;line-height:1.6;color:#93a9bf}
+.pause-go{
+  appearance:none;min-width:96px;padding:8px 16px;border-radius:9px;cursor:pointer;
+  font-family:inherit;font-size:13px;font-weight:600;color:#fff;
+  background:linear-gradient(180deg,#2f9d6c,#1b6b47);border:1px solid #2f9d6c;
+}
+.pause-go:hover{background:linear-gradient(180deg,#37b27b,#217a52);border-color:#37b27b}
+.pause-go:active{transform:translateY(1px)}
+@keyframes pause-in{from{opacity:0}to{opacity:1}}

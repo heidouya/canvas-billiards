@@ -162,6 +162,28 @@ body.theme-sketch .modal-box{
 }
 body.theme-sketch .modal-box h2{color:#22221e}
 body.theme-sketch .modal-box p{color:#6f685c}
+
+/* ---- 暂停 ---- */
+body.theme-sketch .pause-cover{background:rgba(244,237,221,.62)}
+body.theme-sketch .pause-card{
+  background:#fffdf5;border:1.4px solid rgba(43,43,40,.7);border-radius:5px;
+  box-shadow:3px 3px 0 rgba(43,43,40,.16);
+}
+body.theme-sketch .pause-title{color:#22221e;letter-spacing:3px}
+body.theme-sketch .pause-sub{color:#6f685c}
+body.theme-sketch .pause-go{
+  background:#2b2b28;border-color:#2b2b28;color:#fffdf5;border-radius:4px;
+}
+body.theme-sketch .pause-go:hover{background:#14140f;border-color:#14140f}
+body.theme-sketch .pause-mini{
+  background:#fffdf5;border-color:rgba(43,43,40,.55);color:#2b2b28;border-radius:4px;
+}
+body.theme-sketch .pause-mini:hover{background:#f6efdd;border-color:#2b2b28}
+body.theme-sketch .pause-mini.on{background:#2b2b28;border-color:#2b2b28;color:#fffdf5}
+body.theme-sketch .pause-mini:disabled{border-color:rgba(43,43,40,.3);color:#a09884}
+body.theme-sketch .pause-mini:disabled:hover{background:#fffdf5;border-color:rgba(43,43,40,.3)}
+body.theme-sketch .panel-mini.on{background:#2b2b28;border-color:#2b2b28;color:#fffdf5}
+body.theme-sketch .panel-mini:disabled{border-color:rgba(43,43,40,.3);color:#a09884}
 body.theme-sketch .start-kicker{
   color:#6b3c14;background:#f6ecd8;border:1px solid rgba(146,84,30,.4);border-radius:3px;
 }

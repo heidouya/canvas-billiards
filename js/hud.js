@@ -231,10 +231,12 @@ function updateStatus() {
     sub = `目标：${state.groups[p] === 'solid' ? '纯色 1-7' : '花色 9-15'}（剩 ${left} 颗）· 反方向拖拽瞄准`;
   }
 
-  // 电脑互打暂停时，覆盖上面的提示
-  if (state.mode === 'auto' && state.autoPaused && !state.gameOver && state.phase !== 'shooting') {
+  // 暂停时覆盖上面的提示（电脑互打的「暂停观战」也走这里）
+  if (state.paused && !state.gameOver) {
     title = `${name} · 已暂停`;
-    sub = '点「继续观战」让电脑接着打';
+    sub = state.mode === 'auto'
+      ? '计时停住了 · 点「继续观战」让电脑接着打'
+      : '计时停住了 · 按空格或点「继续」接着打';
   }
 
   statusTextEl.textContent = title;
@@ -251,6 +253,7 @@ function updateStatus() {
  * 用开始时间戳 + 累计时长表示，支持暂停（电脑互打暂停时停表）
  * ============================================================ */
 function startClock() {
+  if (state.paused) return;      // 暂停中不许偷偷起表（关玩法卡、切模式都会走到这里）
   if (state.clockSince) return;
   state.clockSince = performance.now();
 }
@@ -268,6 +271,7 @@ function elapsedMs() {
 
 // 把毫秒写进球组条中间的计时（秒数没变就不重绘）
 function updateClockUI() {
+  paintClockPaused();
   const sp = window.SpeedPool;
   // 清台挑战：这里显示的是倒计时，不是本局用时
   if (sp && sp.active) {
@@ -320,6 +324,8 @@ function resetGame(setup) {
   state.lastFoul = null;
   state.aimDir = { x: 1, y: 0 };
   state.autoPaused = false;   // 重新开局默认继续自动进行
+  state.paused = false;       // 暂停也一并解除，不做「重开还停着」这种半死状态
+  state.pauseHeld = false;
   // 本局计时归零并重新起表（开局卡还开着就先停着，关掉卡片再起表）
   state.clockMs = 0;
   state.clockSince = 0;
@@ -333,7 +339,7 @@ function resetGame(setup) {
   state.replayFrames = null;
   el('btnReplay').disabled = true;
   hideModal();
-  updatePauseBtn();
+  if (window.Pause) window.Pause.sync();
   if (state.introOpen) {
     updateIntroText();   // 卡片开着时切了模式 / 难度，文案跟着更新
     stopClock();
@@ -357,7 +363,6 @@ el('modeSeg').addEventListener('click', e => {
   // 人机对战：一行「难度」指电脑；电脑互打：两行分别指电脑 1 / 电脑 2
   el('levelRow').hidden = mode === 'pvp';
   el('level0Row').hidden = mode !== 'auto';
-  el('btnAutoPause').hidden = mode !== 'auto';
   el('levelLabel').textContent = mode === 'auto' ? '电脑 2' : '难度';
   resetGame();
   toast(mode === 'ai' ? '人机对战：玩家 1 先开球'
@@ -444,40 +449,14 @@ el('styleSeg').addEventListener('click', e => {
   toast(want ? '手绘纸面：球位和判定都在，只是换了画法' : '已切回台面风格');
 });
 
-// 电脑互打：暂停 / 继续
-function updatePauseBtn() {
-  const btn = el('btnAutoPause');
-  btn.textContent = state.autoPaused ? '继续观战' : '暂停观战';
-  btn.classList.toggle('primary', state.autoPaused);
-  const pausedFlag = state.autoPaused ? '1' : '0';
-  clockTextEl.dataset.paused = pausedFlag;
-  if (barClockEl) barClockEl.dataset.paused = pausedFlag;
+// 暂停（含原来的「暂停观战」）统一由 js/pause.js 管：页头 / 状态条那两枚按钮、空格、Esc 走同一个开关。
+// 这里只留计时上的小标记：计时条停下时数字旁边不闪，避免像"表停了"。
+function paintClockPaused() {
+  const flag = state.paused ? '1' : '0';
+  if (clockTextEl.dataset.paused !== flag) clockTextEl.dataset.paused = flag;
+  if (barClockEl && barClockEl.dataset.paused !== flag) barClockEl.dataset.paused = flag;
 }
 
-el('btnAutoPause').addEventListener('click', () => {
-  if (state.mode !== 'auto') return;
-  state.autoPaused = !state.autoPaused;
-  updatePauseBtn();
-  if (state.autoPaused) {
-    stopClock();             // 暂停观战 = 停表，不然这局用时会被"看别人打"的时间带偏
-    // 停在思考中的一杆也要一起断掉，避免暂停后还冷不丁出一杆
-    clearTimeout(aiTimer);
-    clearTimeout(aiShootTimer);
-    state.aiming = false;
-    state.power = 0;
-    state.locked = false;
-    updatePowerUI();
-    updateStatus();
-    updateClockUI();
-    toast('已暂停，点「继续观战」接着打');
-  } else {
-    startClock();
-    updateStatus();
-    updateClockUI();
-    maybeStartAI();
-    toast('继续观战');
-  }
-});
 
 el('btnRestart').addEventListener('click', () => {
   const sp = window.SpeedPool;

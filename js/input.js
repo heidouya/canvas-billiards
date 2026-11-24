@@ -14,6 +14,7 @@ function pointerPos(e) {
 }
 
 function canControl() {
+  if (state.paused) return false;      // 暂停中，台面不接受任何操作
   if (state.modalOpen || state.gameOver || state.locked) return false;
   if (state.phase !== 'aim') return false;
   if (isAIPlayer(state.turn)) return false; // 电脑回合锁定玩家操作
