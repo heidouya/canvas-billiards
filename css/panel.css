@@ -83,6 +83,13 @@
 }
 .panel-mini:hover{background:#1d2c3c;border-color:#31506b}
 .panel-mini:active{transform:scale(.97)}
+/* 桌面页头那枚全屏收成图标：宽度固定 32px，进出全屏只换图标不换宽度，整排不跟着挪 */
+.icon-mini{width:32px;padding:0;justify-content:center}
+.icon-mini .fs-ic{width:15px;height:15px;display:block}
+.icon-mini .fs-ic path{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.icon-mini .fs-shrink{display:none}
+.icon-mini.is-fs .fs-expand{display:none}
+.icon-mini.is-fs .fs-shrink{display:block}
 
 /* ---------- 趣味挑战：页头下拉 ---------- */
 /* 跳球 / 躲球两个小玩法收成一颗按钮，点开往下弹一小张单子。

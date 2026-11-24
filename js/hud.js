@@ -500,9 +500,13 @@ const fsElement = () => document.fullscreenElement || document.webkitFullscreenE
 
 function updateFullBtn() {
   const on = !!fsElement();
+  // 手机横屏那枚仍是文字按钮；桌面页头这枚是图标，进出全屏只换图标不换宽度
   btnFull.textContent = on ? '退出全屏' : '全屏';
-  btnFullTop.textContent = on ? '退出全屏' : '全屏';
-  btnFullTop.title = on ? '退出全屏（按 Esc 也行）' : '全屏后纵向空间更大，台面也会更大';
+  if (btnFullTop) {
+    btnFullTop.classList.toggle('is-fs', on);
+    btnFullTop.setAttribute('aria-label', on ? '退出全屏' : '全屏');
+    btnFullTop.title = on ? '退出全屏（按 Esc 也行）' : '全屏后纵向空间更大，台面也会更大';
+  }
 }
 
 async function toggleFullscreen() {

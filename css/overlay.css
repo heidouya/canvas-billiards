@@ -60,6 +60,8 @@
 /* ---------- 暂停 ---------- */
 /* 页头那枚（桌面）用的是 .panel-mini，这里补「按下去了」和「不能按」两种样子 */
 .panel-mini.on{background:#22405a;border-color:#3f6b90;color:#eaf4ff}
+/* 全屏图标按钮按下去了的样子（只有桌面那枚，手机横屏仍是文字按钮） */
+.panel-mini.icon-mini.is-fs{background:#22405a;border-color:#3f6b90;color:#eaf4ff}
 /* 清台 / 关卡进行中：这枚按钮改行「结束」，红底；点一下上膛变深红，再点才真退 */
 .panel-mini.end{background:#3a1b1e;border-color:#7d3a3e;color:#ffd6d4}
 .panel-mini.end:hover{background:#472226;border-color:#96474b;color:#fff0ef}
