@@ -323,6 +323,12 @@
         saveStore();
       }
 
+      // 成功了该往下走（换一档），失败了才是「再来一次」：主按钮跟着这次结果换边
+      const bAgain = el('speedAgain');
+      const bTier = el('speedTierBtn');
+      if (bAgain) bAgain.classList.toggle('primary', !ok);
+      if (bTier) bTier.classList.toggle('primary', !!ok);
+
       const kicker = el('speedKicker');
       if (kicker) kicker.textContent = `限时清台 · ${tierText(t)}`;
 
@@ -386,8 +392,8 @@
       if (this.over) {
         statusTextEl.textContent = this.success ? '清台成功' : '时间到';
         statusSubEl.textContent = this.success
-          ? `${t.balls} 颗 · 用时 ${clockText(this.lastUsed)} · 点「再来一次」或者换个档`
-          : `还差 ${need} 颗 · 点「再来一次」或者换个档`;
+          ? `${t.balls} 颗 · 用时 ${clockText(this.lastUsed)} · 点「换一档」试试别的长度`
+          : `还差 ${need} 颗 · 点「再来一次」再冲一次`;
         statusSubEl.className = 'sub';
         turnDotEl.className = 'dot speed';
         return;

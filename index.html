@@ -120,7 +120,8 @@
               <span class="speed-badge" id="speedBadge" hidden>新纪录</span>
               <div class="speed-score" id="speedScore">清台成功 2:41.0</div>
               <p class="speed-sub" id="speedResultSub">15 颗全清 · 罚时 10 秒</p>
-              <!-- 左「再来一次」＝留在这档，右「换一档」＝换长度，退出收进卡片右上角的 × -->
+              <!-- 左「再来一次」＝留在这档，右「换一档」＝换长度，退出收进卡片右上角的 ×；
+                   谁是主按钮看结果：成功强调「换一档」，失败强调「再来一次」（js/speed.js 的 finish() 里换） -->
               <div class="speed-btns">
                 <button type="button" class="btn primary" id="speedAgain">再来一次</button>
                 <button type="button" class="btn" id="speedTierBtn">换一档</button>
