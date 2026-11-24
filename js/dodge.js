@@ -43,12 +43,14 @@
   const INVULN = 1.6;           // 被撞后的护体时间
   const BALL_CAP = 12;          // 场上最多同时几颗弹球
 
-  // 安全区右边界：开局贴着开球线，之后一路收窄（右边越界就算跑到台面中间，不允许）
+  // 安全区右边界：开局就贴着开球线，之后一路收窄（右边越界就算跑到台面中间，不允许）
+  // 第一段原来是 300（宽 228px），前 11 秒不用挪窝——一颗球横穿 228px 只要半秒多，
+  // 而两颗间隔 2.5 秒，等于四分之三的时间没事干。所以开局直接站到 262（宽 190px），
+  // 一上来就得横移；整条时间轴也前移一档，末端 200 从 33 秒提到 22 秒
   const SHRINK = [
-    { t: 0, right: HEAD_X - 10 },
-    { t: 11, right: 262 },
-    { t: 23, right: 222 },
-    { t: 33, right: 200 }
+    { t: 0, right: 262 },
+    { t: 10, right: 222 },
+    { t: 22, right: 200 }
   ];
 
   // 出球节奏：越到后面越快、越密。1.9 秒那档听着慢，其实是「一颗球的飞行时间」
@@ -83,6 +85,7 @@
     result: null,
     balls: [],
     spawnCd: 0,
+    fired: 0,                     // 这一局发过几颗（开局前三颗抢一下节拍）
     zoneRight: SHRINK[0].right,
     zoneTarget: SHRINK[0].right,
     step: 0,
@@ -139,6 +142,7 @@
     s.step = 0;
     s.warned = 0;
     s.spawnCd = 0;
+    s.fired = 0;
     s.invuln = 0;
     s.flash = 0;
     s.shake = 0;
@@ -667,7 +671,7 @@
       if (s.count <= 0) {
         s.phase = 'play';
         s.t = 0;
-        s.spawnCd = 0.6;
+        s.spawnCd = 0.15;   // 开局别空两秒：第一颗几乎立刻起飞
         setMsg('撑住 40 秒就算通关');
       }
     } else if (s.phase === 'play') {
@@ -709,9 +713,11 @@
       s.spawnCd -= dt;
       if (s.spawnCd <= 0) {
         fireBall();
-        // 一对同时来比「每颗更快」更像躲球，也更早给到压力：14 秒起
-        if (s.t > 14 && Math.random() < 0.25) fireBall();
-        s.spawnCd = spawnGap(s.t) * rand(0.92, 1.08);
+        s.fired++;
+        // 一对同时来比「每颗更快」更像躲球，也更早给到压力：10 秒起
+        if (s.t > 10 && Math.random() < 0.25) fireBall();
+        // 开局前三颗按 1.2 秒抢节拍，第 4 颗起回到正常档
+        s.spawnCd = (s.fired <= 3 ? 1.2 : spawnGap(s.t)) * rand(0.92, 1.08);
       }
 
       stepPhysics(dt);
