@@ -267,6 +267,12 @@ function drawBall(b, x, y, rot, dx, dy) {
     ctx.fill();
   }
 
+  // 滚动斑点：球面上一小块记号，随自转沿运动方向在球面上前后走。
+  // k 是强度：静止时压得很淡（十五颗球各挂两点，不压淡会显得整张台面很脏），动起来才完全显出来
+  // 画在号码圈之前：号牌压在斑点上面才像“印在球上的图案挡住了球面记号”
+  const sp = Math.hypot(b.vx || 0, b.vy || 0);
+  drawRollDots(b, x, y, rt, udx, udy, rot == null ? Math.min(1, 0.35 + sp / 220) : 1);
+
   // 号码圈
   if (b.kind !== 'cue') {
     ctx.beginPath();
@@ -285,6 +291,34 @@ function drawBall(b, x, y, rot, dx, dy) {
   ctx.arc(x - r * 0.33, y - r * 0.38, r * 0.22, 0, TAU);
   ctx.fillStyle = 'rgba(255,255,255,.55)';
   ctx.fill();
+}
+
+/* 滚动斑点本体（深色主题）。rx 沿运动方向被透视压扁、ry 垂直运动方向不变，
+   所以靠近球缘时斑点会变成一小条——这正是俯视看一颗球滚过去时的样子。
+   白球 / 花色球（白底）/ 黄橙两颗（浅色）用暗点，其余用亮点，保证在任何底色上都看得见 */
+function drawRollDots(b, x, y, rt, udx, udy, k) {
+  const spots = rollSpots(rt, udx, udy);
+  if (!spots.length) return;
+  const r = BALL_R;
+  const ang = Math.atan2(udy, udx);
+  const dark = b.kind === 'cue' || b.kind === 'stripe' || b.id === 1 || b.id === 5;
+  // 黄、橙两颗底色浅，暗点要比白底上的再重一点才看得出来
+  const darkA = b.kind === 'cue' ? 0.40 : (b.id === 1 || b.id === 5 ? 0.34 : 0.28);
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r - 0.4, 0, TAU);
+  ctx.clip();
+  for (const s of spots) {
+    const a = s.a * (k == null ? 1 : k);
+    if (a <= 0.02) continue;
+    ctx.beginPath();
+    ctx.ellipse(x + s.ox * r, y + s.oy * r, ROLL_DOT_R * s.sx, ROLL_DOT_R, ang, 0, TAU);
+    ctx.fillStyle = dark
+      ? `rgba(46,56,66,${(darkA * a).toFixed(3)})`
+      : `rgba(255,255,255,${(0.62 * a).toFixed(3)})`;
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function drawBalls() {
