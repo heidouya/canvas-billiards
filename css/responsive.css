@@ -9,6 +9,8 @@
   .canvas-wrap{padding:6px}
   .btn-card{flex-wrap:wrap}
   .btn{flex:1 1 45%}
+  /* 页头「趣味挑战」在窄屏被藏起来了，清台的入口改从面板这颗按钮进 */
+  .btn.only-narrow{display:flex}
   .chip{width:24px;height:24px;font-size:11px}
   .chips{gap:5px}
 }

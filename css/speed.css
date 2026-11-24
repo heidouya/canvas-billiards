@@ -8,20 +8,19 @@
  *   ④ 压在台面上的结算卡（跟躲球那张长得一样，但自己一套类名）
  * ============================================================ */
 
-/* ---------- ① 设置卡最后那一行 ---------- */
-.speed-row{
-  display:flex;align-items:center;gap:10px;
-  margin-top:12px;padding-top:12px;
-  border-top:1px solid rgba(120,150,180,.14);
+/* ---------- ① 入口：「趣味挑战」单子里的第三项 ---------- */
+/* 结构 / 配色全吃 .chal-item，这里只标一件事：挑战开着时这一行转琥珀，
+   一眼能看出“清台还挂着”，点它就是结束 */
+body.speed-on .chal-item.speed-item{color:#ffd36b}
+body.speed-on .chal-item.speed-item i{color:#bfa26a}
+/* 挑战中跳球 / 躲球两项被锁（点开浮层会盖住台面，倒计时还在跑） */
+.chal-item:disabled{opacity:.4;cursor:not-allowed}
+
+/* 窄屏页头没有「趣味挑战」，面板里那颗按钮顶上（桌面端隐藏，见 responsive.css）
+   —— 用媒体查询而不是裸规则，免得和 responsive.css 的顺序打架 */
+@media (min-width:941px){
+  .btn.only-narrow{display:none}
 }
-.speed-meta{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
-.speed-name{font-size:12.5px;font-weight:600;color:#dbe9f7;line-height:1.3;letter-spacing:.2px}
-.speed-sub{
-  font-size:11px;color:#7d93a9;line-height:1.35;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.speed-go{flex:0 0 auto;min-width:92px;justify-content:center}
-body.speed-on .speed-name{color:#ffd36b}
 
 /* ---------- ② 挑战中锁住改不了的行 ---------- */
 body.speed-on .speed-lock{
@@ -84,10 +83,8 @@ body.speed-on .speed-lock{
 }
 
 /* ---------- 手绘纸面 ---------- */
-body.theme-sketch .speed-row{border-top:1px dashed rgba(43,43,40,.38)}
-body.theme-sketch .speed-name{color:#22221e}
-body.theme-sketch.speed-on .speed-name{color:#a9661f}
-body.theme-sketch .speed-sub{color:#7a7365}
+body.theme-sketch.speed-on .chal-item.speed-item{color:#a9661f}
+body.theme-sketch.speed-on .chal-item.speed-item i{color:#8a7658}
 body.theme-sketch .rack-clock.urgent,
 body.theme-sketch .bar-clock.urgent{color:#a9661f}
 body.theme-sketch .rack-clock.critical,

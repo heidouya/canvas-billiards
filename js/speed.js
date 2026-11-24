@@ -4,8 +4,8 @@
  * 跟跳球 / 躲球不一样，这不是个另起一张画布的小玩法，而是主局的一个“计时器”：
  * 台面、球、物理、瞄准、回放全都是主局那一套，只是把八球的胜负与球组判定
  * 换成清台规则 ——
- *   · 90 秒内把 15 颗球全部打进，进哪个袋都算，不看球组、不看黑八顺序
- *   · 母球落袋、空杆（没碰到任何球）各罚 5 秒，母球自动摆回开球点附近
+ *   · 4 分钟内把 15 颗球全部打进，进哪个袋都算，不看球组、不看黑八顺序
+ *   · 母球落袋、空杆（没碰到任何球）各罚 10 秒，母球自动摆回开球点附近
  *   · 清完记用时（含罚时），时间到就结算“还剩几颗”
  *
  * 接入方式只有三处，主局逻辑一行没改：
@@ -14,8 +14,10 @@
  *   updateStatus / updateRackStrip / updateClockUI 各一个分支 → 换成清台的说法
  * ============================================================ */
 (function () {
-  const SPEED_MS = 90 * 1000;        // 一局 90 秒
-  const PENALTY_MS = 5 * 1000;       // 犯规罚 5 秒
+  // 4 分钟：机器人实测清 15 颗光是球滚就 70–110 秒，人每杆还要瞄三四秒，
+  // 二三十杆下来 3 分钟基本不够用，90 秒根本是玩笑。罚时按“一杆的时间”算 10 秒。
+  const SPEED_MS = 240 * 1000;
+  const PENALTY_MS = 10 * 1000;
   const KEY = 'eightball.speed.v1';
 
   /* ---------- 存档：最佳用时 + 通关次数 ---------- */
@@ -66,9 +68,10 @@
     },
 
     /* ---------- 开始 / 结束 ---------- */
-    // 面板那颗按钮：正在挑战就退出，否则先问一句（别一按就把人家打到一半的局清了）
+    // 入口只有一颗按钮：开着就结束，刚结算完再点就是“再来一次”，其余情况先问一句
     toggle() {
-      if (this.active) { this.exit(); return; }
+      if (this.active && !this.over) { this.exit(); return; }
+      if (this.active && this.over) { this.begin(); return; }
       const inMatch = state.breakDone || state.shot || state.gameOver;
       if (!inMatch) { this.begin(); return; }
       showModal('开始限时清台', '清台会用同一张台面重开一局，当前这局的进度会清掉（本局不计入战绩）。', [
@@ -95,7 +98,7 @@
       this.paintStrip();
       this.paintStatus();
       updateClockUI();
-      toast('清台开始 · 90 秒打完 15 颗，进任意袋都算', 2600);
+      toast('清台开始 · 4 分钟打完 15 颗，进任意袋都算', 2600);
     },
 
     // 退出：回到一局普通的对局
@@ -145,11 +148,11 @@
       let penMsg = '';
       if (shot.cuePotted) {
         this.addPenalty();
-        penMsg = '母球落袋 · 罚 5 秒';
+        penMsg = '母球落袋 · 罚 10 秒';
         this.respotCue();
       } else if (shot.firstHit === null) {
         this.addPenalty();
-        penMsg = '空杆没碰到球 · 罚 5 秒';
+        penMsg = '空杆没碰到球 · 罚 10 秒';
       }
       if (this.over) return;       // 罚时把自己罚到时间结束
 
@@ -226,27 +229,36 @@
     },
 
     /* ---------- 三处 HUD 文案 ---------- */
-    // 设置卡最后那行：平时写规则和最佳，挑战中写进度；按钮在挑战中是“结束挑战”
+    // 入口有两处：桌面端是「趣味挑战」单子里的第三项（标签 + 一行小字），
+    // 窄屏是面板里的那颗 only-narrow 按钮（页头整片收起了）
     paintPanel() {
-      const btn = el('btnSpeed');
+      const label = el('speedLabel');
       const sub = el('speedBest');
-      if (!btn || !sub) return;
-      if (this.active && !this.over) {
-        sub.textContent = `剩 ${this.ballsLeft()} 颗 · ` +
-          (this.penalty ? `已罚 ${this.penalty / 1000} 秒` : '时间到自动结算');
-        btn.textContent = '结束挑战';
-        btn.classList.remove('primary');
-      } else if (this.active && this.over) {
-        sub.textContent = this.success
-          ? `用时 ${clockText(this.lastUsed)} · 已通关 ${this.best.clears} 次`
-          : `还剩 ${this.ballsLeft()} 颗没打完`;
-        btn.textContent = '再来一次';
-        btn.classList.add('primary');
-      } else {
-        sub.textContent = '90 秒 · 犯规 +5 秒 · 最佳 ' +
-          (this.best.bestMs ? clockText(this.best.bestMs) : '—');
-        btn.textContent = '开始挑战';
-        btn.classList.add('primary');
+      const mob = el('btnSpeed2');
+      const running = this.active && !this.over;
+
+      if (label) label.textContent = running ? '结束清台' : '限时清台';
+      if (sub) {
+        if (running) {
+          sub.textContent = `剩 ${this.ballsLeft()} 颗` +
+            (this.penalty ? ` · 已罚 ${this.penalty / 1000} 秒` : '');
+        } else if (this.active && this.over) {
+          sub.textContent = this.success
+            ? `用时 ${clockText(this.lastUsed)} · 点这里再来一次`
+            : `剩 ${this.ballsLeft()} 颗没打完 · 点这里再来一次`;
+        } else {
+          sub.textContent = '4 分钟清 15 颗 · 犯规罚 10 秒' +
+            (this.best.bestMs ? ` · 最佳 ${clockText(this.best.bestMs)}` : '');
+        }
+      }
+      if (mob) {
+        mob.textContent = running ? '结束清台' : (this.active && this.over ? '再来一次' : '限时清台');
+      }
+
+      // 挑战中把跳球 / 躲球两个入口一并锁住：点开浮层会把台面盖住，倒计时却还在走
+      for (const id of ['btnJump', 'btnDodge', 'btnJump2', 'btnDodge2']) {
+        const b = el(id);
+        if (b) b.disabled = running;
       }
     },
 
@@ -266,7 +278,7 @@
         ? '球在运动中…'
         : state.phase === 'replay'
           ? '回放中 · 倒计时还在走'
-          : (this.penalty ? `已罚 ${this.penalty / 1000} 秒 · 进任意袋都算` : '进任意袋都算 · 母球落袋或空杆罚 5 秒');
+          : (this.penalty ? `已罚 ${this.penalty / 1000} 秒 · 进任意袋都算` : '进任意袋都算 · 母球落袋或空杆罚 10 秒');
       statusSubEl.className = 'sub' + (this.penalty ? ' warn' : '');
       turnDotEl.className = 'dot speed';
     },
@@ -293,6 +305,8 @@
   };
 
   el('btnSpeed').addEventListener('click', () => MINE.toggle());
+  const btnNarrow = el('btnSpeed2');
+  if (btnNarrow) btnNarrow.addEventListener('click', () => MINE.toggle());
   el('speedAgain').addEventListener('click', () => MINE.begin());
   el('speedQuit').addEventListener('click', () => MINE.exit());
 

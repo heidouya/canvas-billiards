@@ -35,6 +35,8 @@
         <div class="chal-drop" id="chalDrop" role="menu" hidden>
           <button type="button" role="menuitem" class="chal-item" id="btnJump">跳球挑战<i>跳过挡球 · 三关</i></button>
           <button type="button" role="menuitem" class="chal-item" id="btnDodge">躲球挑战<i>40 秒一局 · 记最佳</i></button>
+          <!-- 限时清台走主局同一张台面，入口跟跳球 / 躲球收在同一张单子里 -->
+          <button type="button" role="menuitem" class="chal-item speed-item" id="btnSpeed"><span id="speedLabel">限时清台</span><i id="speedBest">4 分钟清 15 颗 · 犯规罚 10 秒</i></button>
         </div>
       </div>
       <!-- 桌面端：浏览器全屏，可用高度变大后台面也跟着变大（手机横屏另有细带上的全屏按钮） -->
@@ -86,8 +88,8 @@
           <div class="speed-result" id="speedResult" hidden>
             <div class="speed-result-card">
               <span class="speed-badge" id="speedBadge" hidden>新纪录</span>
-              <div class="speed-score" id="speedScore">清台成功 0:47.3</div>
-              <p class="speed-sub" id="speedResultSub">15 颗全清 · 罚时 5 秒</p>
+              <div class="speed-score" id="speedScore">清台成功 2:41.0</div>
+              <p class="speed-sub" id="speedResultSub">15 颗全清 · 罚时 10 秒</p>
               <div class="speed-btns">
                 <button type="button" class="btn primary" id="speedAgain">再来一次</button>
                 <button type="button" class="btn" id="speedQuit">退出清台</button>
@@ -152,15 +154,6 @@
             <button type="button" data-style="sketch">手绘</button>
           </div>
         </div>
-        <!-- 限时清台：跟跳球 / 躲球一样是“开一个小挑战”，但走主局同一张台面和物理。
-             放在设置卡最后一行，不用滚面板也看得见（单独一张卡会被战绩挤到屏幕外） -->
-        <div class="speed-row">
-          <div class="speed-meta">
-            <span class="speed-name">限时清台</span>
-            <span class="speed-sub" id="speedBest">90 秒 · 犯规 +5 秒 · 最佳 —</span>
-          </div>
-          <button type="button" class="btn primary speed-go" id="btnSpeed">开始挑战</button>
-        </div>
         <!-- 电脑互打：暂停 / 继续观战 -->
         <button type="button" class="btn auto-btn speed-lock" id="btnAutoPause" hidden>暂停观战</button>
       </div>
@@ -188,6 +181,8 @@
         <!-- 手机上页头按钮会隐藏，所以面板里再放一个入口 -->
         <button type="button" class="btn" id="btnJump2">跳球挑战</button>
         <button type="button" class="btn" id="btnDodge2">躲球挑战</button>
+        <!-- 手机 / 窄屏页头收起了「趣味挑战」，清台的入口改在这里出现（桌面端这行隐藏） -->
+        <button type="button" class="btn only-narrow" id="btnSpeed2">限时清台</button>
         <button type="button" class="btn danger wide" id="btnClear">清空战绩</button>
       </div>
 
