@@ -12,8 +12,12 @@ let recAcc = 0;
 function snapshotFrame() {
   const arr = new Array(state.balls.length);
   for (let i = 0; i < state.balls.length; i++) {
-    const b = state.balls[i];
-    arr[i] = [Math.round(b.x * 10) / 10, Math.round(b.y * 10) / 10, b.active ? 1 : 0];
+    const a = state.balls[i];
+    // [x, y, active, 自转弧度, 方向x, 方向y] —— 回放也要能画出滚动，否则回放里球会“突然不转”
+    arr[i] = [
+      Math.round(a.x * 10) / 10, Math.round(a.y * 10) / 10, a.active ? 1 : 0,
+      Math.round(a.rot * 100) / 100, Math.round(a.dx * 100) / 100, Math.round(a.dy * 100) / 100
+    ];
   }
   return arr;
 }

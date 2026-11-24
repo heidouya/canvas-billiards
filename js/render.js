@@ -204,9 +204,12 @@ function drawPocketHint() {
   ctx.restore();
 }
 
-// 单颗球
-function drawBall(b, x, y) {
-  if (state.sketch) { sketchBall(b, x, y); return; }
+// 单颗球。rot / dx / dy 可以覆盖球自己的滚动状态（回放时用记录里的那一帧）
+function drawBall(b, x, y, rot, dx, dy) {
+  const rt = rot == null ? b.rot : rot;
+  const udx = dx == null ? b.dx : dx;
+  const udy = dy == null ? b.dy : dy;
+  if (state.sketch) { sketchBall(b, x, y, rt, udx, udy); return; }
   const r = BALL_R;
 
   // 投影
@@ -292,7 +295,7 @@ function drawBalls() {
     for (let i = 0; i < state.balls.length; i++) {
       const d = f && f[i];
       if (!d || !d[2]) continue;
-      drawBall(state.balls[i], d[0], d[1]);
+      drawBall(state.balls[i], d[0], d[1], d[3], d[4], d[5]);
     }
     return;
   }

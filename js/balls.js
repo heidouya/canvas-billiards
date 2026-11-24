@@ -12,6 +12,7 @@ function makeBall(id, x, y) {
   return {
     id, kind,
     x, y, vx: 0, vy: 0,
+    rot: 0, dx: 1, dy: 0,          // 自转累计弧度 + 最后一次运动方向（只用于画滚动）
     active: true,
     color: id === 0 ? '#f7f4ec' : BALL_COLORS[id]
   };

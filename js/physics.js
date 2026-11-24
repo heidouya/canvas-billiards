@@ -37,6 +37,14 @@ function substep(dt) {
       b.x += b.vx * dt;
       b.y += b.vy * dt;
     }
+
+    // 自转：滚过的弧长 / 半径；方向取当前速度方向，停下时保留最后朝向（球不会自己“转回来”）
+    const sp2 = Math.hypot(b.vx, b.vy);
+    if (sp2 > 0) {
+      b.rot += sp2 * dt / BALL_R;
+      b.dx = b.vx / sp2;
+      b.dy = b.vy / sp2;
+    }
   }
 
   for (let i = 0; i < balls.length; i++) {
