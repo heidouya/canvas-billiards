@@ -51,25 +51,30 @@ function formatDurationText(ms) {
 }
 
 /* 滚动斑点在球面上的位置（纯几何，两套皮肤共用）。
-   俯视正投影下，球面上的一点只能沿运动方向来回走：屏幕位移 = R·sin(φ)·半弦长，
+   俯视正投影下，球面上的一点只能沿运动方向来回走：屏幕位移 = sin(φ)·幅度，
    翻到背面（cos φ < 0）就看不见。所以「滚」看上去是花纹沿速度方向平移，
    而不是绕着球心转（绕轴心转在俯视里表达的是竖轴自旋，反而更假）。
    ox/oy 是以球心为原点的屏幕位移（单位 R），sx 是沿运动方向的透视压缩，a 是透明度 */
 function rollSpots(rot, dx, dy) {
   if (typeof rot !== 'number' || !isFinite(rot)) return [];
   if (typeof dx !== 'number' || typeof dy !== 'number') return [];
-  const c = Math.cos(rot * ROLL_VIS);
-  if (c <= 0) return [];                       // 整个斑点所在的半球翻到背面了
-  const adv = Math.sin(rot * ROLL_VIS) * Math.sqrt(1 - ROLL_LAT * ROLL_LAT);
+  const base = rot * ROLL_VIS;
   const px = -dy * ROLL_LAT, py = dx * ROLL_LAT;
   const out = [];
-  for (const s of [1, -1]) {
-    out.push({
-      ox: dx * adv + px * s,
-      oy: dy * adv + py * s,
-      sx: Math.max(0.22, c),                   // 越靠边压得越扁
-      a: Math.sqrt(c)                          // 边缘淡出，不做硬切
-    });
+  // 两组对径的斑点：一组翻到背面时另一组正好从后缘露出来，画面才不会有一半时间是空球
+  for (const half of [0, Math.PI]) {
+    const phase = base + half;
+    const c = Math.cos(phase);
+    if (c <= 0) continue;                      // 这一组在背面
+    const adv = Math.sin(phase) * ROLL_TRAVEL;
+    for (const s of [1, -1]) {
+      out.push({
+        ox: dx * adv + px * s,
+        oy: dy * adv + py * s,
+        sx: Math.max(0.22, c),                 // 越靠边压得越扁
+        a: Math.sqrt(c)                        // 边缘淡出，不做硬切
+      });
+    }
   }
   return out;
 }
