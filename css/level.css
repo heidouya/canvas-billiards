@@ -30,7 +30,8 @@ body.level-on .level-lock{opacity:.4;pointer-events:none;transition:opacity .2s}
 }
 .level-pick[hidden]{display:none}
 .level-pick-card{
-  width:min(430px,100%);padding:20px 22px 16px;border-radius:16px;
+  position:relative;
+  width:min(430px,100%);padding:20px 22px 18px;border-radius:16px;
   background:linear-gradient(180deg,#152230,#0a1119);
   border:1px solid rgba(99,182,255,.26);
   box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);
@@ -56,16 +57,16 @@ body.level-on .level-lock{opacity:.4;pointer-events:none;transition:opacity .2s}
 .level-tile.done b{color:#6fe0a8}
 .level-tile.done i{color:#5fae86}
 
-/* 八格下面的「先不打」：跟格子留出 14px 呼吸，整行铺满，手指好点 */
-.level-pick-foot{margin-top:14px}
-.level-quit{
-  appearance:none;display:block;width:100%;padding:9px 12px;border-radius:9px;
-  border:1px solid #223447;background:#0d1620;color:#8199ad;
-  font-family:inherit;font-size:13px;line-height:1.2;cursor:pointer;
-  transition:background .15s,border-color .15s,color .15s;
+/* 单子右上角的 ×：不打了、回到台面（清台选档与关卡选关共用这一套，跟结算卡右上角那颗同一做法） */
+.pick-x{
+  position:absolute;top:7px;right:7px;width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0;border:1px solid transparent;border-radius:50%;
+  appearance:none;cursor:pointer;font-family:inherit;
+  font-size:17px;line-height:1;color:#7f97ac;background:transparent;
+  transition:color .15s,background .15s,border-color .15s;
 }
-.level-quit:hover{background:#152430;border-color:#345a7c;color:#cfe2f2}
-.level-quit:active{transform:translateY(1px)}
+.pick-x:hover{color:#eaf4ff;background:#1b2836;border-color:#2c4055}
 
 /* ---------- ③ 结算卡 ---------- */
 .level-result{
@@ -175,10 +176,8 @@ body.theme-sketch .level-tile:hover{background:#fffdf5;border-color:#22221e}
 body.theme-sketch .level-tile.done{border-color:rgba(31,92,143,.7);background:#f2f8fd}
 body.theme-sketch .level-tile.done b{color:#1f5c8f}
 body.theme-sketch .level-tile.done i{color:#4a7fa8}
-body.theme-sketch .level-quit{
-  background:#f4efe1;border:1.2px solid rgba(43,43,40,.5);border-radius:4px;color:#5a5449;
-}
-body.theme-sketch .level-quit:hover{background:#fffdf5;border-color:#22221e;color:#22221e}
+body.theme-sketch .pick-x{color:#7b7364}
+body.theme-sketch .pick-x:hover{color:#2b2b28;background:#f6efdd;border-color:#2b2b28}
 body.theme-sketch .level-end-note{color:#1f5c8f}
 /* 纸面上“次要按钮”就是白纸描墨，别留深色底（深底是主按钮的语言） */
 body.theme-sketch .level-result-card.has-next #levelAgain,
@@ -201,8 +200,9 @@ body.theme-sketch .level-result-card.last-clear #levelRePick:hover{background:#1
 /* ---------- ④ 手机横屏：卡片压小一号 ---------- */
 @media (max-height:560px) and (orientation:landscape){
   .level-pick,.level-result{padding:8px}
-  .level-pick-card{padding:12px 14px 10px;border-radius:12px}
+  .level-pick-card{padding:12px 14px 12px;border-radius:12px}
   .level-result-card{padding:12px 16px 10px;border-radius:12px}
+  .pick-x{top:5px;right:5px;width:24px;height:24px;font-size:16px}
   .level-pick-card h3{font-size:16px;margin:4px 0 2px}
   .level-pick-sub{margin-bottom:8px;font-size:11px}
   .level-grid{grid-template-columns:repeat(4,1fr);gap:6px}

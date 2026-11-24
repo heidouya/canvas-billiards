@@ -93,13 +93,11 @@
           <!-- 限时清台：先选一档（3 / 6 / 10 / 15 颗，1～4 分钟），跟关卡选关单子同一张骨架 -->
           <div class="level-pick" id="speedPick" hidden>
             <div class="level-pick-card">
+              <button type="button" class="pick-x" id="speedPickClose" aria-label="不打了，回到台面" title="不打了，回到台面">×</button>
               <div class="level-kicker">限时清台</div>
               <h3>选一档</h3>
               <p class="level-pick-sub" id="speedPickSub">台面摆 15 颗，打进本档那么多颗就结算 · 犯规罚 10 秒</p>
               <div class="speed-tier-grid" id="speedTierGrid"></div>
-              <div class="level-pick-foot">
-                <button type="button" class="level-quit" id="speedPickClose">先不打</button>
-              </div>
             </div>
           </div>
 
@@ -132,13 +130,11 @@
           <!-- 关卡挑战：选关单子（八个小方块，过了的写最少杆数） -->
           <div class="level-pick" id="levelPick" hidden>
             <div class="level-pick-card">
+              <button type="button" class="pick-x" id="levelClose" aria-label="不打了，回到台面" title="不打了，回到台面">×</button>
               <div class="level-kicker">关卡挑战</div>
               <h3>挑一关打</h3>
               <p class="level-pick-sub" id="levelPickSub">8 关摆球题 · 已过 0 关</p>
               <div class="level-grid" id="levelGrid"></div>
-              <div class="level-pick-foot">
-                <button type="button" class="level-quit" id="levelClose">先不打</button>
-              </div>
             </div>
           </div>
 
