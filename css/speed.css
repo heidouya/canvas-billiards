@@ -8,7 +8,30 @@
  *   ④ 压在台面上的结算卡（跟躲球那张长得一样，但自己一套类名）
  * ============================================================ */
 
-/* ---------- ① 入口：「趣味挑战」单子里的第三项 ---------- */
+/* ---------- ① 选档单子：四格（3 / 6 / 10 / 15 颗） ---------- */
+/* 容器、标题、底部「先不打」直接吃关卡那张单子的样式（.level-pick / .level-quit），
+   这里只补四格本身：一颗球数 + 时长 + 这一档的最佳 */
+.speed-tier-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.speed-tier{
+  appearance:none;display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  padding:11px 13px 12px;border-radius:10px;cursor:pointer;
+  border:1px solid #23364a;background:#0e1822;color:#dbe9f7;
+  font-family:inherit;text-align:left;
+  transition:background .15s,border-color .15s,transform .12s;
+}
+.speed-tier b{font-size:17px;font-weight:700;line-height:1.15;color:#eaf4ff;font-variant-numeric:tabular-nums}
+.speed-tier span{font-size:11.5px;color:#9db1c6}
+.speed-tier i{font-style:normal;font-size:10.5px;color:#6f8aa4;margin-top:2px}
+.speed-tier:hover{background:#16263a;border-color:#3a6d9c}
+.speed-tier:active{transform:scale(.97)}
+/* 打过的档描金边（清台整体是金色的） */
+.speed-tier.done{border-color:rgba(255,211,107,.38);background:#1a1710}
+.speed-tier.done b{color:#ffd36b}
+.speed-tier.done i{color:#bfa26a}
+/* 上次打的那一档：左边一道金线 */
+.speed-tier.current{box-shadow:inset 3px 0 0 #ffd36b}
+
+/* ---------- ② 入口：「趣味挑战」单子里的第三项 ---------- */
 /* 结构 / 配色全吃 .chal-item，这里只标一件事：挑战开着时这一行转琥珀，
    一眼能看出“清台还挂着”，点它就是结束 */
 body.speed-on .chal-item.speed-item{color:#ffd36b}
@@ -59,6 +82,9 @@ body.speed-on .speed-lock{
   box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);
   animation:speed-pop .22s cubic-bezier(.2,1.1,.4,1) both;
 }
+.speed-kicker{
+  font-size:11px;letter-spacing:1.3px;color:#8fa6bb;margin-bottom:8px;
+}
 .speed-badge{
   display:inline-block;margin:0 auto 10px;
   padding:2px 10px;border-radius:999px;
@@ -73,8 +99,16 @@ body.speed-on .speed-lock{
 .speed-sub{
   margin:8px 0 16px;font-size:12.5px;line-height:1.6;color:#93a9bf;
 }
-.speed-btns{display:flex;gap:8px;justify-content:center}
-.speed-btns .btn{flex:0 0 auto;min-width:104px}
+/* 左「再来一次」右「换一档」并排等宽；退出收成底下一行小字 */
+.speed-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.speed-btns .btn{min-width:0;width:100%}
+.speed-quiet{
+  appearance:none;display:block;width:100%;margin-top:9px;padding:7px 0 1px;
+  border:0;background:transparent;cursor:pointer;font-family:inherit;
+  font-size:12.5px;letter-spacing:.3px;color:#7f97ac;
+  transition:color .15s;
+}
+.speed-quiet:hover{color:#cfe0f0;text-decoration:underline}
 
 @keyframes speed-fade{from{opacity:0}to{opacity:1}}
 @keyframes speed-pop{
@@ -102,12 +136,28 @@ body.theme-sketch .speed-badge{
 }
 body.theme-sketch .speed-score{color:#22221e}
 body.theme-sketch .speed-sub{color:#6f685c}
+body.theme-sketch .speed-kicker{color:#7b7364}
+/* 纸面版四格：白纸描墨，打过的描赭石边 */
+body.theme-sketch .speed-tier{background:#fffdf5;border-color:rgba(43,43,40,.55);color:#2b2b28;box-shadow:2px 2px 0 rgba(43,43,40,.12)}
+body.theme-sketch .speed-tier b{color:#22221e}
+body.theme-sketch .speed-tier span{color:#6f685c}
+body.theme-sketch .speed-tier i{color:#8a7658}
+body.theme-sketch .speed-tier:hover{background:#f6efdd;border-color:#2b2b28}
+body.theme-sketch .speed-tier.done{border-color:rgba(169,102,31,.55);background:#fdf6e4}
+body.theme-sketch .speed-tier.done b{color:#a9661f}
+body.theme-sketch .speed-tier.current{box-shadow:inset 3px 0 0 #a9661f,2px 2px 0 rgba(43,43,40,.12)}
+body.theme-sketch .speed-quiet{color:#7b7364}
+body.theme-sketch .speed-quiet:hover{color:#2b2b28}
 
 /* ---------- 手机横屏：卡片再压小一号 ---------- */
 @media (max-height:560px) and (orientation:landscape){
   .speed-result{padding:8px}
   .speed-result-card{padding:14px 18px 12px;border-radius:12px}
+  .speed-kicker{margin-bottom:5px;font-size:10px}
   .speed-score{font-size:22px}
   .speed-sub{margin:6px 0 10px;font-size:11.5px}
-  .speed-btns .btn{min-width:88px}
+  .speed-quiet{margin-top:7px;font-size:11.5px}
+  .speed-tier{padding:8px 10px 9px}
+  .speed-tier b{font-size:15px}
+  .speed-tier i{font-size:10px}
 }

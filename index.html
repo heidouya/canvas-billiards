@@ -87,16 +87,32 @@
         <div class="canvas-wrap">
           <canvas id="table"></canvas>
           <div id="toast"></div>
+          <!-- 限时清台：先选一档（3 / 6 / 10 / 15 颗，1～4 分钟），跟关卡选关单子同一张骨架 -->
+          <div class="level-pick" id="speedPick" hidden>
+            <div class="level-pick-card">
+              <div class="level-kicker">限时清台</div>
+              <h3>选一档</h3>
+              <p class="level-pick-sub" id="speedPickSub">台面摆 15 颗，打进本档那么多颗就结算 · 犯规罚 10 秒</p>
+              <div class="speed-tier-grid" id="speedTierGrid"></div>
+              <div class="level-pick-foot">
+                <button type="button" class="level-quit" id="speedPickClose">先不打</button>
+              </div>
+            </div>
+          </div>
+
           <!-- 限时清台的结算卡：复用躲球那张卡的做法（HTML 而不是画在 canvas 上） -->
           <div class="speed-result" id="speedResult" hidden>
             <div class="speed-result-card">
+              <div class="speed-kicker" id="speedKicker">限时清台 · 15 颗 / 4 分钟</div>
               <span class="speed-badge" id="speedBadge" hidden>新纪录</span>
               <div class="speed-score" id="speedScore">清台成功 2:41.0</div>
               <p class="speed-sub" id="speedResultSub">15 颗全清 · 罚时 10 秒</p>
+              <!-- 左「再来一次」＝留在这档，右「换一档」＝换长度，退出收成底下一行小字 -->
               <div class="speed-btns">
                 <button type="button" class="btn primary" id="speedAgain">再来一次</button>
-                <button type="button" class="btn" id="speedQuit">退出清台</button>
+                <button type="button" class="btn" id="speedTierBtn">换一档</button>
               </div>
+              <button type="button" class="speed-quiet" id="speedQuit">退出清台</button>
             </div>
           </div>
 
