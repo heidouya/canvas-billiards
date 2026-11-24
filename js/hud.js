@@ -614,7 +614,11 @@ function setPanelShow(show) {
   applyPanelShow();
 }
 
-btnPanelTop.addEventListener('click', () => setPanelShow(!panelShow));
+// 点这颗按钮本身就是"看懂了"，顺手把引导气泡（如果还挂着）收掉
+btnPanelTop.addEventListener('click', () => {
+  setPanelShow(!panelShow);
+  if (panelHint && panelHint.classList.contains('on')) cancelPanelHint();
+});
 
 applyPanelShow();
 window.addEventListener('resize', applyPanelShow);
@@ -622,6 +626,55 @@ window.addEventListener('orientationchange', applyPanelShow);
 const desktopMq = window.matchMedia(DESKTOP_QUERY);
 if (desktopMq.addEventListener) desktopMq.addEventListener('change', applyPanelShow);
 else if (desktopMq.addListener) desktopMq.addListener(applyPanelShow);
+
+/* ---------- 新手引导：第一次打开站点时，在面板开关下面浮一次说明 ----------
+   图标只够说"面板在不在右边"，说不清"点它是显示还是隐藏"，所以头一回进来把这句话直说一遍。
+   只出现一次：浮出来就立刻记 eightball.panelHint.v1，之后哪怕用户马上关页面也不再打扰；
+   3.5 秒自己收；点这颗按钮 / 按任意键 / 点一下气泡、点一下台面，都立刻收掉 */
+const PANEL_HINT_KEY = 'eightball.panelHint.v1';
+const panelHint = el('panelHint');
+let panelHintTimer = 0;
+let panelHintLead = 0;
+
+function panelHintSeen() {
+  try { return localStorage.getItem(PANEL_HINT_KEY) === '1'; } catch (e) { return true; }
+}
+function hidePanelHint() {
+  clearTimeout(panelHintTimer);
+  if (panelHint) panelHint.classList.remove('on');
+}
+function showPanelHint() {
+  if (!panelHint) return;
+  clearTimeout(panelHintTimer);
+  panelHint.classList.add('on');
+  try { localStorage.setItem(PANEL_HINT_KEY, '1'); } catch (e) { /* 忽略 */ }
+  panelHintTimer = setTimeout(hidePanelHint, 3500);
+}
+function cancelPanelHint() {
+  clearTimeout(panelHintLead);
+  hidePanelHint();
+}
+
+// 只在桌面端、且面板现在是开着的（收起的用户已经懂了，不用教）才浮。
+// 3.2 秒才出来：让进站那条「比赛开始」（2.6 秒）先退场，别两处同时冒新东西
+if (!panelHintSeen()) {
+  panelHintLead = setTimeout(() => {
+    if (!window.matchMedia(DESKTOP_QUERY).matches || !panelShow) return;
+    showPanelHint();
+  }, 3200);
+}
+// 提前动手的用户不等这 1 秒：一有输入就取消掉还没浮出来的引导
+window.addEventListener('pointerdown', cancelPanelHint, { once: true, passive: true });
+window.addEventListener('keydown', cancelPanelHint, { once: true });
+if (panelHint) panelHint.addEventListener('click', cancelPanelHint);
+
+// 验收 / 复现用（跟 DodgeChallenge、Pause 一个路子）
+window.PanelHint = {
+  show: showPanelHint,
+  hide: hidePanelHint,
+  seen: panelHintSeen,
+  reset() { try { localStorage.removeItem(PANEL_HINT_KEY); } catch (e) { /* 忽略 */ } }
+};
 
 /* 桌面端的全屏按钮由 14.6 那段（手机横屏全屏按钮）一并接管，这里不再重复实现 */
 

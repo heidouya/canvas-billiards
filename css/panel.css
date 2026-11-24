@@ -109,14 +109,39 @@
 .icon-cluster .icon-mini.is-fs{background:#22405a;border-color:#3f6b90;color:#eaf4ff}
 body.panel-off .icon-cluster .pnl-mini{background:#1a2735;border-color:#2b4763;color:#cfe0ee}
 
-/* 面板开关的图标：一个方框 + 里面靠右的竖线（经典侧栏图标）；面板收起时竖线隐掉、
-   换成一个朝右的小箭头——"面板滑出去了，点它拉回来" */
+/* 面板开关的图标——读的是"面板在不在右边"，
+   不是"点下去干什么"（动作交给 title / 首次那条引导气泡说）：
+   · 面板开着：方框 + 右边一条实心（面板正占着这块位置）
+   · 面板收起：实心条隐掉、框外换成朝右的箭头（面板滑到右边去了，点它拉回来）
+   15px 下只放两个元素，再多就糊成一团（试过"框 + 竖线 + 箭头"三件套，认不出来） */
 .icon-mini .pnl-ic{width:15px;height:15px;display:block}
 .icon-mini .pnl-ic rect,
 .icon-mini .pnl-ic path{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.icon-mini .pnl-ic .pnl-bar{fill:currentColor;stroke:none}
 .icon-mini .pnl-ic .pnl-arrow{opacity:0}
-body.panel-off .icon-cluster .pnl-side{opacity:0}
+body.panel-off .icon-cluster .pnl-bar{opacity:0}
 body.panel-off .icon-cluster .pnl-arrow{opacity:1}
+
+/* ---------- 新手引导气泡：第一次打开才浮一次，说明这颗图标是干什么的 ----------
+   绝对定位挂在按钮排下面（.head-actions 是它定位参照），右边缘跟面板开关对齐，
+   气泡右上角一个小三角指回按钮。绝对定位 + visibility 切换，不占页头布局，也不挡台面点击 */
+.panel-hint{
+  position:absolute;right:38px;top:calc(100% + 9px);z-index:30;
+  width:max-content;
+  padding:7px 10px;border-radius:9px;
+  background:#16283a;border:1px solid #2f4f6d;color:#d6e8f7;
+  font-size:12px;line-height:1.45;letter-spacing:.2px;
+  box-shadow:0 10px 26px rgba(0,0,0,.5);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .18s ease,transform .18s ease;
+  transform:translateY(-4px);
+}
+.panel-hint.on{opacity:1;visibility:visible;transform:none}
+.panel-hint-tail{
+  position:absolute;top:-5px;right:14px;width:8px;height:8px;
+  background:#16283a;border-left:1px solid #2f4f6d;border-top:1px solid #2f4f6d;
+  transform:rotate(45deg);
+}
 
 /* 面板最底那行源码入口：小字、低调，点一下开新标签 */
 .panel-foot-link{margin:14px 2px 2px;text-align:center;font-size:11.5px;letter-spacing:.2px}

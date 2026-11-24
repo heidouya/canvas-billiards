@@ -265,3 +265,10 @@ body.theme-sketch .icon-cluster .panel-mini:hover{
 }
 body.theme-sketch .icon-cluster .panel-mini.icon-mini.is-fs{background:#2b2b28;border-color:#2b2b28;color:#fffdf5}
 body.theme-sketch.panel-off .icon-cluster .pnl-mini{background:#efe6d2;border-color:#2b2b28;color:#2b2b28}
+
+/* 新手引导气泡：纸面上是一张裁下来的纸条，硬边框 + 一点投影，不用深色底 */
+body.theme-sketch .panel-hint{
+  background:#faf7ef;border:1px solid #2b2b28;border-radius:3px;
+  color:#2b2b28;box-shadow:2px 2px 0 rgba(43,43,40,.18);
+}
+body.theme-sketch .panel-hint-tail{background:#faf7ef;border-left:1px solid #2b2b28;border-top:1px solid #2b2b28}
