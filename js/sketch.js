@@ -271,8 +271,8 @@ function drawRollInk(b, x, y, rt, udx, udy, k) {
     ctx.beginPath();
     ctx.ellipse(x + s.ox * r, y + s.oy * r, ROLL_DOT_R * s.sx, ROLL_DOT_R, ang, 0, TAU);
     ctx.fillStyle = light
-      ? `rgba(43,43,40,${((b.kind === 'cue' ? 0.42 : 0.34) * a).toFixed(3)})`
-      : `rgba(255,253,245,${(0.68 * a).toFixed(3)})`;
+      ? `rgba(43,43,40,${((b.kind === 'cue' ? 0.46 : 0.42) * a).toFixed(3)})`
+      : `rgba(255,253,245,${(0.74 * a).toFixed(3)})`;
     ctx.fill();
   }
   ctx.restore();
