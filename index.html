@@ -25,10 +25,17 @@
     </div>
     <!-- 本局计时挪到了台面上方的球组条中间（跟台面同宽，才不会因为右侧面板开合而错位） -->
     <div class="head-actions">
-      <!-- 跳球挑战：独立小玩法，点开是覆盖式浮层，关掉就回到原局 -->
-      <button type="button" class="panel-mini" id="btnJump">跳球挑战</button>
-      <!-- 躲球挑战：40 秒一局的小玩法，同样覆盖式浮层，不影响当前这局 -->
-      <button type="button" class="panel-mini" id="btnDodge">躲球挑战</button>
+      <!-- 趣味挑战：跳球 / 躲球两个小玩法收进一个下拉，页头只留这一颗按钮 -->
+      <div class="chal" id="chal">
+        <button type="button" class="panel-mini chal-btn" id="btnChal"
+                aria-haspopup="true" aria-expanded="false" aria-controls="chalDrop">
+          趣味挑战<span class="chal-caret" aria-hidden="true"></span>
+        </button>
+        <div class="chal-drop" id="chalDrop" role="menu" hidden>
+          <button type="button" role="menuitem" class="chal-item" id="btnJump">跳球挑战<i>跳过挡球 · 三关</i></button>
+          <button type="button" role="menuitem" class="chal-item" id="btnDodge">躲球挑战<i>40 秒一局 · 记最佳</i></button>
+        </div>
+      </div>
       <!-- 桌面端：浏览器全屏，可用高度变大后台面也跟着变大（手机横屏另有细带上的全屏按钮） -->
       <button type="button" class="panel-mini" id="btnFullTop">全屏</button>
       <!-- 桌面端：收起/展开右侧面板，把宽度让给台面（手机端不显示） -->
@@ -286,5 +293,6 @@
 <script src="js/tablebg.js"></script>
 <script src="js/jump.js"></script>
 <script src="js/dodge.js"></script>
+<script src="js/chal-menu.js"></script>
 </body>
 </html>

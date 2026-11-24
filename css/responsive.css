@@ -4,7 +4,7 @@
   .main{flex-direction:column}
   .panel{width:100%;flex:1 1 auto}
   /* 窄屏面板在台面下方，没有「收起」这回事：页头按钮与开关都藏起来 */
-  .panel-mini{display:none}
+  .panel-mini,.chal{display:none}
 
   .canvas-wrap{padding:6px}
   .btn-card{flex-wrap:wrap}

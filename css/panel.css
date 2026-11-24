@@ -83,3 +83,35 @@
 }
 .panel-mini:hover{background:#1d2c3c;border-color:#31506b}
 .panel-mini:active{transform:scale(.97)}
+
+/* ---------- 趣味挑战：页头下拉 ---------- */
+/* 跳球 / 躲球两个小玩法收成一颗按钮，点开往下弹一小张单子。
+   定位挂在自己的按钮上（right 对齐），所以页头换行、面板收起都不会跟着跑 */
+.chal{position:relative;flex:0 0 auto}
+.chal-btn{gap:6px}
+.chal-caret{
+  width:0;height:0;margin-left:2px;
+  border-left:4px solid transparent;border-right:4px solid transparent;
+  border-top:5px solid #8fb0c9;
+  transition:transform .18s;
+}
+.chal.open .chal-btn{background:#1f3145;border-color:#3a5c7b}
+.chal.open .chal-caret{transform:rotate(180deg)}
+
+.chal-drop{
+  position:absolute;top:calc(100% + 6px);right:0;z-index:60;
+  min-width:178px;padding:4px;
+  border-radius:10px;border:1px solid #26405a;
+  background:#0e1822;
+  box-shadow:0 16px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);
+}
+.chal-drop[hidden]{display:none}
+.chal-item{
+  appearance:none;display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  width:100%;padding:7px 10px 8px;
+  border:0;border-radius:7px;background:transparent;color:#dbe9f7;
+  font-family:inherit;font-size:12.5px;line-height:1.35;text-align:left;cursor:pointer;
+}
+.chal-item i{font-style:normal;font-size:11px;color:#7d93a9}
+.chal-item:hover,.chal-item:focus-visible{background:#1a2836;outline:none}
+.chal-item:hover i{color:#9db6cc}

@@ -14,6 +14,16 @@ body.theme-sketch{
 }
 
 /* ---- 页头 ---- */
+body.theme-sketch .chal-caret{border-top-color:#2b2b28}
+body.theme-sketch .chal.open .chal-btn{background:#f6efdd;border-color:#2b2b28}
+body.theme-sketch .chal-drop{
+  background:#fffdf5;border:1px solid #2b2b28;border-radius:4px;
+  box-shadow:3px 3px 0 rgba(43,43,40,.16);
+}
+body.theme-sketch .chal-item{color:#23231f}
+body.theme-sketch .chal-item i{color:#8a8273}
+body.theme-sketch .chal-item:hover,
+body.theme-sketch .chal-item:focus-visible{background:#f4ecdb}
 body.theme-sketch .brand h1{color:#2b2b28;letter-spacing:2px}
 body.theme-sketch .brand .tag{color:#8a8273;letter-spacing:1.6px}
 body.theme-sketch .panel-mini,
