@@ -663,10 +663,11 @@ if (!panelHintSeen()) {
     showPanelHint();
   }, 3200);
 }
-// 提前动手的用户不等这 1 秒：一有输入就取消掉还没浮出来的引导
-window.addEventListener('pointerdown', cancelPanelHint, { once: true, passive: true });
-window.addEventListener('keydown', cancelPanelHint, { once: true });
-if (panelHint) panelHint.addEventListener('click', cancelPanelHint);
+// 提前动手的用户不等这 3.2 秒：有输入就取消掉还没浮出来的引导；
+// 已经浮出来了，点哪儿 / 按哪个键都算看到过了，立刻收掉（气泡在的时候自己吃点击，
+// 所以不会因为点到气泡而误触它下面盖着的「规则 / 模式」按钮）
+window.addEventListener('pointerdown', cancelPanelHint, { passive: true });
+window.addEventListener('keydown', cancelPanelHint);
 
 // 验收 / 复现用（跟 DodgeChallenge、Pause 一个路子）
 window.PanelHint = {
