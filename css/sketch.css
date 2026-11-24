@@ -185,17 +185,13 @@ body.theme-sketch .pause-mini:disabled:hover{background:#fffdf5;border-color:rgb
 body.theme-sketch .panel-mini.on{background:#2b2b28;border-color:#2b2b28;color:#fffdf5}
 body.theme-sketch .panel-mini.icon-mini.is-fs{background:#2b2b28;border-color:#2b2b28;color:#fffdf5}
 body.theme-sketch .panel-mini:disabled{border-color:rgba(43,43,40,.3);color:#a09884}
-/* 清台 / 关卡里那枚「结束」：纸面 + 红墨描边，确认时换成实心红墨 */
+/* 清台 / 关卡里那枚「结束」：纸面 + 红墨描边，点一下就退出 */
 body.theme-sketch .panel-mini.end,
 body.theme-sketch .pause-mini.end{
   background:#fffdf5;border-color:#a8362e;color:#a8362e;
 }
 body.theme-sketch .panel-mini.end:hover,
 body.theme-sketch .pause-mini.end:hover{background:#fbeee6;border-color:#8c2a24;color:#8c2a24}
-body.theme-sketch .panel-mini.end.armed,
-body.theme-sketch .pause-mini.end.armed{
-  background:#a8362e;border-color:#8c2a24;color:#fffdf5;box-shadow:none;
-}
 body.theme-sketch .panel-mini.end:disabled,
 body.theme-sketch .pause-mini.end:disabled{border-color:rgba(168,54,46,.4);color:#c9a49a}
 body.theme-sketch .start-kicker{

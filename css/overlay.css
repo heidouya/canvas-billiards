@@ -62,12 +62,9 @@
 .panel-mini.on{background:#22405a;border-color:#3f6b90;color:#eaf4ff}
 /* 全屏图标按钮按下去了的样子（只有桌面那枚，手机横屏仍是文字按钮） */
 .panel-mini.icon-mini.is-fs{background:#22405a;border-color:#3f6b90;color:#eaf4ff}
-/* 清台 / 关卡进行中：这枚按钮改行「结束」，红底；点一下上膛变深红，再点才真退 */
+/* 清台 / 关卡进行中：这枚按钮改行「结束」，红底，点一下就退出 */
 .panel-mini.end{background:#3a1b1e;border-color:#7d3a3e;color:#ffd6d4}
 .panel-mini.end:hover{background:#472226;border-color:#96474b;color:#fff0ef}
-.panel-mini.end.armed{background:#a8322f;border-color:#c4554f;color:#fff;
-  box-shadow:0 0 0 2px rgba(190,64,58,.22)}
-.panel-mini.end.armed:hover{background:#b93a36;border-color:#d2605a}
 .panel-mini:disabled{opacity:.4;cursor:default}
 .panel-mini:disabled:hover{background:#16222f;border-color:#26405a}
 .panel-mini.end:disabled:hover{background:#3a1b1e;border-color:#7d3a3e}
@@ -84,8 +81,6 @@
 .pause-mini.on{background:#22405a;border-color:#3f6b90;color:#eaf4ff}
 .pause-mini.end{background:#3a1b1e;border-color:#7d3a3e;color:#ffd6d4}
 .pause-mini.end:hover{background:#472226;border-color:#96474b;color:#fff0ef}
-.pause-mini.end.armed{background:#a8322f;border-color:#c4554f;color:#fff;
-  box-shadow:0 0 0 2px rgba(190,64,58,.22)}
 .pause-mini:disabled{opacity:.4;cursor:default}
 .pause-mini:disabled:hover{background:#16222f;border-color:#26405a}
 .pause-mini.end:disabled:hover{background:#3a1b1e;border-color:#7d3a3e}
