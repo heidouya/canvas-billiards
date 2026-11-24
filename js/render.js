@@ -303,7 +303,7 @@ function drawRollDots(b, x, y, rt, udx, udy, k) {
   const ang = Math.atan2(udy, udx);
   const dark = b.kind === 'cue' || b.kind === 'stripe' || b.id === 1 || b.id === 5;
   // 黄、橙两颗底色浅，暗点要比白底上的再重一点才看得出来
-  const darkA = b.kind === 'cue' ? 0.44 : (b.id === 1 || b.id === 5 ? 0.42 : 0.34);
+  const darkA = b.kind === 'cue' ? 0.48 : (b.id === 1 || b.id === 5 ? 0.46 : 0.38);
   ctx.save();
   ctx.beginPath();
   ctx.arc(x, y, r - 0.4, 0, TAU);
@@ -315,7 +315,7 @@ function drawRollDots(b, x, y, rt, udx, udy, k) {
     ctx.ellipse(x + s.ox * r, y + s.oy * r, ROLL_DOT_R * s.sx, ROLL_DOT_R, ang, 0, TAU);
     ctx.fillStyle = dark
       ? `rgba(46,56,66,${(darkA * a).toFixed(3)})`
-      : `rgba(255,255,255,${(0.66 * a).toFixed(3)})`;
+      : `rgba(255,255,255,${(0.80 * a).toFixed(3)})`;
     ctx.fill();
   }
   ctx.restore();
@@ -406,3 +406,4 @@ function render() {
   drawCueStick();
   drawPowerBadge();
 }
+
