@@ -103,16 +103,16 @@
           <!-- 限时清台的结算卡：复用躲球那张卡的做法（HTML 而不是画在 canvas 上） -->
           <div class="speed-result" id="speedResult" hidden>
             <div class="speed-result-card">
+              <button type="button" class="speed-x" id="speedQuit" aria-label="退出清台" title="退出清台">×</button>
               <div class="speed-kicker" id="speedKicker">限时清台 · 15 颗 / 4 分钟</div>
               <span class="speed-badge" id="speedBadge" hidden>新纪录</span>
               <div class="speed-score" id="speedScore">清台成功 2:41.0</div>
               <p class="speed-sub" id="speedResultSub">15 颗全清 · 罚时 10 秒</p>
-              <!-- 左「再来一次」＝留在这档，右「换一档」＝换长度，退出收成底下一行小字 -->
+              <!-- 左「再来一次」＝留在这档，右「换一档」＝换长度，退出收进卡片右上角的 × -->
               <div class="speed-btns">
                 <button type="button" class="btn primary" id="speedAgain">再来一次</button>
                 <button type="button" class="btn" id="speedTierBtn">换一档</button>
               </div>
-              <button type="button" class="speed-quiet" id="speedQuit">退出清台</button>
             </div>
           </div>
 

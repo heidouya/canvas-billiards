@@ -74,8 +74,9 @@ body.speed-on .speed-lock{
 }
 .speed-result[hidden]{display:none}
 .speed-result-card{
+  position:relative;
   width:min(360px,100%);
-  padding:22px 24px 18px;
+  padding:22px 24px 20px;
   border-radius:16px;text-align:center;
   background:linear-gradient(180deg,#152230,#0a1119);
   border:1px solid rgba(255,211,107,.3);
@@ -99,16 +100,19 @@ body.speed-on .speed-lock{
 .speed-sub{
   margin:8px 0 16px;font-size:12.5px;line-height:1.6;color:#93a9bf;
 }
-/* 左「再来一次」右「换一档」并排等宽；退出收成底下一行小字 */
+/* 左「再来一次」右「换一档」并排等宽；退出收进右上角的 × */
 .speed-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .speed-btns .btn{min-width:0;width:100%}
-.speed-quiet{
-  appearance:none;display:block;width:100%;margin-top:9px;padding:7px 0 1px;
-  border:0;background:transparent;cursor:pointer;font-family:inherit;
-  font-size:12.5px;letter-spacing:.3px;color:#7f97ac;
-  transition:color .15s;
+/* 右上角的 ×：退出清台（跟关卡结算卡同一套做法） */
+.speed-x{
+  position:absolute;top:7px;right:7px;width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0;border:1px solid transparent;border-radius:50%;
+  appearance:none;cursor:pointer;font-family:inherit;
+  font-size:17px;line-height:1;color:#7f97ac;background:transparent;
+  transition:color .15s,background .15s,border-color .15s;
 }
-.speed-quiet:hover{color:#cfe0f0;text-decoration:underline}
+.speed-x:hover{color:#eaf4ff;background:#1b2836;border-color:#2c4055}
 
 @keyframes speed-fade{from{opacity:0}to{opacity:1}}
 @keyframes speed-pop{
@@ -146,8 +150,8 @@ body.theme-sketch .speed-tier:hover{background:#f6efdd;border-color:#2b2b28}
 body.theme-sketch .speed-tier.done{border-color:rgba(169,102,31,.55);background:#fdf6e4}
 body.theme-sketch .speed-tier.done b{color:#a9661f}
 body.theme-sketch .speed-tier.current{box-shadow:inset 3px 0 0 #a9661f,2px 2px 0 rgba(43,43,40,.12)}
-body.theme-sketch .speed-quiet{color:#7b7364}
-body.theme-sketch .speed-quiet:hover{color:#2b2b28}
+body.theme-sketch .speed-x{color:#7b7364}
+body.theme-sketch .speed-x:hover{color:#2b2b28;background:#f6efdd;border-color:#2b2b28}
 
 /* ---------- 手机横屏：卡片再压小一号 ---------- */
 @media (max-height:560px) and (orientation:landscape){
@@ -156,7 +160,7 @@ body.theme-sketch .speed-quiet:hover{color:#2b2b28}
   .speed-kicker{margin-bottom:5px;font-size:10px}
   .speed-score{font-size:22px}
   .speed-sub{margin:6px 0 10px;font-size:11.5px}
-  .speed-quiet{margin-top:7px;font-size:11.5px}
+  .speed-x{top:5px;right:5px;width:24px;height:24px;font-size:16px}
   .speed-tier{padding:8px 10px 9px}
   .speed-tier b{font-size:15px}
   .speed-tier i{font-size:10px}
