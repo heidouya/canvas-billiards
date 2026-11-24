@@ -51,15 +51,19 @@
     { t: 33, right: 200 }
   ];
 
-  // 出球节奏：越到后面越快、越密
+  // 出球节奏：越到后面越快、越密。1.9 秒那档听着慢，其实是「一颗球的飞行时间」
+  // 也差不多 1.8 秒——上一颗刚到、下一颗才起飞，前 10 秒台面上常常只有一颗在飞，
+  // 所以前段压到 1.6，让两道球在空中相错，才有躲的感觉
   function spawnGap(t) {
-    if (t < 10) return 1.9;
-    if (t < 23) return 1.6;
-    if (t < 33) return 1.3;
-    return 1.15;
+    if (t < 10) return 1.6;
+    if (t < 23) return 1.45;
+    if (t < 33) return 1.25;
+    return 1.1;
   }
+  // 初速：起点 400 时，摩擦（46）飞到安全区线只剩 320，看着像「飘」进来而不是飞过来，
+  // 所以起点抬到 450、斜率放缓一点，封顶仍是 740
   function spawnSpeed(t) {
-    return clamp(400 + t * 8.5, 400, 740);
+    return clamp(450 + t * 7.2, 450, 740);
   }
 
   /* ---------------- 状态 ---------------- */
@@ -705,7 +709,8 @@
       s.spawnCd -= dt;
       if (s.spawnCd <= 0) {
         fireBall();
-        if (s.t > 24 && Math.random() < 0.25) fireBall();
+        // 一对同时来比「每颗更快」更像躲球，也更早给到压力：14 秒起
+        if (s.t > 14 && Math.random() < 0.25) fireBall();
         s.spawnCd = spawnGap(s.t) * rand(0.92, 1.08);
       }
 
