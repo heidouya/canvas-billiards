@@ -253,13 +253,41 @@ function drawSketchStatic() {
 /* ---------------- 手绘球 ---------------- */
 
 // 球号要跟着球走（seed 固定），不然每帧都会重新“抖”一次，像信号不好
+/* 手绘版的滚动斑点：纸面上就是两点铅笔痕。不用 rough 画——十六颗球每帧三十多个小圆，
+   rough 的那个量级会拖帧，而且 3px 的点在纸上本来也看不出笔触 */
+function drawRollInk(b, x, y, rt, udx, udy, k) {
+  const spots = rollSpots(rt, udx, udy);
+  if (!spots.length) return;
+  const r = BALL_R;
+  const ang = Math.atan2(udy, udx);
+  const light = b.kind === 'cue' || b.kind === 'stripe' || b.id === 1 || b.id === 5;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r - 0.4, 0, TAU);
+  ctx.clip();
+  for (const s of spots) {
+    const a = s.a * (k == null ? 1 : k);
+    if (a <= 0.02) continue;
+    ctx.beginPath();
+    ctx.ellipse(x + s.ox * r, y + s.oy * r, ROLL_DOT_R * s.sx, ROLL_DOT_R, ang, 0, TAU);
+    ctx.fillStyle = light
+      ? `rgba(43,43,40,${((b.kind === 'cue' ? 0.42 : 0.34) * a).toFixed(3)})`
+      : `rgba(255,253,245,${(0.68 * a).toFixed(3)})`;
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 function ballSeed(b, salt) {
   return 2000 + (b.id | 0) * 37 + (salt | 0);
 }
 
-function sketchBall(b, x, y) {
+function sketchBall(b, x, y, rot, dx, dy) {
   const rc = roughCanvas();
   const r = BALL_R;
+  const rt = rot == null ? b.rot : rot;
+  const udx = dx == null ? b.dx : dx;
+  const udy = dy == null ? b.dy : dy;
 
   // 铅笔影：薄薄一层压在球右下，别做成“重影”
   ctx.save();
@@ -289,6 +317,10 @@ function sketchBall(b, x, y) {
     seed: ballSeed(b, 2), stroke: '#2b2b28', strokeWidth: 1.2,
     roughness: 1.1, bowing: 1, disableMultiStroke: true
   });
+
+  // 滚动斑点：纸面上就是两点铅笔痕，随自转在球面上前后走（深色底用奶白点，浅底用墨点）
+  const hsp = Math.hypot(b.vx || 0, b.vy || 0);
+  drawRollInk(b, x, y, rt, udx, udy, rot == null ? Math.min(1, 0.35 + hsp / 220) : 1);
 
   // 底部一圈弧线：纸面上唯一的“体积感”，比渐变更克制
   ctx.beginPath();
