@@ -27,6 +27,8 @@
 .modal-box p{margin:0 0 18px;font-size:13px;line-height:1.7;color:#93a9bf}
 .modal-actions{display:flex;gap:10px;flex-wrap:wrap}
 .modal-actions .btn{flex:1 1 40%;min-width:110px}
+/* 只有一颗按钮时别拉满整条（像页脚横幅），收在弹窗一半宽、居中 */
+.modal-actions > .btn:only-child{flex:0 0 auto;width:50%;margin:0 auto}
 
 /* ---------- 开局提示卡 ---------- */
 .start-box{width:min(460px,100%)}
