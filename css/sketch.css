@@ -250,3 +250,7 @@ body.theme-sketch .jump-count{color:#7a7365}
 body.theme-sketch .jump-hint .hint-dot{background:#2a5c8a;box-shadow:none}
 body.theme-sketch .jump-hint.off{color:#9a9280}
 body.theme-sketch .jump-hint.off .hint-dot{background:#c3bbaa}
+
+/* 面板最底那行源码入口：纸面上用浅墨，hover 才压深 */
+body.theme-sketch .panel-foot-link a{color:#8a8273}
+body.theme-sketch .panel-foot-link a:hover{color:#2b2b28}
