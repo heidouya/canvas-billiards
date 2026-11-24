@@ -14,6 +14,7 @@ function frame(now) {
 }
 
 function update(dt) {
+  if (window.SpeedPool) window.SpeedPool.tick(dt);   // 清台挑战的倒计时（不在挑战里就是空转）
   updateClockUI();          // 状态卡上的本局计时
   if (state.phase === 'shooting') {
     stepPhysics(dt);

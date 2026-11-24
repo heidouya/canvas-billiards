@@ -161,6 +161,14 @@ function updatePowerUI() {
 }
 
 function updateStatus() {
+  const sp = window.SpeedPool;
+  // 清台挑战：状态卡说的是“还剩几颗”，跟八球那套击球方/球组无关
+  if (sp && sp.active) {
+    sp.paintStatus();
+    sp.paintPanel();
+    updateRackStrip();
+    return;
+  }
   const p = state.turn;
   const aiSide = isAIPlayer(p);      // 当前这一杆是不是电脑在打
   const name = nameOf(p);
@@ -252,6 +260,27 @@ function elapsedMs() {
 
 // 把毫秒写进球组条中间的计时（秒数没变就不重绘）
 function updateClockUI() {
+  const sp = window.SpeedPool;
+  // 清台挑战：这里显示的是倒计时，不是本局用时
+  if (sp && sp.active) {
+    const txt = formatClock(sp.left);
+    if (txt !== lastClockText) {
+      lastClockText = txt;
+      clockTextEl.textContent = txt;
+      if (barClockEl) barClockEl.textContent = txt;
+    }
+    const lv = sp.left <= 10000 ? 'critical' : (sp.left <= 20000 ? 'urgent' : '');
+    clockTextEl.classList.toggle('urgent', lv === 'urgent');
+    clockTextEl.classList.toggle('critical', lv === 'critical');
+    if (barClockEl) {
+      barClockEl.classList.toggle('urgent', lv === 'urgent');
+      barClockEl.classList.toggle('critical', lv === 'critical');
+    }
+    return;
+  }
+  clockTextEl.classList.remove('urgent', 'critical');
+  if (barClockEl) barClockEl.classList.remove('urgent', 'critical');
+
   const txt = formatClock(elapsedMs());
   if (txt !== lastClockText) {
     lastClockText = txt;
@@ -261,6 +290,9 @@ function updateClockUI() {
 }
 
 function resetGame() {
+  // 换模式 / 换规则 / 点重新开局…都走这里：正在清台就先把挑战摘掉（重开那一局就回到普通对局）
+  const sp = window.SpeedPool;
+  if (sp && sp.active && !sp.starting) sp.abort();
   setupBalls();
   state.turn = 0;
   state.groups = [null, null];
@@ -437,6 +469,12 @@ el('btnAutoPause').addEventListener('click', () => {
 });
 
 el('btnRestart').addEventListener('click', () => {
+  const sp = window.SpeedPool;
+  // 挑战中点「重新开局」= 清台重开，而不是把人踢回普通对局
+  if (sp && sp.active) {
+    sp.begin();
+    return;
+  }
   resetGame();
   toast('重新开局');
 });
@@ -662,6 +700,11 @@ function buildRackStrip() {
 
 // 刷新球号条：进袋的球淡出；定组后在标题处标出归属与剩余数量
 function updateRackStrip() {
+  const sp = window.SpeedPool;
+  // 清台挑战：这一条变成进度条（左边“清台挑战”、右边“剩 N 颗”，球号照样按落袋淡出）
+  if (sp && sp.active) { sp.paintStrip(); return; }
+  el('gpTagSolid').hidden = false;
+  el('gpTagStripe').hidden = false;
   const ownerOf = kind => {
     if (state.groups[0] === kind) return 0;
     if (state.groups[1] === kind) return 1;

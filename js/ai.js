@@ -20,6 +20,8 @@ function levelOf(p) {
 
 // 这一方是不是电脑：人机对战里只有玩家 2（1）是电脑，电脑互打里两边都是
 function isAIPlayer(p) {
+  // 清台挑战里永远是玩家自己在打，电脑互打模式也不例外（否则输入会被锁死）
+  if (window.SpeedPool && window.SpeedPool.active) return false;
   if (state.mode === 'ai') return p === 1;
   if (state.mode === 'auto') return true;
   return false;
@@ -230,6 +232,11 @@ maybeStartAI = function () {
   clearTimeout(aiTimer);
   clearTimeout(aiShootTimer);
   state.locked = false;
+  // 清台挑战是单人打，电脑一律不介入（观战模式也可能从这儿被叫起来）
+  if (window.SpeedPool && window.SpeedPool.active) {
+    updateStatus();
+    return;
+  }
   // 该谁出杆由 state.turn 决定，人机对战里只有玩家 2 会交给电脑
   const p = state.turn;
   const paused = state.mode === 'auto' && state.autoPaused;

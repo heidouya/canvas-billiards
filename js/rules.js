@@ -8,7 +8,9 @@ function shoot(power) {
   if (!cue || !cue.active) return;
 
   // 美式八球：黑八阶段必须先指定袋口（中式八球不指定袋，任意袋打进都算赢）
-  if (state.ruleSet === 'us' && isOnEight(state.turn) && state.calledPocket < 0) {
+  // 清台挑战没有袋口指定这回事，直接跳过这一段
+  if (!(window.SpeedPool && window.SpeedPool.active) &&
+      state.ruleSet === 'us' && isOnEight(state.turn) && state.calledPocket < 0) {
     toast('黑八阶段请先点击袋口指定目标袋');
     state.power = 0;
     updatePowerUI();
@@ -106,6 +108,11 @@ function nameOf(player) {
 
 /* ---------- 结算一杆 ---------- */
 function endShot() {
+  // 清台挑战：这一杆交给 speed.js 结算（不看球组、不判胜负、不换手），八球规则整段跳过
+  if (window.SpeedPool && window.SpeedPool.active) {
+    window.SpeedPool.onEndShot(state.shot);
+    return;
+  }
   const me = state.turn;
   const opp = 1 - me;
   const shot = state.shot;

@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="css/responsive.css">
 <link rel="stylesheet" href="css/jump.css">
 <link rel="stylesheet" href="css/dodge.css">
+<link rel="stylesheet" href="css/speed.css">
 <link rel="stylesheet" href="css/sketch.css">
 </head>
 <body>
@@ -51,7 +52,7 @@
           <div class="group-panel" id="panelSolid">
             <div class="gp-head">
               <span class="gp-owner" id="ownerSolid">球组待定</span>
-              <span class="gp-tag">纯色 1-7</span>
+              <span class="gp-tag" id="gpTagSolid">纯色 1-7</span>
             </div>
             <div class="chips" id="chipsSolid"></div>
           </div>
@@ -60,7 +61,7 @@
           <div class="group-panel" id="panelStripe">
             <div class="gp-head">
               <span class="gp-owner" id="ownerStripe">球组待定</span>
-              <span class="gp-tag">花色 9-15</span>
+              <span class="gp-tag" id="gpTagStripe">花色 9-15</span>
             </div>
             <div class="chips" id="chipsStripe"></div>
           </div>
@@ -81,6 +82,18 @@
         <div class="canvas-wrap">
           <canvas id="table"></canvas>
           <div id="toast"></div>
+          <!-- 限时清台的结算卡：复用躲球那张卡的做法（HTML 而不是画在 canvas 上） -->
+          <div class="speed-result" id="speedResult" hidden>
+            <div class="speed-result-card">
+              <span class="speed-badge" id="speedBadge" hidden>新纪录</span>
+              <div class="speed-score" id="speedScore">清台成功 0:47.3</div>
+              <p class="speed-sub" id="speedResultSub">15 颗全清 · 罚时 5 秒</p>
+              <div class="speed-btns">
+                <button type="button" class="btn primary" id="speedAgain">再来一次</button>
+                <button type="button" class="btn" id="speedQuit">退出清台</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -89,14 +102,14 @@
       <!-- 对局设置：规则 / 模式 / 难度，放在最上面；切换后即时开局 -->
       <div class="card setup-card">
         <!-- 规则：中式八球（默认）/ 美式八球 -->
-        <div class="seg-row">
+        <div class="seg-row speed-lock">
           <span class="seg-label">规则</span>
           <div class="seg" id="ruleSeg">
             <button type="button" class="active" data-rule="cn">中式八球</button>
             <button type="button" data-rule="us">美式八球</button>
           </div>
         </div>
-        <div class="seg-row">
+        <div class="seg-row speed-lock">
           <span class="seg-label">模式</span>
           <div class="seg" id="modeSeg">
             <button type="button" class="active" data-mode="ai">人机对战</button>
@@ -105,7 +118,7 @@
           </div>
         </div>
         <!-- 电脑 1（只在电脑互打时出现） -->
-        <div class="seg-row" id="level0Row" hidden>
+        <div class="seg-row speed-lock" id="level0Row" hidden>
           <span class="seg-label">电脑 1</span>
           <div class="seg" id="levelSeg0">
             <button type="button" data-level0="easy">简单</button>
@@ -114,7 +127,7 @@
           </div>
         </div>
         <!-- 难度：人机对战里指电脑；电脑互打里指电脑 2 -->
-        <div class="seg-row" id="levelRow">
+        <div class="seg-row speed-lock" id="levelRow">
           <span class="seg-label" id="levelLabel">难度</span>
           <div class="seg" id="levelSeg">
             <button type="button" class="active" data-level="easy">简单</button>
@@ -139,8 +152,17 @@
             <button type="button" data-style="sketch">手绘</button>
           </div>
         </div>
+        <!-- 限时清台：跟跳球 / 躲球一样是“开一个小挑战”，但走主局同一张台面和物理。
+             放在设置卡最后一行，不用滚面板也看得见（单独一张卡会被战绩挤到屏幕外） -->
+        <div class="speed-row">
+          <div class="speed-meta">
+            <span class="speed-name">限时清台</span>
+            <span class="speed-sub" id="speedBest">90 秒 · 犯规 +5 秒 · 最佳 —</span>
+          </div>
+          <button type="button" class="btn primary speed-go" id="btnSpeed">开始挑战</button>
+        </div>
         <!-- 电脑互打：暂停 / 继续观战 -->
-        <button type="button" class="btn auto-btn" id="btnAutoPause" hidden>暂停观战</button>
+        <button type="button" class="btn auto-btn speed-lock" id="btnAutoPause" hidden>暂停观战</button>
       </div>
 
       <!-- 状态 + 力度：合成一张卡，信息从上到下一条线读完 -->
@@ -288,6 +310,7 @@
 <script src="js/sound.js"></script>
 <script src="js/replay.js"></script>
 <script src="js/hud.js"></script>
+<script src="js/speed.js"></script>
 <script src="js/loop.js"></script>
 <script src="js/main.js"></script>
 <script src="js/tablebg.js"></script>
