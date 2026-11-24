@@ -1,0 +1,137 @@
+/* ============================================================
+ * 躲球挑战浮层
+ * ------------------------------------------------------------
+ * 骨架直接复用 jump.css（.jump / .jump-box / .jump-head / .jump-stage /
+ * .jump-foot / .jump-msg / .jump-close），这样手绘皮肤（sketch.css）里那套
+ * 纸面规则也自动生效，不用为第二个小玩法再抄一遍。
+ * 这里只补躲球挑战自己的：命数点、计时、最佳成绩。
+ * ============================================================ */
+
+.dodge-lives{
+  flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;
+  height:26px;padding:0 10px;border-radius:8px;
+  background:#0d1621;border:1px solid #1d2b3c;
+}
+.dodge-life{
+  display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:#57d79b;box-shadow:0 0 7px rgba(87,215,155,.55);
+  transition:background .15s,box-shadow .15s,opacity .15s;
+}
+.dodge-life.off{
+  background:#2b3846;box-shadow:none;opacity:.55;
+}
+
+.dodge-hud{
+  flex:0 0 auto;display:inline-flex;align-items:baseline;gap:10px;
+  font-variant-numeric:tabular-nums;
+}
+.dodge-time{font-size:13px;font-weight:600;color:#dceaf7;letter-spacing:.3px}
+.dodge-best{font-size:12px;color:#7d93a9}
+
+/* 手机横屏：高度紧张，命数点和最佳成绩压小一号，别再挤掉台面 */
+@media (max-height:560px) and (orientation:landscape){
+  .dodge-lives{height:22px;padding:0 8px;gap:4px}
+  .dodge-life{width:7px;height:7px}
+  .dodge-hud{gap:8px}
+  .dodge-time{font-size:12px}
+  .dodge-best{font-size:11px}
+  /* 这一行副标题在最窄的横屏里会把「关闭」挤到边上；
+     目标（撑住 40 秒）底部提示每局都会说，页头这里让位 */
+  .dodge .jump-title .jump-sub{display:none}
+}
+
+/* 手机竖屏：台面被宽度卡住，只有 335px 宽、球比手指还小。
+   这里不弹提示、不拦着你玩，只在下面写一句“横过来更好躲” */
+.dodge-tip{
+  display:none;margin:-2px 0 0;text-align:center;
+  font-size:11.5px;line-height:1.5;color:#7d93a9;letter-spacing:.2px;
+}
+@media (orientation:portrait) and (max-width:620px){
+  .dodge-tip{display:block}
+}
+
+/* ---------- 手绘纸面 ---------- */
+body.theme-sketch .dodge-lives{
+  background:#fffdf5;border:1px solid rgba(43,43,40,.5);
+  box-shadow:2px 2px 0 rgba(43,43,40,.12);
+}
+body.theme-sketch .dodge-life{
+  background:#2f7649;box-shadow:none;
+}
+body.theme-sketch .dodge-life.off{
+  background:transparent;border:1px solid rgba(43,43,40,.35);opacity:1;
+}
+body.theme-sketch .dodge-time{color:#22221e}
+body.theme-sketch .dodge-best{color:#7a7365}
+body.theme-sketch .dodge-tip{color:#7a7365}
+
+/* ---------- 结算卡（HTML，压在台面上） ---------- */
+.dodge-result{
+  position:absolute;inset:0;z-index:3;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+  background:rgba(5,9,14,.62);
+  animation:dodge-fade .18s ease-out both;
+}
+.dodge-result[hidden]{display:none}
+.dodge-result-card{
+  width:min(360px,100%);
+  padding:22px 24px 18px;
+  border-radius:16px;text-align:center;
+  background:linear-gradient(180deg,#152230,#0a1119);
+  border:1px solid rgba(120,190,255,.28);
+  box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);
+  animation:dodge-pop .22s cubic-bezier(.2,1.1,.4,1) both;
+}
+.dodge-result-badge{
+  display:inline-block;margin:0 auto 10px;
+  padding:2px 10px;border-radius:999px;
+  font-size:11.5px;font-weight:600;letter-spacing:.5px;
+  color:#0d2a1c;background:#6fe0a8;
+}
+/* 通关比破纪录更值钱，用金色区分一下 */
+.dodge-result-badge.cleared{
+  color:#3d2c06;background:#ffd36b;
+  box-shadow:0 0 14px rgba(255,211,107,.35);
+}
+.dodge-result-badge[hidden]{display:none}
+.dodge-result-score{
+  font-size:27px;font-weight:700;letter-spacing:.5px;color:#eaf4ff;
+  font-variant-numeric:tabular-nums;
+}
+.dodge-result-sub{
+  margin:8px 0 16px;font-size:12.5px;line-height:1.6;color:#93a9bf;
+}
+.dodge-result-btns{display:flex;gap:8px;justify-content:center}
+.dodge-result-btns .btn{flex:0 0 auto;min-width:104px}
+
+@keyframes dodge-fade{from{opacity:0}to{opacity:1}}
+@keyframes dodge-pop{
+  from{opacity:0;transform:translateY(8px) scale(.96)}
+  to{opacity:1;transform:none}
+}
+
+body.theme-sketch .dodge-result{background:rgba(244,237,221,.58)}
+body.theme-sketch .dodge-result-card{
+  background:#fffdf5;
+  border:1.4px solid rgba(43,43,40,.7);border-radius:5px;
+  box-shadow:3px 3px 0 rgba(43,43,40,.16);
+}
+body.theme-sketch .dodge-result-badge{
+  color:#fffdf5;background:#2b2b28;border-radius:3px;
+}
+body.theme-sketch .dodge-result-badge.cleared{
+  color:#fffdf5;background:#2f7649;border-radius:3px;
+  box-shadow:2px 2px 0 rgba(43,43,40,.16);
+}
+body.theme-sketch .dodge-result-score{color:#22221e}
+body.theme-sketch .dodge-result-sub{color:#6f685c}
+
+/* 手机横屏：结算卡再压小一号，别顶到台面外面 */
+@media (max-height:560px) and (orientation:landscape){
+  .dodge-result{padding:8px}
+  .dodge-result-card{padding:14px 18px 12px;border-radius:12px}
+  .dodge-result-score{font-size:22px}
+  .dodge-result-sub{margin:6px 0 10px;font-size:11.5px}
+  .dodge-result-btns .btn{min-width:88px}
+}

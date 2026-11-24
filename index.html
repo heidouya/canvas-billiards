@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="css/overlay.css">
 <link rel="stylesheet" href="css/responsive.css">
 <link rel="stylesheet" href="css/jump.css">
+<link rel="stylesheet" href="css/dodge.css">
 <link rel="stylesheet" href="css/sketch.css">
 </head>
 <body>
@@ -26,6 +27,8 @@
     <div class="head-actions">
       <!-- 跳球挑战：独立小玩法，点开是覆盖式浮层，关掉就回到原局 -->
       <button type="button" class="panel-mini" id="btnJump">跳球挑战</button>
+      <!-- 躲球挑战：40 秒一局的小玩法，同样覆盖式浮层，不影响当前这局 -->
+      <button type="button" class="panel-mini" id="btnDodge">躲球挑战</button>
       <!-- 桌面端：浏览器全屏，可用高度变大后台面也跟着变大（手机横屏另有细带上的全屏按钮） -->
       <button type="button" class="panel-mini" id="btnFullTop">全屏</button>
       <!-- 桌面端：收起/展开右侧面板，把宽度让给台面（手机端不显示） -->
@@ -155,6 +158,7 @@
         <button type="button" class="btn" id="btnHelp">玩法</button>
         <!-- 手机上页头按钮会隐藏，所以面板里再放一个入口 -->
         <button type="button" class="btn" id="btnJump2">跳球挑战</button>
+        <button type="button" class="btn" id="btnDodge2">躲球挑战</button>
         <button type="button" class="btn danger wide" id="btnClear">清空战绩</button>
       </div>
 
@@ -221,6 +225,45 @@
   </div>
 </div>
 
+<!-- 躲球挑战：40 秒一局的小玩法，跟跳球挑战共用同一套浮层骨架（样式也跟着手绘皮肤走） -->
+<div class="jump dodge" id="dodgeMode">
+  <div class="jump-box">
+    <div class="jump-head">
+      <div class="jump-title">躲球挑战<span class="jump-sub" id="dodgeSub">拖动白球躲开飞来的球 · 撑满 40 秒</span></div>
+      <div class="dodge-lives" id="dodgeLives" aria-label="剩余 3 条命">
+        <i class="dodge-life"></i><i class="dodge-life"></i><i class="dodge-life"></i>
+      </div>
+      <div class="dodge-hud">
+        <span class="dodge-time" id="dodgeTime">0.0 秒</span>
+        <span class="dodge-best" id="dodgeBest">最佳 —</span>
+      </div>
+      <button type="button" class="jump-close" id="dodgeClose">关闭</button>
+    </div>
+    <div class="jump-stage">
+      <canvas id="dodgeCanvas"></canvas>
+      <!-- 结算卡：做成 HTML 而不是画在 canvas 上，字更锐、按钮有正常的按下反馈 -->
+      <div class="dodge-result" id="dodgeResult" hidden>
+        <div class="dodge-result-card">
+          <span class="dodge-result-badge" id="dodgeBadge" hidden>新纪录</span>
+          <div class="dodge-result-score" id="dodgeScore">撑到 12.3 秒</div>
+          <p class="dodge-result-sub" id="dodgeResultSub">三条命用完了 · 最佳 12.3 秒</p>
+          <div class="dodge-result-btns">
+            <button type="button" class="btn primary" id="dodgeAgain">再来一局</button>
+            <button type="button" class="btn" id="dodgeQuit">关闭</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="dodge-tip">竖屏台面偏小，横过来更好躲</p>
+    <div class="jump-foot">
+      <div class="jump-msg" id="dodgeMsg">倒计时结束就开球 · 按住白球拖动，躲开从右边飞来的球</div>
+      <div class="jump-actions">
+        <button type="button" class="btn" id="dodgeRetry">重来</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/util.js"></script>
 <script src="js/state.js"></script>
@@ -240,6 +283,8 @@
 <script src="js/hud.js"></script>
 <script src="js/loop.js"></script>
 <script src="js/main.js"></script>
+<script src="js/tablebg.js"></script>
 <script src="js/jump.js"></script>
+<script src="js/dodge.js"></script>
 </body>
 </html>

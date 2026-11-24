@@ -559,76 +559,8 @@
   function pc(dark, sketch) { return state.sketch ? sketch : dark; }
 
   function drawTable() {
-    if (state.sketch) {
-      // 手绘模式：直接贴主玩法缓存的纸面台桌（几何完全相同），不再单独画一遍
-      ctx.drawImage(sketchLayer(), 0, 0, VIEW_W, VIEW_H);
-      return;
-    }
-    ctx.save();
-    // 木框
-    roundRect(ctx, 2, 2, VIEW_W - 4, VIEW_H - 4, 26);
-    const g = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-    g.addColorStop(0, '#8a5a36');
-    g.addColorStop(0.35, '#6d4128');
-    g.addColorStop(0.72, '#542f1c');
-    g.addColorStop(1, '#38200f');
-    ctx.fillStyle = g;
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(255,224,190,.22)';
-    ctx.stroke();
-
-    // 台呢
-    const rg = ctx.createRadialGradient(MID_X, MID_Y, 60, MID_X, MID_Y, 660);
-    rg.addColorStop(0, '#1b8f60');
-    rg.addColorStop(0.55, '#0f7350');
-    rg.addColorStop(1, '#08492f');
-    ctx.fillStyle = rg;
-    ctx.fillRect(TABLE.x, TABLE.y, TABLE.w, TABLE.h);
-
-    // 内侧阴影
-    const sh = ctx.createLinearGradient(0, TABLE.y, 0, TABLE.y + 26);
-    sh.addColorStop(0, 'rgba(0,0,0,.32)');
-    sh.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = sh;
-    ctx.fillRect(TABLE.x, TABLE.y, TABLE.w, 26);
-    const sh2 = ctx.createLinearGradient(0, TABLE.y + TABLE.h, 0, TABLE.y + TABLE.h - 26);
-    sh2.addColorStop(0, 'rgba(0,0,0,.32)');
-    sh2.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = sh2;
-    ctx.fillRect(TABLE.x, TABLE.y + TABLE.h - 26, TABLE.w, 26);
-
-    // 库边胶条
-    ctx.lineCap = 'butt';
-    RAIL_SEGS.forEach(sg => {
-      ctx.beginPath();
-      ctx.moveTo(sg.x1, sg.y1);
-      ctx.lineTo(sg.x2, sg.y2);
-      ctx.lineWidth = 15;
-      ctx.strokeStyle = '#0c5f3e';
-      ctx.stroke();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = 'rgba(255,255,255,.12)';
-      ctx.stroke();
-    });
-
-    // 袋口
-    for (let i = 0; i < POCKETS.length; i++) {
-      const p = POCKETS[i];
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, POCKET_R + 7, 0, TAU);
-      ctx.fillStyle = 'rgba(20,10,4,.45)';
-      ctx.fill();
-      const pr = ctx.createRadialGradient(p.x - 6, p.y - 6, 2, p.x, p.y, POCKET_R);
-      pr.addColorStop(0, '#000');
-      pr.addColorStop(0.75, '#050809');
-      pr.addColorStop(1, '#141a1e');
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, POCKET_R, 0, TAU);
-      ctx.fillStyle = pr;
-      ctx.fill();
-    }
-    ctx.restore();
+    // 台桌画法抽到 js/tablebg.js，跳球和躲球挑战共用一张桌子
+    TableBG.draw(ctx, state.sketch);
   }
 
   // 手绘模式的球：平涂 + 墨线圈 + 手写号码；飞在空中靠“影子 + 高度虚线”表达，不用渐变
