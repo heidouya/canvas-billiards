@@ -601,7 +601,10 @@ function applyPanelShow() {
   // 窄屏下面板在台面下方，没有“收起”这回事，类名一律清掉（用 add/remove，别用 toggle）
   if (desktop && !panelShow) document.body.classList.add('panel-off');
   else document.body.classList.remove('panel-off');
-  btnPanelTop.textContent = panelShow ? '收起面板' : '显示面板';
+  // 这枚按钮现在是图标（方框 + 右侧那条面板），不能再写 textContent——会把 SVG 清掉；
+  // 状态全交给 body.panel-off 让 CSS 换（右条实心 / 空 + 朝外箭头）
+  btnPanelTop.setAttribute('aria-label', panelShow ? '收起右侧面板' : '显示右侧面板');
+  btnPanelTop.setAttribute('aria-pressed', panelShow ? 'true' : 'false');
   btnPanelTop.title = panelShow ? '把右侧面板收起来，台面能更大' : '把右侧面板展开';
 }
 

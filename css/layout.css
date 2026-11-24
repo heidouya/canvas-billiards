@@ -35,3 +35,5 @@ canvas{
 
 /* 页头右侧的小按钮（全屏 / 收起面板）排一行 */
 .head-actions{display:flex;gap:8px;flex:0 0 auto}
+/* 两级间距：操作组（趣味挑战）跟工具组（暂停 / 三颗图标）之间 12px，组内 8px */
+.head-actions #btnPause{margin-left:4px}

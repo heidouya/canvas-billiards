@@ -92,12 +92,31 @@
 .icon-mini.is-fs .fs-shrink{display:block}
 
 /* 页头最右那枚 GitHub：它们是 <a> 不是 <button>，所以要把链接自带的蓝色、
-   下划线和行高一起压掉，才跟旁边几颗完全对齐；跟「收起面板」之间多留 2px，
-   总共 10px，把「外部跳转」跟操作按钮隔开一点 */
-.panel-mini.gh-mini{margin-left:2px;text-decoration:none;line-height:1}
+   下划线和行高一起压掉，才跟旁边几颗完全对齐 */
+.panel-mini.gh-mini{text-decoration:none;line-height:1}
 .panel-mini.gh-mini:active{transform:scale(.97)}
 .panel-mini.gh-mini:focus-visible{outline:2px solid #4f9ad6;outline-offset:2px}
 .gh-mini .gh-ic{width:15px;height:15px;display:block;fill:currentColor;stroke:none}
+
+/* ---------- 页头工具簇：全屏 / 面板 / GitHub ---------- */
+/* 三颗 32px 图标挨在一起（簇内 6px），整簇走 ghost：默认无边框无底色，hover 才浮出底。
+   这样页头只留「趣味挑战」「暂停」两条边，五个等宽胶囊串在一起的那种"工具栏感"就没了 */
+.icon-cluster{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.icon-cluster .panel-mini{background:transparent;border-color:transparent;color:#a9c0d4}
+.icon-cluster .panel-mini:hover{background:#1d2c3c;border-color:#31506b;color:#e6f2fb}
+.icon-cluster .panel-mini:focus-visible{outline:2px solid #4f9ad6;outline-offset:2px}
+/* 已经开着的状态（全屏中 / 面板被收起）仍然点亮，不用只靠记忆 */
+.icon-cluster .icon-mini.is-fs{background:#22405a;border-color:#3f6b90;color:#eaf4ff}
+body.panel-off .icon-cluster .pnl-mini{background:#1a2735;border-color:#2b4763;color:#cfe0ee}
+
+/* 面板开关的图标：一个方框 + 里面靠右的竖线（经典侧栏图标）；面板收起时竖线隐掉、
+   换成一个朝右的小箭头——"面板滑出去了，点它拉回来" */
+.icon-mini .pnl-ic{width:15px;height:15px;display:block}
+.icon-mini .pnl-ic rect,
+.icon-mini .pnl-ic path{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.icon-mini .pnl-ic .pnl-arrow{opacity:0}
+body.panel-off .icon-cluster .pnl-side{opacity:0}
+body.panel-off .icon-cluster .pnl-arrow{opacity:1}
 
 /* 面板最底那行源码入口：小字、低调，点一下开新标签 */
 .panel-foot-link{margin:14px 2px 2px;text-align:center;font-size:11.5px;letter-spacing:.2px}

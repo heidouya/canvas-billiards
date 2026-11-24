@@ -45,28 +45,39 @@
       <!-- 暂停：计时停住、电脑也不出杆。清台 / 关卡里这块位置改行「结束」（红色，点一下就退出，不再二次确认），
            跳球 / 躲球里不给停，按钮会灰掉 -->
       <button type="button" class="panel-mini" id="btnPause" aria-pressed="false" aria-label="暂停这一局">暂停</button>
-      <!-- 桌面端：浏览器全屏，可用高度变大后台面也跟着变大（手机横屏另有细带上的全屏按钮）
-           桌面这枚收成图标（四角展开 / 四角收拢），省一截页头宽度，也不用在「全屏 / 退出全屏」之间换宽度 -->
-      <button type="button" class="panel-mini icon-mini" id="btnFullTop" aria-label="全屏" title="全屏后纵向空间更大，台面也会更大">
-        <svg class="fs-ic fs-expand" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-          <path d="M3 6.2V3h3.2M13 6.2V3h-3.2M3 9.8v3.2h3.2M13 9.8v3.2h-3.2"/>
-        </svg>
-        <!-- 退出全屏：四角收拢（跟展开的四角在同样的位置，只是往中间挪了） -->
-        <svg class="fs-ic fs-shrink" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-          <path d="M5.6 5.6V3.2H3.2M10.4 5.6V3.2H12.8M5.6 10.4v2.4H3.2M10.4 10.4v2.4H12.8"/>
-        </svg>
-      </button>
-      <!-- 桌面端：收起/展开右侧面板，把宽度让给台面（手机端不显示） -->
-      <button type="button" class="panel-mini" id="btnPanelTop" aria-label="收起或展开右侧面板">收起面板</button>
-      <!-- 页头最右：源码入口。外链，新标签打开，误点也不会丢这一局（切走时主局本来就会自动停表）。
-           桌面页头这几颗在窄屏整排收起，手机上改从面板底部那行小字进（见下方 panel-foot-link） -->
-      <a class="panel-mini icon-mini gh-mini" id="btnGithub"
-         href="https://github.com/heidouya/canvas-billiards" target="_blank" rel="noopener noreferrer"
-         aria-label="在 GitHub 上查看源码（新标签打开）" title="源码在 GitHub · 点颗 star">
-        <svg class="gh-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.555-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
-        </svg>
-      </a>
+      <!-- 工具簇：三颗 32px 图标挨在一起（簇内 6px），跟左边那两颗文字按钮留 12px / 8px 的两级间距。
+           这一簇走 ghost 样式（默认无边框无底色），页头就只剩「趣味挑战」「暂停」两条边，不再像工具栏 -->
+      <span class="icon-cluster">
+        <!-- 桌面端：浏览器全屏，可用高度变大后台面也跟着变大（手机横屏另有细带上的全屏按钮）
+             桌面这枚收成图标（四角展开 / 四角收拢），省一截页头宽度，也不用在「全屏 / 退出全屏」之间换宽度 -->
+        <button type="button" class="panel-mini icon-mini" id="btnFullTop" aria-label="全屏" title="全屏后纵向空间更大，台面也会更大">
+          <svg class="fs-ic fs-expand" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M3 6.2V3h3.2M13 6.2V3h-3.2M3 9.8v3.2h3.2M13 9.8v3.2h-3.2"/>
+          </svg>
+          <!-- 退出全屏：四角收拢（跟展开的四角在同样的位置，只是往中间挪了） -->
+          <svg class="fs-ic fs-shrink" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M5.6 5.6V3.2H3.2M10.4 5.6V3.2H12.8M5.6 10.4v2.4H3.2M10.4 10.4v2.4H12.8"/>
+          </svg>
+        </button>
+        <!-- 桌面端：收起/展开右侧面板，把宽度让给台面（手机端不显示）
+             图标：一个方框 + 右侧那条"面板"。面板在的时候右条实心；收起来时右条空、多一个朝外的箭头 -->
+        <button type="button" class="panel-mini icon-mini pnl-mini" id="btnPanelTop" aria-label="收起右侧面板" title="把右侧面板收起来，台面能更大">
+          <svg class="pnl-ic" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <rect x="1.8" y="3" width="12.4" height="10" rx="1.7"/>
+            <path class="pnl-side" d="M10 3.4v9.2"/>
+            <path class="pnl-arrow" d="M5.6 6.2 7.4 8l-1.8 1.8"/>
+          </svg>
+        </button>
+        <!-- 页头最右：源码入口。外链，新标签打开，误点也不会丢这一局（切走时主局本来就会自动停表）。
+             桌面页头这几颗在窄屏整排收起，手机上改从面板底部那行小字进（见下方 panel-foot-link） -->
+        <a class="panel-mini icon-mini gh-mini" id="btnGithub"
+           href="https://github.com/heidouya/canvas-billiards" target="_blank" rel="noopener noreferrer"
+           aria-label="在 GitHub 上查看源码（新标签打开）" title="源码在 GitHub · 点颗 star">
+          <svg class="gh-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.555-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+          </svg>
+        </a>
+      </span>
     </div>
   </header>
 
