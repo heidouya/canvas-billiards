@@ -79,8 +79,9 @@
           </svg>
         </a>
       </span>
-      <!-- 新手引导：第一次打开时在这颗面板按钮下面浮一条小气泡，把"这颗图标管什么"直说一遍。
-           只出现一次（localStorage eightball.panelHint.v1），3.5 秒自己消失，点按钮 / 按任意键 / 点气泡都立刻收掉 -->
+      <!-- 面板开关的说明气泡：只要面板是展开的它就跟着出现（不是"第一次才说"的一次性引导）。
+           页面加载 3.2 秒后浮一次（让进站那条「比赛开始」先退场），每次点回展开也立刻浮一次；
+           3.5 秒自己收，点按钮 / 点气泡也立刻收掉；面板收起就不出 -->
       <div class="panel-hint" id="panelHint" role="status">
         <span class="panel-hint-tail" aria-hidden="true"></span>点这里收起右侧面板，台面会变大
       </div>

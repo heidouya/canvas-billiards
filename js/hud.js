@@ -614,10 +614,11 @@ function setPanelShow(show) {
   applyPanelShow();
 }
 
-// 点这颗按钮本身就是"看懂了"，顺手把引导气泡（如果还挂着）收掉
+// 点这颗按钮：切换面板。展开就把这条说明重新拉出来，收起立刻收掉
 btnPanelTop.addEventListener('click', () => {
   setPanelShow(!panelShow);
-  if (panelHint && panelHint.classList.contains('on')) cancelPanelHint();
+  if (panelShow) showPanelHint();
+  else hidePanelHint();
 });
 
 applyPanelShow();
@@ -627,55 +628,53 @@ const desktopMq = window.matchMedia(DESKTOP_QUERY);
 if (desktopMq.addEventListener) desktopMq.addEventListener('change', applyPanelShow);
 else if (desktopMq.addListener) desktopMq.addListener(applyPanelShow);
 
-/* ---------- 新手引导：第一次打开站点时，在面板开关下面浮一次说明 ----------
-   图标只够说"面板在不在右边"，说不清"点它是显示还是隐藏"，所以头一回进来把这句话直说一遍。
-   只出现一次：浮出来就立刻记 eightball.panelHint.v1，之后哪怕用户马上关页面也不再打扰；
-   3.5 秒自己收；点这颗按钮 / 按任意键 / 点一下气泡、点一下台面，都立刻收掉 */
-const PANEL_HINT_KEY = 'eightball.panelHint.v1';
+/* ---------- 面板开关的说明气泡：只要面板是展开的，它就跟着出现 ----------
+   图标只够说"面板在不在右边"，说不清"点它是显示还是隐藏"，所以面板展开的时候把这句话直说一遍：
+   · 每次打开页面（面板是展开的）→ 3.2 秒后浮一次（让进站那条「比赛开始」先退场，别两处同时冒新东西）；
+   · 每次从「收起」点回「展开」→ 立刻浮一次；
+   · 面板收起就立刻收；3.5 秒也自己收；点按钮 / 点一下气泡也立刻收。
+   不写 localStorage——它不是"第一次才说一遍"的一次性引导，而是挂在"面板展开"这个状态上的说明 */
 const panelHint = el('panelHint');
 let panelHintTimer = 0;
 let panelHintLead = 0;
 
-function panelHintSeen() {
-  try { return localStorage.getItem(PANEL_HINT_KEY) === '1'; } catch (e) { return true; }
+function panelHintOn() {
+  return !!(panelHint && panelHint.classList.contains('on'));
 }
 function hidePanelHint() {
   clearTimeout(panelHintTimer);
   if (panelHint) panelHint.classList.remove('on');
 }
 function showPanelHint() {
-  if (!panelHint) return;
+  // 窄屏没有这颗按钮，也没地方挂气泡
+  if (!panelHint || !window.matchMedia(DESKTOP_QUERY).matches) return;
   clearTimeout(panelHintTimer);
   panelHint.classList.add('on');
-  try { localStorage.setItem(PANEL_HINT_KEY, '1'); } catch (e) { /* 忽略 */ }
   panelHintTimer = setTimeout(hidePanelHint, 3500);
 }
-function cancelPanelHint() {
-  clearTimeout(panelHintLead);
-  hidePanelHint();
-}
 
-// 只在桌面端、且面板现在是开着的（收起的用户已经懂了，不用教）才浮。
-// 3.2 秒才出来：让进站那条「比赛开始」（2.6 秒）先退场，别两处同时冒新东西
-if (!panelHintSeen()) {
+if (panelShow) {
   panelHintLead = setTimeout(() => {
     if (!window.matchMedia(DESKTOP_QUERY).matches || !panelShow) return;
     showPanelHint();
   }, 3200);
 }
-// 提前动手的用户不等这 3.2 秒：有输入就取消掉还没浮出来的引导；
-// 已经浮出来了，点哪儿 / 按哪个键都算看到过了，立刻收掉（气泡在的时候自己吃点击，
-// 所以不会因为点到气泡而误触它下面盖着的「规则 / 模式」按钮）
-window.addEventListener('pointerdown', cancelPanelHint, { passive: true });
-window.addEventListener('keydown', cancelPanelHint);
+// 还没浮出来之前就动手的用户，不去打扰他（打一杆 / 按空格 / 点别处都算）；
+// 已经浮出来了就不因为点台面而闪掉——它自己会 3.5 秒退场，点气泡本身另算
+window.addEventListener('pointerdown', () => {
+  if (!panelHintOn()) clearTimeout(panelHintLead);
+}, { passive: true });
+window.addEventListener('keydown', () => {
+  if (!panelHintOn()) clearTimeout(panelHintLead);
+});
+if (panelHint) panelHint.addEventListener('click', hidePanelHint);
+// 缩到窄屏（按钮整排收起）时别留一条浮着的气泡
+window.addEventListener('resize', () => {
+  if (!window.matchMedia(DESKTOP_QUERY).matches) hidePanelHint();
+});
 
 // 验收 / 复现用（跟 DodgeChallenge、Pause 一个路子）
-window.PanelHint = {
-  show: showPanelHint,
-  hide: hidePanelHint,
-  seen: panelHintSeen,
-  reset() { try { localStorage.removeItem(PANEL_HINT_KEY); } catch (e) { /* 忽略 */ } }
-};
+window.PanelHint = { show: showPanelHint, hide: hidePanelHint, isOn: panelHintOn };
 
 /* 桌面端的全屏按钮由 14.6 那段（手机横屏全屏按钮）一并接管，这里不再重复实现 */
 
