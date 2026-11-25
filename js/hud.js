@@ -601,9 +601,9 @@ function applyPanelShow() {
   // 窄屏下面板在台面下方，没有“收起”这回事，类名一律清掉（用 add/remove，别用 toggle）
   if (desktop && !panelShow) document.body.classList.add('panel-off');
   else document.body.classList.remove('panel-off');
-  // 这枚按钮现在是图标（方框 + 右侧那条面板），不能再写 textContent——会把 SVG 清掉；
-  // 状态全交给 body.panel-off 让 CSS 换（右条实心 / 空 + 朝外箭头）
-  btnPanelTop.setAttribute('aria-label', panelShow ? '收起右侧面板' : '显示右侧面板');
+  // 文字按钮：直接写按钮上那四个字——说的是"点下去干什么"，两态都是 4 个字，宽度不变、整排不挪位
+  btnPanelTop.textContent = panelShow ? '收起面板' : '展开面板';
+  btnPanelTop.setAttribute('aria-label', panelShow ? '收起右侧面板' : '展开右侧面板');
   btnPanelTop.setAttribute('aria-pressed', panelShow ? 'true' : 'false');
   btnPanelTop.title = panelShow ? '把右侧面板收起来，台面能更大' : '把右侧面板展开';
 }
@@ -614,12 +614,7 @@ function setPanelShow(show) {
   applyPanelShow();
 }
 
-// 点这颗按钮：切换面板。展开就把这条说明重新拉出来，收起立刻收掉
-btnPanelTop.addEventListener('click', () => {
-  setPanelShow(!panelShow);
-  if (panelShow) showPanelHint();
-  else hidePanelHint();
-});
+btnPanelTop.addEventListener('click', () => setPanelShow(!panelShow));
 
 applyPanelShow();
 window.addEventListener('resize', applyPanelShow);
@@ -627,54 +622,6 @@ window.addEventListener('orientationchange', applyPanelShow);
 const desktopMq = window.matchMedia(DESKTOP_QUERY);
 if (desktopMq.addEventListener) desktopMq.addEventListener('change', applyPanelShow);
 else if (desktopMq.addListener) desktopMq.addListener(applyPanelShow);
-
-/* ---------- 面板开关的说明气泡：只要面板是展开的，它就跟着出现 ----------
-   图标只够说"面板在不在右边"，说不清"点它是显示还是隐藏"，所以面板展开的时候把这句话直说一遍：
-   · 每次打开页面（面板是展开的）→ 3.2 秒后浮一次（让进站那条「比赛开始」先退场，别两处同时冒新东西）；
-   · 每次从「收起」点回「展开」→ 立刻浮一次；
-   · 面板收起就立刻收；3.5 秒也自己收；点按钮 / 点一下气泡也立刻收。
-   不写 localStorage——它不是"第一次才说一遍"的一次性引导，而是挂在"面板展开"这个状态上的说明 */
-const panelHint = el('panelHint');
-let panelHintTimer = 0;
-let panelHintLead = 0;
-
-function panelHintOn() {
-  return !!(panelHint && panelHint.classList.contains('on'));
-}
-function hidePanelHint() {
-  clearTimeout(panelHintTimer);
-  if (panelHint) panelHint.classList.remove('on');
-}
-function showPanelHint() {
-  // 窄屏没有这颗按钮，也没地方挂气泡
-  if (!panelHint || !window.matchMedia(DESKTOP_QUERY).matches) return;
-  clearTimeout(panelHintTimer);
-  panelHint.classList.add('on');
-  panelHintTimer = setTimeout(hidePanelHint, 3500);
-}
-
-if (panelShow) {
-  panelHintLead = setTimeout(() => {
-    if (!window.matchMedia(DESKTOP_QUERY).matches || !panelShow) return;
-    showPanelHint();
-  }, 3200);
-}
-// 还没浮出来之前就动手的用户，不去打扰他（打一杆 / 按空格 / 点别处都算）；
-// 已经浮出来了就不因为点台面而闪掉——它自己会 3.5 秒退场，点气泡本身另算
-window.addEventListener('pointerdown', () => {
-  if (!panelHintOn()) clearTimeout(panelHintLead);
-}, { passive: true });
-window.addEventListener('keydown', () => {
-  if (!panelHintOn()) clearTimeout(panelHintLead);
-});
-if (panelHint) panelHint.addEventListener('click', hidePanelHint);
-// 缩到窄屏（按钮整排收起）时别留一条浮着的气泡
-window.addEventListener('resize', () => {
-  if (!window.matchMedia(DESKTOP_QUERY).matches) hidePanelHint();
-});
-
-// 验收 / 复现用（跟 DodgeChallenge、Pause 一个路子）
-window.PanelHint = { show: showPanelHint, hide: hidePanelHint, isOn: panelHintOn };
 
 /* 桌面端的全屏按钮由 14.6 那段（手机横屏全屏按钮）一并接管，这里不再重复实现 */
 

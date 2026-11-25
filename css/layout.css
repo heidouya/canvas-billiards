@@ -33,8 +33,7 @@ canvas{
   background:#0a0f14;
 }
 
-/* 页头右侧的小按钮（全屏 / 收起面板）排一行。
-   position:relative 是给新手引导气泡（.panel-hint）当定位参照：它要贴在按钮排下面 */
-.head-actions{display:flex;gap:8px;flex:0 0 auto;position:relative}
-/* 两级间距：操作组（趣味挑战）跟工具组（暂停 / 三颗图标）之间 12px，组内 8px */
+/* 页头右侧的小按钮（文字按钮 / 全屏 / GitHub 图标）排一行 */
+.head-actions{display:flex;gap:8px;flex:0 0 auto}
+/* 两级间距：操作组（趣味挑战 / 暂停 / 收起面板）跟工具组（全屏 + GitHub 两颗图标）之间 12px，组内 8px */
 .head-actions #btnPause{margin-left:4px}
